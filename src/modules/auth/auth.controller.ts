@@ -5,11 +5,16 @@ import {
   BadRequestException,
   UnauthorizedException,
   ValidationPipe,
+  Delete,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { AuthGuard } from './guards/jwt-auth.guard';
+import { Request } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -17,6 +22,24 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
   ) {}
+
+  @Post('/refresh-token')
+  async refreshToken(@Body() body: { refreshToken: string }) {
+    const newToken = await this.authService.refreshToken(body);
+    if (!newToken) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+    return newToken;
+  }
+
+  @Delete('/revoke-refresh-token')
+  revokeRefreshToken(@Body() body: { refreshToken: string }) {
+    this.authService.revokeRefreshToken(body);
+    return {
+      success: true,
+      message: 'Delete success',
+    };
+  }
 
   @Post('/register')
   async register(@Body(new ValidationPipe()) registerDto: RegisterDto) {
@@ -40,6 +63,18 @@ export class AuthController {
     }
     return {
       token: token,
+    };
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete('/logout')
+  async logout(@Req() request: Request & { user: { [key: string]: string } }) {
+    const accessToken = request.user.accessToken;
+    const expToken = request.user.expToken;
+    await this.authService.logout(accessToken, +expToken);
+    return {
+      success: true,
+      message: 'Logout success',
     };
   }
 }
