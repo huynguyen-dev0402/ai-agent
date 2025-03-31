@@ -8,6 +8,7 @@ import { User } from '../users/entities/user.entity';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { ConfigModule } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
+import { RedisModule } from '@nestjs-modules/ioredis';
 
 @Module({
   imports: [
@@ -21,6 +22,10 @@ import { UsersService } from '../users/users.service';
       signOptions: { expiresIn: process.env.JWT_EXPIRED },
     }),
     TypeOrmModule.forFeature([User]),
+    RedisModule.forRoot({
+      type: 'single',
+      url: 'redis://localhost:6379',
+    }),
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, UsersService],
