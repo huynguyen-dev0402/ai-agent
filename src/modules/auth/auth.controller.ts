@@ -33,8 +33,8 @@ export class AuthController {
   }
 
   @Delete('/revoke-refresh-token')
-  revokeRefreshToken(@Body() body: { refreshToken: string }) {
-    this.authService.revokeRefreshToken(body);
+  revokeRefreshToken(@Body() { refreshToken }) {
+    this.authService.revokeRefreshToken(refreshToken);
     return {
       success: true,
       message: 'Delete success',

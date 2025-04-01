@@ -77,7 +77,12 @@ export class AuthService {
     //add access_token to blacklist
     const accessToken = JSON.parse(tokenFromRedis).access_token;
     await this.redis.set(`blacklist_${accessToken}`, accessToken);
-    return this.getToken(user);
+    const token = await this.getToken(user);
+    await this.saveTokenToRedis({
+      accessToken: token.access_token,
+      refreshToken: token.refresh_token,
+    });
+    return token;
   }
 
   revokeRefreshToken(body: { refreshToken: string }) {
