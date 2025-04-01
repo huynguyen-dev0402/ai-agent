@@ -6,7 +6,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../users/entities/user.entity';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
 import { RedisModule } from '@nestjs-modules/ioredis';
 
@@ -22,9 +22,16 @@ import { RedisModule } from '@nestjs-modules/ioredis';
       signOptions: { expiresIn: process.env.JWT_EXPIRED },
     }),
     TypeOrmModule.forFeature([User]),
-    RedisModule.forRoot({
-      type: 'single',
-      url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
+    RedisModule.forRootAsync({
+      useFactory: () => ({
+        type: 'single',
+        options: {
+          host: process.env.REDIS_HOST,
+          port: Number(process.env.REDIS_PORT),
+          username: process.env.REDIS_USERNAME,
+          password: process.env.REDIS_PASSWORD,
+        },
+      }),
     }),
   ],
   controllers: [AuthController],
