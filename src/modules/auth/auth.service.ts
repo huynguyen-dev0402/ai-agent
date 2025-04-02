@@ -10,7 +10,6 @@ import { User } from '../users/entities/user.entity';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
 import * as md5 from 'md5';
-import e from 'express';
 
 @Injectable()
 export class AuthService {
@@ -28,10 +27,7 @@ export class AuthService {
         accessToken: token.access_token,
         refreshToken: token.refresh_token,
       });
-      return {
-        user,
-        token,
-      };
+      return token;
     }
     return false;
   }

@@ -10,6 +10,7 @@ import {
   ValidationPipe,
   BadRequestException,
   NotFoundException,
+  Req,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -22,13 +23,18 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { User } from './entities/user.entity';
+import { Request } from 'express';
+import { AuthService } from '../auth/auth.service';
 
 @Controller('users')
 @UseGuards(AuthGuard)
 @ApiTags('Users')
 @ApiBearerAuth('access-token')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly authService: AuthService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new user' })
@@ -38,24 +44,67 @@ export class UsersController {
     type: User,
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  create(@Body(new ValidationPipe()) createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  async create(@Body(new ValidationPipe()) createUserDto: CreateUserDto) {
+    const user = await this.usersService.create(createUserDto);
+    if (!user) {
+      throw new BadRequestException('Cannot create user');
+    }
+    return user;
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all users' })
   @ApiResponse({ status: 200, description: 'List of all users', type: [User] })
   @ApiResponse({ status: 403, description: 'Forbidden' })
-  findAll() {
-    return this.usersService.findAll();
+  async findAll() {
+    const users = await this.usersService.findAll();
+    if (!users) {
+      throw new NotFoundException('Users not found');
+    }
+    return {
+      success: true,
+      message: 'User found successfully',
+      users,
+    };
+  }
+
+  @Get('/profile')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get user info' })
+  @ApiResponse({ status: 200, description: 'User found', type: User })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getInfoUser(
+    @Req() request: Request & { user: { [key: string]: string } },
+  ) {
+    const accessToken = request.user.accessToken;
+    const user = await this.authService.getUser(accessToken);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return {
+      success: true,
+      message: 'Get user info successfully',
+      user,
+    };
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a user by ID' })
   @ApiResponse({ status: 200, description: 'The found user', type: User })
   @ApiResponse({ status: 404, description: 'User not found' })
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    if (!id) {
+      throw new BadRequestException('ID is not empty or invalid');
+    }
+    const user = await this.usersService.findOne(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return {
+      success: true,
+      message: 'User found successfully',
+      user,
+    };
   }
 
   @Patch(':id')
@@ -90,7 +139,8 @@ export class UsersController {
     }
     if (response && response.affected) {
       return {
-        message: `Users deleted successfully with id: ${id}`,
+        success: true,
+        message: `User deleted successfully with id: ${id}`,
         user: user,
       };
     }
@@ -107,6 +157,7 @@ export class UsersController {
     }
     if (response && response.affected) {
       return {
+        success: true,
         message: `Users deleted successfully with id: ${ids}`,
         users: users,
       };

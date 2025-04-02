@@ -49,7 +49,7 @@ export class AuthController {
     this.authService.revokeRefreshToken(refreshToken);
     return {
       success: true,
-      message: 'Delete success',
+      message: 'Deleted success',
     };
   }
 
@@ -58,14 +58,9 @@ export class AuthController {
   @ApiResponse({ status: 201, description: 'User registered successfully' })
   @ApiResponse({ status: 400, description: 'Email already exsits' })
   async register(@Body(new ValidationPipe()) registerDto: RegisterDto) {
-    const existsEmail = await this.usersService.findOneByEmail(
-      registerDto.email,
-    );
-    if (existsEmail) {
-      throw new BadRequestException('Email is already exsits');
-    }
     await this.usersService.create(registerDto);
     return {
+      success: true,
       message: 'User registered successfully',
     };
   }
@@ -75,17 +70,21 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid email or password' })
   async login(@Body(new ValidationPipe()) loginDto: LoginDto) {
-    const user = await this.authService.validateUser(loginDto);
-    if (!user) {
+    const token = await this.authService.validateUser(loginDto);
+    if (!token) {
       throw new UnauthorizedException('Invalid email or password');
     }
-    return user;
+    return {
+      success: true,
+      message: 'Login successful',
+      token,
+    };
   }
 
   @UseGuards(AuthGuard)
   @Delete('/logout')
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Logout user' })
+  @ApiOperation({ summary: 'Logout' })
   @ApiResponse({ status: 200, description: 'Logout successful' })
   async logout(@Req() request: Request & { user: { [key: string]: string } }) {
     const accessToken = request.user.accessToken;
