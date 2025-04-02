@@ -10,6 +10,7 @@ import { User } from '../users/entities/user.entity';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
 import * as md5 from 'md5';
+import e from 'express';
 
 @Injectable()
 export class AuthService {
@@ -21,7 +22,7 @@ export class AuthService {
   async validateUser(loginDto: LoginDto) {
     const { email, password } = loginDto;
     const user = await this.userService.findOneByEmail(email);
-    if (user && (await comparePassword(password, user.password))) {
+    if (user && comparePassword(password, user.password)) {
       const token = await this.getToken(user);
       await this.saveTokenToRedis({
         accessToken: token.access_token,

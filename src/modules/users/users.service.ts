@@ -3,9 +3,10 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { hashPassword } from 'src/utils/hash-password/hashing.util';
 import { generateUniqueString } from 'src/utils/generate-random/generate-username.util';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class UsersService {
@@ -24,44 +25,84 @@ export class UsersService {
       throw new BadRequestException('email already exists');
     }
     createUserDto['username'] = generateUniqueString('username');
-    createUserDto.password = await hashPassword(password);
+    createUserDto.password = hashPassword(password);
     const newUser = this.userRepository.create(createUserDto);
-    return await this.userRepository.save(newUser);
+    await this.userRepository.save(newUser);
+    return plainToInstance(User, newUser);
   }
 
   async findAll() {
-    return await this.userRepository.find();
+    const users = await this.userRepository.find({
+      where: {
+        status: 'active',
+      },
+    });
+    return plainToInstance(User, users);
   }
 
   async findOne(id: string) {
-    return await this.userRepository.findOne({
+    const user = await this.userRepository.findOne({
       where: {
         id,
+        status: 'active',
       },
     });
+    return plainToInstance(User, user);
   }
 
   async findOneByEmail(email: string) {
     return await this.userRepository.findOne({
       where: {
         email,
+        status: 'active',
       },
     });
   }
 
   async findOneByPhone(phone: string) {
-    return await this.userRepository.findOne({
+    const user = await this.userRepository.findOne({
       where: {
         phone,
+        status: 'active',
       },
     });
+    return plainToInstance(User, user);
   }
 
   update(id: string, updateUserDto: UpdateUserDto) {
     return `This action updates a #${id} user`;
   }
 
-  remove(id: string) {
-    return `This action removes a #${id} user`;
+  async remove(id: string) {
+    const user = await this.userRepository.findOne({
+      where: {
+        id,
+      },
+    });
+    if (user) {
+      const response = await this.userRepository.delete(id);
+      return { response, user: plainToInstance(User, user) };
+    } else {
+      return {
+        message: 'User not found',
+        user: [],
+      };
+    }
+  }
+
+  //Delete list of users by ids
+  async removeManyUser(ids: number[]) {
+    const users = await this.userRepository.find({
+      where: { id: In(ids) },
+    });
+    if (users) {
+      const response = await this.userRepository.delete(ids);
+      return { response, users: plainToInstance(User, users) };
+    } else {
+      return {
+        message: 'User not found',
+        users: [],
+      };
+    }
   }
 }

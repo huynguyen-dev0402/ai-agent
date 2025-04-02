@@ -7,6 +7,9 @@ import {
   Param,
   Delete,
   UseGuards,
+  ValidationPipe,
+  BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -35,7 +38,7 @@ export class UsersController {
     type: User,
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  create(@Body() createUserDto: CreateUserDto) {
+  create(@Body(new ValidationPipe()) createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 
@@ -63,7 +66,10 @@ export class UsersController {
     type: User,
   })
   @ApiResponse({ status: 404, description: 'User not found' })
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+  update(
+    @Param('id') id: string,
+    @Body(new ValidationPipe()) updateUserDto: UpdateUserDto,
+  ) {
     return this.usersService.update(id, updateUserDto);
   }
 
@@ -74,7 +80,36 @@ export class UsersController {
     description: 'The user has been successfully deleted.',
   })
   @ApiResponse({ status: 404, description: 'User not found' })
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(id);
+  async remove(@Param('id') id: string) {
+    if (!id) {
+      throw new BadRequestException('Please provide ids to delete users');
+    }
+    const { response, user } = await this.usersService.remove(id);
+    if (!user) {
+      throw new NotFoundException(`User not found with id: ${id}`);
+    }
+    if (response && response.affected) {
+      return {
+        message: `Users deleted successfully with id: ${id}`,
+        user: user,
+      };
+    }
+  }
+
+  @Delete()
+  async removeManyUser(@Body() ids: number[]) {
+    if (!ids?.length || !ids) {
+      throw new BadRequestException('Please provide ids to delete users');
+    }
+    const { response, users } = await this.usersService.removeManyUser(ids);
+    if (users.length === 0) {
+      throw new NotFoundException(`User not found with id: ${ids}`);
+    }
+    if (response && response.affected) {
+      return {
+        message: `Users deleted successfully with id: ${ids}`,
+        users: users,
+      };
+    }
   }
 }

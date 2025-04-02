@@ -1,3 +1,4 @@
+import { Exclude } from 'class-transformer';
 import { Entity, Column, PrimaryGeneratedColumn, BeforeInsert } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -21,6 +22,7 @@ export class User {
   @Column({ unique: true, nullable: true, length: 15 })
   phone: string;
 
+  @Exclude()
   @Column()
   password: string;
 

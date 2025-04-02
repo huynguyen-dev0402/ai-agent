@@ -56,13 +56,13 @@ export class AuthController {
   @Post('/register')
   @ApiOperation({ summary: 'Register new user' })
   @ApiResponse({ status: 201, description: 'User registered successfully' })
-  @ApiResponse({ status: 400, description: 'Email or Phone already in use' })
+  @ApiResponse({ status: 400, description: 'Email already exsits' })
   async register(@Body(new ValidationPipe()) registerDto: RegisterDto) {
-    const { email, phone } = registerDto;
-    const existsEmail = await this.usersService.findOneByEmail(email);
-    const existsPhone = await this.usersService.findOneByPhone(phone);
-    if (existsEmail || existsPhone) {
-      throw new BadRequestException('Email or Phone number is already in use');
+    const existsEmail = await this.usersService.findOneByEmail(
+      registerDto.email,
+    );
+    if (existsEmail) {
+      throw new BadRequestException('Email is already exsits');
     }
     await this.usersService.create(registerDto);
     return {

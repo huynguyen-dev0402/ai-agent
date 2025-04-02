@@ -26,7 +26,11 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT ?? 3001);
   app.enableCors({
-    origin: ['https://manager-chatbot.vercel.app/'],
+    origin: [
+      'https://manager-chatbot.vercel.app/',
+      'http://localhost:3000',
+      'http://localhost:3001',
+    ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type, Authorization',
     credentials: true,
