@@ -28,7 +28,10 @@ export class AuthService {
         accessToken: token.access_token,
         refreshToken: token.refresh_token,
       });
-      return token;
+      return {
+        user,
+        token,
+      };
     }
     return false;
   }

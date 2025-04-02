@@ -75,13 +75,11 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid email or password' })
   async login(@Body(new ValidationPipe()) loginDto: LoginDto) {
-    const token = await this.authService.validateUser(loginDto);
-    if (!token) {
+    const user = await this.authService.validateUser(loginDto);
+    if (!user) {
       throw new UnauthorizedException('Invalid email or password');
     }
-    return {
-      token: token,
-    };
+    return user;
   }
 
   @UseGuards(AuthGuard)
