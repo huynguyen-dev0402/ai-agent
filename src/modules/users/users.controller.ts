@@ -134,7 +134,7 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'User not found' })
   async remove(@Param('id') id: string) {
     if (!id) {
-      throw new BadRequestException('Please provide ids to delete users');
+      throw new BadRequestException('Please provide id to delete users');
     }
     const { response, user } = await this.usersService.remove(id);
     if (!user) {
