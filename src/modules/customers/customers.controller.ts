@@ -36,6 +36,13 @@ export class CustomersController {
   ) {}
 
   @Post()
+  @ApiOperation({ summary: 'Create a new customer' })
+  @ApiResponse({
+    status: 201,
+    description: 'The customer has been successfully created.',
+    type: Customer,
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
   async create(@Body() createCustomerDto: CreateCustomerDto) {
     const customer = await this.customersService.create(createCustomerDto);
     if (!customer) {
@@ -45,6 +52,13 @@ export class CustomersController {
   }
 
   @Get()
+  @ApiOperation({ summary: 'Get all customers' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of all customers',
+    type: [Customer],
+  })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
   async findAll() {
     const customsers = await this.customersService.findAll();
     if (!customsers) {
@@ -81,11 +95,36 @@ export class CustomersController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.customersService.findOne(id);
+  @ApiOperation({ summary: 'Get a customer by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'The found customer',
+    type: Customer,
+  })
+  @ApiResponse({ status: 404, description: 'Customer not found' })
+  async findOne(@Param('id') id: string) {
+    if (!id) {
+      throw new BadRequestException('ID is not empty or invalid');
+    }
+    const customer = await this.customersService.findOne(id);
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
+    }
+    return {
+      success: true,
+      message: 'Customer found successfully',
+      customer,
+    };
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Update a customer' })
+  @ApiResponse({
+    status: 200,
+    description: 'The customer has been successfully updated.',
+    type: Customer,
+  })
+  @ApiResponse({ status: 404, description: 'Customer not found' })
   update(
     @Param('id') id: string,
     @Body() updateCustomerDto: UpdateCustomerDto,
@@ -94,7 +133,26 @@ export class CustomersController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.customersService.remove(id);
+  @ApiOperation({ summary: 'Delete a customer' })
+  @ApiResponse({
+    status: 200,
+    description: 'The customer has been successfully deleted.',
+  })
+  @ApiResponse({ status: 404, description: 'Customer not found' })
+  async remove(@Param('id') id: string) {
+    if (!id) {
+      throw new BadRequestException('Please provide id to delete customer');
+    }
+    const { response, customer } = await this.customersService.remove(id);
+    if (!customer) {
+      throw new NotFoundException(`Customer not found with id: ${id}`);
+    }
+    if (response && response.affected) {
+      return {
+        success: true,
+        message: `Customer deleted successfully with id: ${id}`,
+        customer: customer,
+      };
+    }
   }
 }
