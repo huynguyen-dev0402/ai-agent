@@ -9,6 +9,6 @@ export function generateUniqueString(data: string): string {
     data = `${data}` + `${timestamp}${randomNum}`.slice(0, 10);
   } while (generatedString.has(data)); // check exsits
 
-  generatedString.add(data); // Lưu vào danh sách đã tạo
+  generatedString.add(data);
   return data;
 }

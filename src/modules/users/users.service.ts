@@ -1,8 +1,8 @@
-import { BadRequestException, Injectable, UseGuards } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from './entities/user.entity';
+import { User, UserStatus } from './entities/user.entity';
 import { In, Repository } from 'typeorm';
 import { hashPassword } from 'src/utils/hash-password/hashing.util';
 import { generateUniqueString } from 'src/utils/generate-random/generate-username.util';
@@ -24,7 +24,7 @@ export class UsersService {
     if (exsits) {
       throw new BadRequestException('email already exists');
     }
-    createUserDto['username'] = generateUniqueString('username');
+    createUserDto['username'] = generateUniqueString('user');
     createUserDto.password = hashPassword(password);
     const newUser = this.userRepository.create(createUserDto);
     await this.userRepository.save(newUser);
@@ -34,7 +34,7 @@ export class UsersService {
   async findAll() {
     const users = await this.userRepository.find({
       where: {
-        status: 'active',
+        status: UserStatus.ACTIVE,
       },
     });
     return plainToInstance(User, users);
@@ -44,7 +44,7 @@ export class UsersService {
     const user = await this.userRepository.findOne({
       where: {
         id,
-        status: 'active',
+        status: UserStatus.ACTIVE,
       },
     });
     return plainToInstance(User, user);
@@ -54,7 +54,7 @@ export class UsersService {
     return await this.userRepository.findOne({
       where: {
         email,
-        status: 'active',
+        status: UserStatus.ACTIVE,
       },
     });
   }
@@ -63,7 +63,7 @@ export class UsersService {
     const user = await this.userRepository.findOne({
       where: {
         phone,
-        status: 'active',
+        status: UserStatus.ACTIVE,
       },
     });
     return plainToInstance(User, user);

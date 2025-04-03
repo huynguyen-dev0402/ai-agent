@@ -1,3 +1,4 @@
+import { CustomersService } from './../customers/customers.service';
 import {
   Controller,
   Post,
@@ -11,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
-import { RegisterDto } from './dto/register.dto';
+import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthGuard } from './guards/jwt-auth.guard';
 import { Request } from 'express';
@@ -21,6 +22,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { RegisterCustomerDto } from './dto/register-customer.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -28,6 +30,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
+    private readonly customerService: CustomersService,
   ) {}
 
   @Post('/refresh-token')
@@ -57,11 +60,27 @@ export class AuthController {
   @ApiOperation({ summary: 'Register new user' })
   @ApiResponse({ status: 201, description: 'User registered successfully' })
   @ApiResponse({ status: 400, description: 'Email already exsits' })
-  async register(@Body(new ValidationPipe()) registerDto: RegisterDto) {
-    await this.usersService.create(registerDto);
+  async registerUser(
+    @Body(new ValidationPipe()) registerUserDto: RegisterUserDto,
+  ) {
+    await this.usersService.create(registerUserDto);
     return {
       success: true,
       message: 'User registered successfully',
+    };
+  }
+
+  @Post('/register-customer')
+  @ApiOperation({ summary: 'Register new customer' })
+  @ApiResponse({ status: 201, description: 'Customer registered successfully' })
+  @ApiResponse({ status: 400, description: 'Email already exsits' })
+  async registerCustomer(
+    @Body(new ValidationPipe()) registerCustomerDto: RegisterCustomerDto,
+  ) {
+    await this.customerService.create(registerCustomerDto);
+    return {
+      success: true,
+      message: 'Customer registered successfully',
     };
   }
 

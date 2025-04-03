@@ -77,6 +77,9 @@ export class UsersController {
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
     const accessToken = request.user.accessToken;
+    if (request.user.accountType === 'customer') {
+      throw new NotFoundException('User not found');
+    }
     const user = await this.authService.getUser(accessToken);
     if (!user) {
       throw new NotFoundException('User not found');
@@ -131,7 +134,7 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'User not found' })
   async remove(@Param('id') id: string) {
     if (!id) {
-      throw new BadRequestException('Please provide ids to delete users');
+      throw new BadRequestException('Please provide id to delete users');
     }
     const { response, user } = await this.usersService.remove(id);
     if (!user) {
