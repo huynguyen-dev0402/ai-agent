@@ -6,23 +6,36 @@ import { UsersService } from './../users/users.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
-import { User } from '../users/entities/user.entity';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
 import * as md5 from 'md5';
+import { CustomersService } from '../customers/customers.service';
+
+type User = {
+  id: string;
+  email: string;
+  password: string;
+};
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService: UsersService,
+    private readonly customerService: CustomersService,
     private readonly jwtService: JwtService,
     @InjectRedis() private readonly redis: Redis,
   ) {}
   async validateUser(loginDto: LoginDto) {
-    const { email, password } = loginDto;
-    const user = await this.userService.findOneByEmail(email);
+    const { email, password, type } = loginDto;
+    let user: User | null = null;
+    if (type === 'personal') {
+      user = await this.userService.findOneByEmail(email);
+    } else if (type === 'customer') {
+      user = await this.customerService.findOneByEmail(email);
+    }
+
     if (user && comparePassword(password, user.password)) {
-      const token = await this.getToken(user);
+      const token = await this.getToken(user, type);
       await this.saveTokenToRedis({
         accessToken: token.access_token,
         refreshToken: token.refresh_token,
@@ -32,15 +45,19 @@ export class AuthService {
     return false;
   }
 
-  async getToken(user: User) {
+  async getToken(user: User, accountType: string) {
     return {
-      access_token: await this.createToken(user),
-      refresh_token: await this.createRefreshToken(user),
+      access_token: await this.createToken(user, accountType),
+      refresh_token: await this.createRefreshToken(user, accountType),
     };
   }
 
-  createToken(user: User) {
-    const payload = { email: user.email, sub: user.id };
+  createToken(user: User, accountType: string) {
+    const payload = {
+      email: user.email,
+      sub: user.id,
+      accountType,
+    };
     return this.jwtService.signAsync(payload);
   }
 
@@ -48,8 +65,12 @@ export class AuthService {
     return this.jwtService.decode(token);
   }
 
-  async createRefreshToken(user: User) {
-    const payload = { email: user.email, sub: user.id };
+  async createRefreshToken(user: User, accountType: string) {
+    const payload = {
+      email: user.email,
+      sub: user.id,
+      accountType,
+    };
     const refreshToken = await this.jwtService.signAsync(payload, {
       expiresIn: process.env.JWT_REFRESH_EXPIRED,
     });
@@ -61,9 +82,16 @@ export class AuthService {
     if (!payload) {
       return false;
     }
-    const user = await this.userService.findOneByEmail(payload.email);
+    let user: User | null = null;
+    if (payload.accountType === 'customer') {
+      user = await this.customerService.findOne(payload.sub);
+    }
+    if (payload.accountType === 'personal') {
+      user = await this.userService.findOne(payload.sub);
+    }
+
     if (!user) {
-      throw new BadRequestException('User not found');
+      return false;
     }
     const hashRefreshToken = md5(body.refreshToken);
     const tokenFromRedis = await this.redis.get(
@@ -77,7 +105,7 @@ export class AuthService {
     //add access_token to blacklist
     const accessToken = JSON.parse(tokenFromRedis).access_token;
     await this.redis.set(`blacklist_${accessToken}`, accessToken);
-    const token = await this.getToken(user);
+    const token = await this.getToken(user, payload.accountType);
     await this.saveTokenToRedis({
       accessToken: token.access_token,
       refreshToken: token.refresh_token,
@@ -96,10 +124,11 @@ export class AuthService {
     //Set expire time
     const currentTime = new Date().getTime() / 1000;
     const expireTime = this.decodeToken(refreshToken).exp;
-    const diff = Math.round(expireTime - currentTime);
+    const expire = Math.round(expireTime - currentTime);
+
     const hashRefreshToken = md5(refreshToken);
     const hashAccessToken = md5(accessToken);
-    //Save Redis
+    // Save to Redis with expire time
     await this.redis.set(
       `refresh_token_${hashRefreshToken}`,
       JSON.stringify({
@@ -107,7 +136,7 @@ export class AuthService {
         refresh_token: hashRefreshToken,
       }),
       'EX',
-      diff,
+      expire,
     );
     return token;
   }
@@ -115,23 +144,29 @@ export class AuthService {
   async getUser(token: string) {
     const payload = this.decodeToken(token);
     if (!payload) {
-      return false;
+      throw new BadRequestException('Invalid token');
     }
     const blackListToken = await this.redis.get(`blacklist_${md5(token)}`);
     if (blackListToken) {
-      return false;
+      throw new BadRequestException('Token is blacklisted');
     }
-    return this.userService.findOne(payload.sub);
+    if (payload.accountType === 'customer') {
+      return this.customerService.findOne(payload.sub);
+    }
+    if (payload.accountType === 'personal')
+      return this.userService.findOne(payload.sub);
   }
 
   async logout(accessToken: string, exp: number) {
     const hashAccessToken = md5(accessToken);
     const expire = exp - Math.round(new Date().getTime() / 1000);
-    await this.redis.set(
-      `blacklist_${hashAccessToken}`,
-      hashAccessToken,
-      'EX',
-      expire,
-    );
+    if (expire > 0) {
+      await this.redis.set(
+        `blacklist_${hashAccessToken}`,
+        hashAccessToken,
+        'EX',
+        expire,
+      );
+    }
   }
 }

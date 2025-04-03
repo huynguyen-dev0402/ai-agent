@@ -21,7 +21,7 @@ export class AuthGuard implements CanActivate {
     if (!user) {
       throw new UnauthorizedException('Invalid token');
     }
-    let decode: { exp: number };
+    let decode: { exp: number; accountType: string };
     try {
       decode = this.authService.decodeToken(token);
     } catch (error) {
@@ -29,6 +29,7 @@ export class AuthGuard implements CanActivate {
     }
     request.user = {
       ...user,
+      accountType: decode.accountType,
       accessToken: token,
       expToken: decode.exp,
     };
