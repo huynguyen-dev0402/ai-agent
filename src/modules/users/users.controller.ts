@@ -77,6 +77,9 @@ export class UsersController {
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
     const accessToken = request.user.accessToken;
+    if (request.user.accountType === 'customer') {
+      throw new NotFoundException('User not found');
+    }
     const user = await this.authService.getUser(accessToken);
     if (!user) {
       throw new NotFoundException('User not found');
