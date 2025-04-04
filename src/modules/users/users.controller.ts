@@ -25,6 +25,7 @@ import {
 import { User } from './entities/user.entity';
 import { Request } from 'express';
 import { AuthService } from '../auth/auth.service';
+import { ApiTokensService } from '../api-tokens/api-tokens.service';
 
 @Controller('users')
 @UseGuards(AuthGuard)
@@ -34,6 +35,7 @@ export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly authService: AuthService,
+    private readonly apiTokenService: ApiTokensService,
   ) {}
 
   @Post()
@@ -88,6 +90,27 @@ export class UsersController {
       success: true,
       message: 'Get user info successfully',
       user,
+    };
+  }
+
+  @Get('/:id/api-keys')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get api key info' })
+  @ApiResponse({ status: 200, description: 'API key found', type: User })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getApiKeyForUser(@Param('id') id: string) {
+    if (!id) {
+      throw new BadRequestException('Must have id');
+    }
+    // if (!user) {
+    //   throw new NotFoundException('User not found');
+    // }
+    const apiToken = await this.apiTokenService.findApiTokenByUserId(id);
+
+    return {
+      success: true,
+      message: 'Get api token successfully',
+      apiToken,
     };
   }
 

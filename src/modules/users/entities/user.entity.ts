@@ -1,4 +1,6 @@
 import { Exclude } from 'class-transformer';
+import { ApiToken } from 'src/modules/api-tokens/entities/api-token.entity';
+import { Chatbot } from 'src/modules/chatbots/entities/chatbot.entity';
 import { Customer } from 'src/modules/customers/entities/customer.entity';
 import {
   Entity,
@@ -8,6 +10,8 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  OneToMany,
+  OneToOne,
 } from 'typeorm';
 
 export enum UserRole {
@@ -46,6 +50,9 @@ export class User {
   @Column({ type: 'varchar', length: 255, nullable: true })
   thumbnail?: string;
 
+  @Column({ type: 'varchar', length: 255, nullable: false })
+  workspace_id: string;
+
   @Column({ type: 'enum', enum: UserRole, default: UserRole.PERSONAL })
   role: UserRole;
 
@@ -72,4 +79,10 @@ export class User {
   })
   @JoinColumn({ name: 'customer_id' })
   customer?: Customer | null;
+
+  @OneToMany(() => Chatbot, (chatbot) => chatbot.user)
+  chatbots: Chatbot[];
+
+  @OneToOne(() => ApiToken, (api_token) => api_token.user)
+  api_token: ApiToken;
 }
