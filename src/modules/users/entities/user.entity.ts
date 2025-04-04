@@ -50,8 +50,8 @@ export class User {
   @Column({ type: 'varchar', length: 255, nullable: true })
   thumbnail?: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: false })
-  workspace_id: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  workspace_id?: string;
 
   @Column({ type: 'enum', enum: UserRole, default: UserRole.PERSONAL })
   role: UserRole;
