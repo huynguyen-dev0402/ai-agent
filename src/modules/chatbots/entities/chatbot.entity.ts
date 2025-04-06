@@ -71,7 +71,7 @@ export class Chatbot {
   @JoinColumn({ name: 'workspace_id' })
   workspace: Workspace;
 
-  @OneToOne(() => ChatbotModel)
+  @ManyToOne(() => ChatbotModel)
   @JoinColumn({ name: 'model_id' })
   model: ChatbotModel;
 }

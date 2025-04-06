@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
   OneToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 
 export enum ModelStatus {
@@ -81,7 +82,6 @@ export class ChatbotModel {
   })
   updated_at: Date;
 
-  @OneToOne(() => Chatbot)
-  @JoinColumn({ name: 'chatbot_id' })
-  chatbot: Chatbot;
+  @OneToMany(() => Chatbot, (chatbot) => chatbot.model)
+  chatbots: Chatbot[];
 }
