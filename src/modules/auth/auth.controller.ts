@@ -47,7 +47,10 @@ export class AuthController {
   @ApiOperation({ summary: 'Revoke refresh token' })
   @ApiResponse({ status: 200, description: 'Token revoked successfully' })
   revokeRefreshToken(@Body() { refreshToken }) {
-    this.authService.revokeRefreshToken(refreshToken);
+    const response = this.authService.revokeRefreshToken(refreshToken);
+    if (!response) {
+      throw new BadRequestException('Something wrong');
+    }
     return {
       success: true,
       message: 'Deleted success',
@@ -61,7 +64,10 @@ export class AuthController {
   async registerUser(
     @Body(new ValidationPipe()) registerUserDto: RegisterUserDto,
   ) {
-    await this.usersService.create(registerUserDto);
+    const newUser = await this.usersService.create(registerUserDto);
+    if (!newUser) {
+      throw new BadRequestException('Cannot create account');
+    }
     return {
       success: true,
       message: 'User registered successfully',
@@ -75,7 +81,10 @@ export class AuthController {
   async registerCustomer(
     @Body(new ValidationPipe()) registerCustomerDto: RegisterCustomerDto,
   ) {
-    await this.usersService.create(registerCustomerDto);
+    const newUser = await this.usersService.create(registerCustomerDto);
+    if (!newUser) {
+      throw new BadRequestException('Cannot create account');
+    }
     return {
       success: true,
       message: 'Customer registered successfully',
