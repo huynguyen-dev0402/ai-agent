@@ -73,9 +73,6 @@ export class User {
   })
   updated_at: Date;
 
-  @OneToMany(() => ApiToken, (api_token) => api_token.user)
-  api_tokens: ApiToken[];
-
   @OneToMany(() => Workspace, (workspace) => workspace.user)
   workspaces: Workspace[];
 }

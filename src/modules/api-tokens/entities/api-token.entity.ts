@@ -49,9 +49,7 @@ export class ApiToken {
   })
   updated_at: Date;
 
-  @OneToMany(() => User, (user) => user.api_tokens, {
-    onDelete: 'CASCADE',
-  })
+  @OneToOne(() => User)
   @JoinColumn({ name: 'user_id' })
   user: User;
 }
