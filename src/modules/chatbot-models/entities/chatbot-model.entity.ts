@@ -5,12 +5,18 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToMany,
+  OneToOne,
+  JoinColumn,
 } from 'typeorm';
 
 export enum ModelStatus {
   ACTIVE = 'active',
   INACTIVE = 'inactive',
+}
+
+export enum ModelType {
+  TEXT = 'text',
+  MULTI = 'multi',
 }
 
 @Entity('models')
@@ -28,11 +34,31 @@ export class ChatbotModel {
   @Column({ type: 'text', nullable: true, collation: 'utf8mb4_unicode_ci' })
   description: string;
 
-  @Column({ type: 'text', nullable: true, collation: 'utf8mb4_unicode_ci' })
-  max_tokens: string;
+  @Column({ type: 'int', nullable: true, collation: 'utf8mb4_unicode_ci' })
+  context_length: number;
 
-  @Column({ type: 'text', nullable: true, collation: 'utf8mb4_unicode_ci' })
-  presence_penalty: string;
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    collation: 'utf8mb4_unicode_ci',
+  })
+  features: string;
+
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    collation: 'utf8mb4_unicode_ci',
+  })
+  provider: string;
+
+  @Column({
+    type: 'enum',
+    enum: ModelType,
+    default: ModelType.TEXT,
+  })
+  type: ModelType;
 
   @Column({
     type: 'enum',
@@ -54,4 +80,8 @@ export class ChatbotModel {
     onUpdate: 'CURRENT_TIMESTAMP',
   })
   updated_at: Date;
+
+  @OneToOne(() => Chatbot)
+  @JoinColumn({ name: 'chatbot_id' })
+  chatbot: Chatbot;
 }

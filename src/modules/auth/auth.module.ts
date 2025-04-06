@@ -9,8 +9,6 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
 import { RedisModule } from '@nestjs-modules/ioredis';
-import { CustomersService } from '../customers/customers.service';
-import { Customer } from '../customers/entities/customer.entity';
 
 @Module({
   imports: [
@@ -23,7 +21,7 @@ import { Customer } from '../customers/entities/customer.entity';
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: process.env.JWT_EXPIRED },
     }),
-    TypeOrmModule.forFeature([User, Customer]),
+    TypeOrmModule.forFeature([User]),
     RedisModule.forRootAsync({
       useFactory: () => ({
         type: 'single',
@@ -37,7 +35,7 @@ import { Customer } from '../customers/entities/customer.entity';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, UsersService, CustomersService],
+  providers: [AuthService, JwtStrategy, UsersService],
   exports: [AuthService],
 })
 export class AuthModule {}

@@ -78,11 +78,7 @@ export class UsersController {
   async getInfoUser(
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
-    const accessToken = request.user.accessToken;
-    if (request.user.accountType === 'customer') {
-      throw new NotFoundException('User not found');
-    }
-    const user = await this.authService.getUser(accessToken);
+    const user = await this.usersService.findOne(request.user.id);
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -93,19 +89,19 @@ export class UsersController {
     };
   }
 
-  @Get('/:id/api-keys')
+  @Get('/profile/api-tokens')
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Get api key info' })
   @ApiResponse({ status: 200, description: 'API key found', type: User })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getApiKeyForUser(@Param('id') id: string) {
-    if (!id) {
-      throw new BadRequestException('Must have id');
+  async getApiKeyForUser(
+    @Req() request: Request & { user: { [key: string]: string } },
+  ) {
+    const user = await this.usersService.findOne(request.user.id);
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
-    // if (!user) {
-    //   throw new NotFoundException('User not found');
-    // }
-    const apiToken = await this.apiTokenService.findApiTokenByUserId(id);
+    const apiToken = await this.apiTokenService.findApiTokenByUserId(user.id);
 
     return {
       success: true,

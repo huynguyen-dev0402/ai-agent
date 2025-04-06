@@ -8,7 +8,7 @@ import {
   ManyToOne,
   Entity,
 } from 'typeorm';
-@Entity('suggested_question')
+@Entity('suggested_questions')
 export class OnboardingSuggestedQuestion {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -38,9 +38,9 @@ export class OnboardingSuggestedQuestion {
 
   @ManyToOne(
     () => ChatbotOnboarding,
-    (chatbot_onboarding) => chatbot_onboarding.suggested_question,
+    (chatbot_onboarding) => chatbot_onboarding.suggested_questions,
     {
-      nullable: false,
+      nullable: true,
       onDelete: 'CASCADE',
     },
   )
