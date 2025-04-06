@@ -9,7 +9,6 @@ import { LoginDto } from './dto/login.dto';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
 import * as md5 from 'md5';
-import { CustomersService } from '../customers/customers.service';
 
 type User = {
   id: string;
@@ -21,21 +20,14 @@ type User = {
 export class AuthService {
   constructor(
     private readonly userService: UsersService,
-    private readonly customerService: CustomersService,
     private readonly jwtService: JwtService,
     @InjectRedis() private readonly redis: Redis,
   ) {}
   async validateUser(loginDto: LoginDto) {
-    const { email, password, type } = loginDto;
-    let user: User | null = null;
-    if (type === 'personal') {
-      user = await this.userService.findOneByEmail(email);
-    } else if (type === 'customer') {
-      user = await this.customerService.findOneByEmail(email);
-    }
-
+    const { email, password } = loginDto;
+    const user = await this.userService.findOneByEmail(email);
     if (user && comparePassword(password, user.password)) {
-      const token = await this.getToken(user, type);
+      const token = await this.getToken(user);
       await this.saveTokenToRedis({
         accessToken: token.access_token,
         refreshToken: token.refresh_token,
@@ -45,18 +37,17 @@ export class AuthService {
     return false;
   }
 
-  async getToken(user: User, accountType: string) {
+  async getToken(user: User) {
     return {
-      access_token: await this.createToken(user, accountType),
-      refresh_token: await this.createRefreshToken(user, accountType),
+      access_token: await this.createToken(user),
+      refresh_token: await this.createRefreshToken(user),
     };
   }
 
-  createToken(user: User, accountType: string) {
+  createToken(user: User) {
     const payload = {
       email: user.email,
       sub: user.id,
-      accountType,
     };
     return this.jwtService.signAsync(payload);
   }
@@ -65,11 +56,10 @@ export class AuthService {
     return this.jwtService.decode(token);
   }
 
-  async createRefreshToken(user: User, accountType: string) {
+  async createRefreshToken(user: User) {
     const payload = {
       email: user.email,
       sub: user.id,
-      accountType,
     };
     const refreshToken = await this.jwtService.signAsync(payload, {
       expiresIn: process.env.JWT_REFRESH_EXPIRED,
@@ -82,14 +72,7 @@ export class AuthService {
     if (!payload) {
       return false;
     }
-    let user: User | null = null;
-    if (payload.accountType === 'customer') {
-      user = await this.customerService.findOne(payload.sub);
-    }
-    if (payload.accountType === 'personal') {
-      user = await this.userService.findOne(payload.sub);
-    }
-
+    const user = await this.userService.findOne(payload.sub);
     if (!user) {
       return false;
     }
@@ -105,7 +88,7 @@ export class AuthService {
     //add access_token to blacklist
     const accessToken = JSON.parse(tokenFromRedis).access_token;
     await this.redis.set(`blacklist_${accessToken}`, accessToken);
-    const token = await this.getToken(user, payload.accountType);
+    const token = await this.getToken(user);
     await this.saveTokenToRedis({
       accessToken: token.access_token,
       refreshToken: token.refresh_token,
@@ -150,11 +133,7 @@ export class AuthService {
     if (blackListToken) {
       throw new BadRequestException('Token is blacklisted');
     }
-    if (payload.accountType === 'customer') {
-      return this.customerService.findOne(payload.sub);
-    }
-    if (payload.accountType === 'personal')
-      return this.userService.findOne(payload.sub);
+    return this.userService.findOne(payload.sub);
   }
 
   async logout(accessToken: string, exp: number) {

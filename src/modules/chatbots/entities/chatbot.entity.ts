@@ -1,5 +1,6 @@
 import { ChatbotOnboarding } from 'src/modules/chatbot-onboarding/entities/chatbot-onboarding.entity';
 import { User } from 'src/modules/users/entities/user.entity';
+import { Workspace } from 'src/modules/workspaces/entities/workspace.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -8,12 +9,11 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   JoinColumn,
-  OneToOne,
 } from 'typeorm';
 
 export enum ChatbotStatus {
-  ACTIVE = 'active',
-  INACTIVE = 'inactive',
+  DRAFT = 'draft',
+  PUBLISHED = 'published',
 }
 
 @Entity('chatbots')
@@ -21,20 +21,25 @@ export class Chatbot {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: false })
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: false,
+    collation: 'utf8mb4_unicode_ci',
+  })
   chatbot_name: string;
 
-  @Column({ type: 'text', nullable: true })
-  thumbnail: string;
+  @Column({ type: 'text', nullable: true, collation: 'utf8mb4_unicode_ci' })
+  icon_url: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, collation: 'utf8mb4_unicode_ci' })
   prompt_info: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, collation: 'utf8mb4_unicode_ci' })
   description: string;
 
-  @Column({ type: 'enum', enum: ChatbotStatus, default: ChatbotStatus.ACTIVE })
-  status: Chatbot;
+  @Column({ type: 'enum', enum: ChatbotStatus, default: ChatbotStatus.DRAFT })
+  status: ChatbotStatus;
 
   @CreateDateColumn({
     type: 'timestamp',
@@ -50,13 +55,9 @@ export class Chatbot {
   })
   updated_at: Date;
 
-  @ManyToOne(() => User, (user) => user.chatbots, {
-    nullable: false,
+  @ManyToOne(() => Workspace, (workspace) => workspace.chatbots, {
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'user_id' })
-  user: User;
-
-  @OneToOne(() => ChatbotOnboarding)
-  chatbot_onboarding: ChatbotOnboarding;
+  @JoinColumn({ name: 'workspace_id' })
+  workspace: Workspace;
 }

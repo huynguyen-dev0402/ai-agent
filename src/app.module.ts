@@ -6,8 +6,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { User } from './modules/users/entities/user.entity';
-import { CustomersModule } from './modules/customers/customers.module';
-import { Customer } from './modules/customers/entities/customer.entity';
 import { ChatbotsModule } from './modules/chatbots/chatbots.module';
 import { Chatbot } from './modules/chatbots/entities/chatbot.entity';
 import { ChatbotModelsModule } from './modules/chatbot-models/chatbot-models.module';
@@ -21,6 +19,10 @@ import { OnboardingSuggestedQuestionsModule } from './modules/onboarding-suggest
 import { ChatbotOnboarding } from './modules/chatbot-onboarding/entities/chatbot-onboarding.entity';
 import { OnboardingSuggestedQuestion } from './modules/onboarding-suggested-questions/entities/onboarding-suggested-question.entity';
 import { ChatbotConfig } from './modules/chatbot-configs/entities/chatbot-config.entity';
+import { WorkspacesModule } from './modules/workspaces/workspaces.module';
+import { ChatbotPublishedModule } from './modules/chatbot_published/chatbot_published.module';
+import { Workspace } from './modules/workspaces/entities/workspace.entity';
+import { ChatbotPublished } from './modules/chatbot_published/entities/chatbot_published.entity';
 
 @Module({
   imports: [
@@ -36,9 +38,10 @@ import { ChatbotConfig } from './modules/chatbot-configs/entities/chatbot-config
       database: process.env.DATABASE_NAME,
       entities: [
         User,
-        Customer,
         Chatbot,
         ApiToken,
+        Workspace,
+        ChatbotPublished,
         ChatbotModel,
         ChatbotConfig,
         ChatbotOnboarding,
@@ -49,7 +52,6 @@ import { ChatbotConfig } from './modules/chatbot-configs/entities/chatbot-config
     }),
     UsersModule,
     AuthModule,
-    CustomersModule,
     ChatbotsModule,
     ChatbotModelsModule,
     ChatbotKnowledgeModule,
@@ -57,6 +59,8 @@ import { ChatbotConfig } from './modules/chatbot-configs/entities/chatbot-config
     ChatbotConfigsModule,
     ChatbotOnboardingModule,
     OnboardingSuggestedQuestionsModule,
+    WorkspacesModule,
+    ChatbotPublishedModule,
   ],
   controllers: [AppController],
   providers: [AppService],

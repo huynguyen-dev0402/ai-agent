@@ -1,4 +1,3 @@
-import { CustomersService } from './../customers/customers.service';
 import {
   Controller,
   Post,
@@ -30,7 +29,6 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
-    private readonly customerService: CustomersService,
   ) {}
 
   @Post('/refresh-token')
@@ -77,7 +75,7 @@ export class AuthController {
   async registerCustomer(
     @Body(new ValidationPipe()) registerCustomerDto: RegisterCustomerDto,
   ) {
-    await this.customerService.create(registerCustomerDto);
+    await this.usersService.create(registerCustomerDto);
     return {
       success: true,
       message: 'Customer registered successfully',

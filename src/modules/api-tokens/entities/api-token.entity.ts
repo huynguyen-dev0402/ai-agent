@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
   JoinColumn,
   OneToOne,
+  OneToMany,
 } from 'typeorm';
 
 export enum ApiTokenStatus {
@@ -48,8 +49,7 @@ export class ApiToken {
   })
   updated_at: Date;
 
-  @OneToOne(() => User, (user) => user.api_token, {
-    nullable: false,
+  @OneToMany(() => User, (user) => user.api_tokens, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'user_id' })

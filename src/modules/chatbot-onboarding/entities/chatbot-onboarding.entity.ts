@@ -43,5 +43,5 @@ export class ChatbotOnboarding {
     () => OnboardingSuggestedQuestion,
     (suggested_question) => suggested_question.chatbot_onboarding,
   )
-  suggested_question: [OnboardingSuggestedQuestion];
+  suggested_questions: OnboardingSuggestedQuestion[];
 }

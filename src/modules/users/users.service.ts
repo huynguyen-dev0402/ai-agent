@@ -46,9 +46,9 @@ export class UsersService {
         id,
         status: UserStatus.ACTIVE,
       },
-      relations: {
-        api_token: true,
-      },
+      // relations: {
+      //   api_token: true,
+      // },
     });
     return plainToInstance(User, user);
   }

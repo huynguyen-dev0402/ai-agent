@@ -1,29 +1,23 @@
 import { Exclude } from 'class-transformer';
 import { ApiToken } from 'src/modules/api-tokens/entities/api-token.entity';
-import { Chatbot } from 'src/modules/chatbots/entities/chatbot.entity';
-import { Customer } from 'src/modules/customers/entities/customer.entity';
+import { Workspace } from 'src/modules/workspaces/entities/workspace.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
-  JoinColumn,
   OneToMany,
-  OneToOne,
 } from 'typeorm';
-
-export enum UserRole {
-  ADMIN = 'admin',
-  EDITOR = 'editor',
-  MEMBER = 'member',
-  PERSONAL = 'personal',
-}
 
 export enum UserStatus {
   ACTIVE = 'active',
   INACTIVE = 'inactive',
+}
+
+export enum UserType {
+  PERSONAL = 'personal',
+  BUSINESS = 'business',
 }
 
 @Entity('users')
@@ -31,30 +25,36 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: false })
+  @Column({ type: 'varchar', nullable: false })
   username: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: false })
-  fullname: string;
+  @Column({ type: 'varchar', nullable: true })
+  fullname?: string;
 
-  @Column({ type: 'varchar', length: 255, unique: true, nullable: false })
+  @Column({ type: 'varchar', nullable: true })
+  business_name?: string;
+
+  @Column({ type: 'varchar', unique: true, nullable: false })
   email: string;
 
+  @Column({ type: 'varchar', unique: true, nullable: true })
+  domain?: string;
+
+  @Column({ type: 'text', unique: true, nullable: true })
+  address?: string;
+
   @Exclude()
-  @Column({ type: 'varchar', length: 255, nullable: false })
+  @Column({ type: 'varchar', nullable: false })
   password: string;
 
   @Column({ type: 'varchar', length: 20, unique: true, nullable: true })
   phone?: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  thumbnail?: string;
+  @Column({ type: 'varchar', nullable: true })
+  avatar_url?: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  workspace_id?: string;
-
-  @Column({ type: 'enum', enum: UserRole, default: UserRole.PERSONAL })
-  role: UserRole;
+  @Column({ type: 'enum', enum: UserType, nullable: false })
+  type: UserType;
 
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.ACTIVE })
   status: UserStatus;
@@ -73,16 +73,9 @@ export class User {
   })
   updated_at: Date;
 
-  @ManyToOne(() => Customer, (customer) => customer.users, {
-    nullable: true,
-    onDelete: 'CASCADE',
-  })
-  @JoinColumn({ name: 'customer_id' })
-  customer?: Customer | null;
+  @OneToMany(() => ApiToken, (api_token) => api_token.user)
+  api_tokens: ApiToken[];
 
-  @OneToMany(() => Chatbot, (chatbot) => chatbot.user)
-  chatbots: Chatbot[];
-
-  @OneToOne(() => ApiToken, (api_token) => api_token.user)
-  api_token: ApiToken;
+  @OneToMany(() => Workspace, (workspace) => workspace.user)
+  workspaces: Workspace[];
 }
