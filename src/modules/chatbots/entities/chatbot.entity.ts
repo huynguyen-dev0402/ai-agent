@@ -1,3 +1,4 @@
+import { ChatbotModel } from 'src/modules/chatbot-models/entities/chatbot-model.entity';
 import { ChatbotOnboarding } from 'src/modules/chatbot-onboarding/entities/chatbot-onboarding.entity';
 import { User } from 'src/modules/users/entities/user.entity';
 import { Workspace } from 'src/modules/workspaces/entities/workspace.entity';
@@ -9,6 +10,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   JoinColumn,
+  OneToOne,
 } from 'typeorm';
 
 export enum ChatbotStatus {
@@ -25,18 +27,26 @@ export class Chatbot {
     type: 'varchar',
     length: 255,
     nullable: false,
-    collation: 'utf8mb4_unicode_ci',
   })
   chatbot_name: string;
 
-  @Column({ type: 'text', nullable: true, collation: 'utf8mb4_unicode_ci' })
-  icon_url: string;
+  @Column({ name: 'model_id', default: '1716293913' })
+  model_id: string;
 
-  @Column({ type: 'text', nullable: true, collation: 'utf8mb4_unicode_ci' })
-  prompt_info: string;
+  @Column({ type: 'varchar', default: '1024' })
+  connector_id: string;
 
-  @Column({ type: 'text', nullable: true, collation: 'utf8mb4_unicode_ci' })
-  description: string;
+  @Column({ type: 'text', nullable: true })
+  icon_url?: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  external_bot_id?: string;
+
+  @Column({ type: 'text', nullable: true })
+  prompt_info?: string;
+
+  @Column({ type: 'text', nullable: true })
+  description?: string;
 
   @Column({ type: 'enum', enum: ChatbotStatus, default: ChatbotStatus.DRAFT })
   status: ChatbotStatus;
@@ -60,4 +70,8 @@ export class Chatbot {
   })
   @JoinColumn({ name: 'workspace_id' })
   workspace: Workspace;
+
+  @OneToOne(() => ChatbotModel)
+  @JoinColumn({ name: 'model_id' })
+  model: ChatbotModel;
 }

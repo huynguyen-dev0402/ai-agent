@@ -23,14 +23,18 @@ export class ApiTokensService {
     return `This action returns a #${id} apiToken`;
   }
 
-  findApiTokenByUserId(userId: string) {
-    return this.apiTokenRepository.findOne({
+  async findApiTokenByUserId(userId: string) {
+    const apiToken = await this.apiTokenRepository.findOne({
       where: { user: { id: userId } },
       select: {
         id: true,
         token: true,
       },
     });
+    if (!apiToken) {
+      return false;
+    }
+    return apiToken;
   }
 
   update(id: number, updateApiTokenDto: UpdateApiTokenDto) {
