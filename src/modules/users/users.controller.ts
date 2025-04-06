@@ -26,6 +26,7 @@ import { User } from './entities/user.entity';
 import { Request } from 'express';
 import { AuthService } from '../auth/auth.service';
 import { ApiTokensService } from '../api-tokens/api-tokens.service';
+import { WorkspacesService } from '../workspaces/workspaces.service';
 
 @Controller('users')
 @UseGuards(AuthGuard)
@@ -36,6 +37,7 @@ export class UsersController {
     private readonly usersService: UsersService,
     private readonly authService: AuthService,
     private readonly apiTokenService: ApiTokensService,
+    private readonly workspaceService: WorkspacesService,
   ) {}
 
   @Post()
@@ -79,9 +81,6 @@ export class UsersController {
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
     const user = await this.usersService.findOne(request.user.id);
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
     return {
       success: true,
       message: 'Get user info successfully',
@@ -97,16 +96,88 @@ export class UsersController {
   async getApiKeyForUser(
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
-    const user = await this.usersService.findOne(request.user.id);
-    if (!user) {
-      throw new NotFoundException('User not found');
+    const apiToken = await this.apiTokenService.findApiTokenByUserId(
+      request.user.id,
+    );
+    if (!apiToken) {
+      throw new NotFoundException('Api token not found');
     }
-    const apiToken = await this.apiTokenService.findApiTokenByUserId(user.id);
-
     return {
       success: true,
       message: 'Get api token successfully',
       apiToken,
+    };
+  }
+
+  @Get('/profile/workspaces')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get workspaces info' })
+  @ApiResponse({ status: 200, description: 'Workspaces found', type: User })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async findAllWorkspacesForUser(
+    @Req() request: Request & { user: { [key: string]: string } },
+  ) {
+    const workspaces = await this.workspaceService.findAllWorkspacesByUserId(
+      request.user.id,
+    );
+    if (!workspaces) {
+      throw new NotFoundException('Workspaces not found');
+    }
+    return {
+      success: true,
+      message: 'Get workspaces successfully',
+      workspaces,
+    };
+  }
+
+  @Get('/profile/workspaces/chatbots')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get list chatbots info' })
+  @ApiResponse({ status: 200, description: 'List Chatbots', type: User })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async findAllChatbotsForUser(
+    @Req() request: Request & { user: { [key: string]: string } },
+  ) {
+    const workspaces = await this.workspaceService.findAllWorkspacesByUserId(
+      request.user.id,
+    );
+    if (!workspaces) {
+      throw new NotFoundException('Workspaces not found');
+    }
+    const ids = workspaces.map((workspace) => workspace.id);
+    const data =
+      await this.workspaceService.findAllChatbotsByMultiWorkspaces(ids);
+
+    return {
+      success: true,
+      message: 'Get chatbots successfully',
+      data,
+    };
+  }
+
+  @Get('/profile/workspaces/:workspaceId/chatbots')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get list chatbots info' })
+  @ApiResponse({ status: 200, description: 'List Chatbots', type: User })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async findAllChatbotsForUserByWorkspace(
+    @Req() request: Request & { user: { [key: string]: string } },
+    @Param('workspaceId') workspaceId: string,
+  ) {
+    const workspaces = await this.workspaceService.findWorkspaceByUserId(
+      request.user.id,
+    );
+    if (!workspaces) {
+      throw new NotFoundException('Workspaces not found');
+    }
+    const chatbots = await this.workspaceService.findAllChatbotsByWorkspace(
+      workspaces.id,
+    );
+
+    return {
+      success: true,
+      message: 'Get chatbots successfully',
+      chatbots,
     };
   }
 

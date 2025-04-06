@@ -47,7 +47,7 @@ import { ChatbotPublished } from './modules/chatbot_published/entities/chatbot_p
         ChatbotOnboarding,
         OnboardingSuggestedQuestion,
       ],
-      synchronize: true,
+      //synchronize: true,
       //logging: true,
     }),
     UsersModule,

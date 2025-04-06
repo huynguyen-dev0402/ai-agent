@@ -5,9 +5,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { AuthModule } from '../auth/auth.module';
 import { ApiTokensModule } from '../api-tokens/api-tokens.module';
+import { WorkspacesModule } from '../workspaces/workspaces.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User]), AuthModule, ApiTokensModule],
+  imports: [TypeOrmModule.forFeature([User]), AuthModule, ApiTokensModule, WorkspacesModule],
   controllers: [UsersController],
   providers: [UsersService],
   exports: [UsersService],
