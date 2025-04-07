@@ -1,4 +1,4 @@
-import { BadGatewayException, Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateChatbotDto } from './dto/create-chatbot.dto';
 import { UpdateChatbotDto } from './dto/update-chatbot.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -6,6 +6,7 @@ import { Chatbot } from './entities/chatbot.entity';
 import { Repository } from 'typeorm';
 import { UsersService } from '../users/users.service';
 import { PublishChatbotDto } from './dto/publish-chatbot.dto';
+import { ChatbotModelsService } from '../chatbot-models/chatbot-models.service';
 import { WorkspacesService } from '../workspaces/workspaces.service';
 
 @Injectable()
@@ -14,31 +15,76 @@ export class ChatbotsService {
     @InjectRepository(Chatbot)
     private readonly chatbotRepository: Repository<Chatbot>,
     private readonly UserService: UsersService,
+    private readonly chatbotModelsService: ChatbotModelsService,
     private readonly workspaceService: WorkspacesService,
   ) {}
-  async create(createChatbotDto: CreateChatbotDto) {
-    const workspace = await this.workspaceService.findOne(
-      createChatbotDto.workspace_id,
-    );
-    if (!workspace) {
+
+  async findAllChatbotsForUser(userId: string) {
+    const chatbots = await this.chatbotRepository.find({
+      where: {
+        user: {
+          id: userId,
+        },
+      },
+    });
+    if (!chatbots.length) {
       return false;
     }
+    return chatbots;
+  }
+
+  findAll() {
+    return `This action returns all chatbots`;
+  }
+
+  async create(createChatbotDto: CreateChatbotDto) {
+    // const workspace = await this.workspaceService.findOne(
+    //   createChatbotDto.workspace_id,
+    // );
+    // if (!workspace) {
+    //   return false;
+    // }
     // const newChatbot = this.chatbotRepository.create({
     //   ...createChatbotDto,
     //   workspace,
     // });
     // await this.chatbotRepository.save(newChatbot);
-
-    return workspace;
+    // return workspace;
   }
 
-  async publish(externalBotId: string, publishChatbotDto: PublishChatbotDto) {
-    const bot = await this.chatbotRepository.findOne({
+  async createChatbotByUser(
+    userId: string,
+    createChatbotDto: CreateChatbotDto,
+  ) {
+    const model = await this.chatbotModelsService.findOne('1716293913');
+
+    if (!model) {
+      throw new NotFoundException('Model not found');
+    }
+    const user = await this.UserService.findOne(userId);
+    const chatbot = {
+      ...createChatbotDto,
+      user_id: userId,
+      model_id: '1716293913',
+      model,
+      user,
+    };
+    const newChatbot = this.chatbotRepository.create(chatbot);
+    await this.chatbotRepository.save(newChatbot);
+
+    return newChatbot;
+  }
+
+  async publishChatbotByUser(
+    chatbotId: string,
+    publishChatbotDto: PublishChatbotDto,
+  ) {
+    const chatbot = await this.chatbotRepository.findOne({
       where: {
-        external_bot_id: externalBotId,
+        id: chatbotId,
       },
     });
-    if (!bot) {
+    if (!chatbot?.external_bot_id) {
       return false;
     }
     try {
@@ -49,7 +95,7 @@ export class ChatbotsService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          bot_id: externalBotId,
+          bot_id: chatbot.external_bot_id,
           connector_ids: [publishChatbotDto.connector_id],
         }),
       });
@@ -61,10 +107,6 @@ export class ChatbotsService {
     } catch (error) {
       console.error('Error:', error);
     }
-  }
-
-  findAll() {
-    return `This action returns all chatbots`;
   }
 
   async findOne(id: string) {
@@ -79,10 +121,27 @@ export class ChatbotsService {
     return chatbot;
   }
 
-  async update(id: string, updateChatbotDto: UpdateChatbotDto) {
+  async updateChatbotByUser(
+    userId: string,
+    chatbotId: string,
+    updateChatbotDto: UpdateChatbotDto,
+  ) {
+    const workspace = await this.workspaceService.findWorkspaceByUserId(userId);
+    if (!workspace) {
+      throw new NotFoundException('Workspace not found');
+    }
     const chatbot = await this.chatbotRepository.findOne({
       where: {
-        id,
+        id: chatbotId,
+      },
+      relations: {
+        model: true,
+      },
+      select: {
+        model: {
+          id: true,
+          model_name: true,
+        },
       },
     });
 
@@ -103,12 +162,12 @@ export class ChatbotsService {
             suggested_questions: ['Câu hỏi 1'],
           },
           model_info_config: {
-            model_id: 'chatbot.model.id',
+            model_id: chatbot.model.id,
           },
           prompt_info: {
             prompt: updateChatbotDto.prompt_info,
           },
-          space_id: 'chatbot.workspace.id',
+          space_id: workspace.external_space_id,
           name: chatbot.chatbot_name,
         }),
       });

@@ -11,6 +11,7 @@ import {
   BadRequestException,
   NotFoundException,
   Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -27,6 +28,10 @@ import { request, Request } from 'express';
 import { AuthService } from '../auth/auth.service';
 import { ApiTokensService } from '../api-tokens/api-tokens.service';
 import { WorkspacesService } from '../workspaces/workspaces.service';
+import { CreateChatbotDto } from '../chatbots/dto/create-chatbot.dto';
+import { ChatbotsService } from '../chatbots/chatbots.service';
+import { UpdateChatbotDto } from '../chatbots/dto/update-chatbot.dto';
+import { PublishChatbotDto } from '../chatbots/dto/publish-chatbot.dto';
 
 @Controller('users')
 @UseGuards(AuthGuard)
@@ -35,8 +40,7 @@ import { WorkspacesService } from '../workspaces/workspaces.service';
 export class UsersController {
   constructor(
     private readonly usersService: UsersService,
-    private readonly authService: AuthService,
-    private readonly apiTokenService: ApiTokensService,
+    private readonly chatbotService: ChatbotsService,
     private readonly workspaceService: WorkspacesService,
   ) {}
 
@@ -55,7 +59,104 @@ export class UsersController {
     if (!token) {
       throw new BadRequestException('Cannot create API Token');
     }
-    return token;
+    return {
+      success: true,
+      message: 'The API Token has been successfully created.',
+      token,
+    };
+  }
+
+  @Post('/:id/chatbots')
+  @ApiOperation({ summary: 'Create a chatbot' })
+  @ApiResponse({
+    status: 201,
+    description: 'The Chatbot has been successfully created.',
+    type: User,
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  async createChatbotByUser(
+    @Req() request: Request & { user: { [key: string]: string } },
+    @Param('id') id: string,
+    @Body(new ValidationPipe()) createChatbotDto: CreateChatbotDto,
+  ) {
+    if (request.user.id != id) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+    const newChatbot = await this.chatbotService.createChatbotByUser(
+      request.user.id,
+      createChatbotDto,
+    );
+    if (!newChatbot) {
+      throw new BadRequestException('Cannot create Chatbot');
+    }
+    return {
+      success: true,
+      message: 'The Chatbot has been successfully created.',
+      newChatbot,
+    };
+  }
+
+  @Patch('/:userId/chatbots/:chatbotId')
+  @ApiOperation({ summary: 'Update a chatbot' })
+  @ApiResponse({
+    status: 201,
+    description: 'The Chatbot has been successfully updated.',
+    type: User,
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  async updateChatbotByUser(
+    @Req() request: Request & { user: { [key: string]: string } },
+    @Param('userId') id: string,
+    @Param('chatbotId') chatbotId: string,
+    @Body(new ValidationPipe()) updateChatbotDto: UpdateChatbotDto,
+  ) {
+    if (request.user.id != id) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+    const updatedChatbot = await this.chatbotService.updateChatbotByUser(
+      id,
+      chatbotId,
+      updateChatbotDto,
+    );
+    if (!updatedChatbot) {
+      throw new BadRequestException('Cannot update Chatbot');
+    }
+    return {
+      success: true,
+      message: 'The Chatbot has been successfully updated',
+      updatedChatbot,
+    };
+  }
+
+  @Post('/:userId/chatbots/:chatbotId')
+  @ApiOperation({ summary: 'Publish a chatbot' })
+  @ApiResponse({
+    status: 201,
+    description: 'The Chatbot has been successfully published.',
+    type: User,
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  async publishChatbotByUser(
+    @Req() request: Request & { user: { [key: string]: string } },
+    @Param('userId') id: string,
+    @Param('chatbotId') chatbotId: string,
+    @Body(new ValidationPipe()) publishChatbotDto: PublishChatbotDto,
+  ) {
+    if (request.user.id != id) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+    const publishedChatbot = await this.chatbotService.publishChatbotByUser(
+      chatbotId,
+      publishChatbotDto,
+    );
+    if (!publishedChatbot) {
+      throw new BadRequestException('Cannot publish Chatbot');
+    }
+    return {
+      success: true,
+      message: 'The Chatbot has been successfully published.',
+      publishedChatbot,
+    };
   }
 
   @Post()
@@ -106,99 +207,47 @@ export class UsersController {
     };
   }
 
-  // @Get('/profile/api-tokens')
-  // @ApiBearerAuth('access-token')
-  // @ApiOperation({ summary: 'Get api key info' })
-  // @ApiResponse({ status: 200, description: 'API key found', type: User })
-  // @ApiResponse({ status: 401, description: 'Unauthorized' })
-  // async getApiKeyForUser(
-  //   @Req() request: Request & { user: { [key: string]: string } },
-  // ) {
-  //   const apiToken = await this.apiTokenService.findApiTokenByUserId(
-  //     request.user.id,
-  //   );
-  //   if (!apiToken) {
-  //     throw new NotFoundException('Api token not found');
-  //   }
-  //   return {
-  //     success: true,
-  //     message: 'Get api token successfully',
-  //     apiToken,
-  //   };
-  // }
+  @Get('/profile/workspaces')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get workspaces info' })
+  @ApiResponse({ status: 200, description: 'Workspaces found', type: User })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async findAllWorkspacesForUser(
+    @Req() request: Request & { user: { [key: string]: string } },
+  ) {
+    const workspaces = await this.workspaceService.findWorkspaceByUserId(
+      request.user.id,
+    );
+    if (!workspaces) {
+      throw new NotFoundException('Workspaces not found');
+    }
+    return {
+      success: true,
+      message: 'Get workspaces successfully',
+      workspaces,
+    };
+  }
 
-  // @Get('/profile/workspaces')
-  // @ApiBearerAuth('access-token')
-  // @ApiOperation({ summary: 'Get workspaces info' })
-  // @ApiResponse({ status: 200, description: 'Workspaces found', type: User })
-  // @ApiResponse({ status: 401, description: 'Unauthorized' })
-  // async findAllWorkspacesForUser(
-  //   @Req() request: Request & { user: { [key: string]: string } },
-  // ) {
-  //   const workspaces = await this.workspaceService.findAllWorkspacesByUserId(
-  //     request.user.id,
-  //   );
-  //   if (!workspaces) {
-  //     throw new NotFoundException('Workspaces not found');
-  //   }
-  //   return {
-  //     success: true,
-  //     message: 'Get workspaces successfully',
-  //     workspaces,
-  //   };
-  // }
-
-  // @Get('/profile/workspaces/chatbots')
-  // @ApiBearerAuth('access-token')
-  // @ApiOperation({ summary: 'Get list chatbots info' })
-  // @ApiResponse({ status: 200, description: 'List Chatbots', type: User })
-  // @ApiResponse({ status: 401, description: 'Unauthorized' })
-  // async findAllChatbotsForUser(
-  //   @Req() request: Request & { user: { [key: string]: string } },
-  // ) {
-  //   const workspaces = await this.workspaceService.findAllWorkspacesByUserId(
-  //     request.user.id,
-  //   );
-  //   if (!workspaces) {
-  //     throw new NotFoundException('Workspaces not found');
-  //   }
-  //   const ids = workspaces.map((workspace) => workspace.id);
-  //   const data =
-  //     await this.workspaceService.findAllChatbotsByMultiWorkspaces(ids);
-
-  //   return {
-  //     success: true,
-  //     message: 'Get chatbots successfully',
-  //     data,
-  //   };
-  // }
-
-  // @Get('/profile/workspaces/:workspaceId/chatbots')
-  // @ApiBearerAuth('access-token')
-  // @ApiOperation({ summary: 'Get list chatbots info' })
-  // @ApiResponse({ status: 200, description: 'List Chatbots', type: User })
-  // @ApiResponse({ status: 401, description: 'Unauthorized' })
-  // async findAllChatbotsForUserByWorkspace(
-  //   @Req() request: Request & { user: { [key: string]: string } },
-  //   @Param('workspaceId') workspaceId: string,
-  // ) {
-  //   const workspaces = await this.workspaceService.findWorkspaceByUserId(
-  //     request.user.id,
-  //     workspaceId,
-  //   );
-  //   if (!workspaces) {
-  //     throw new NotFoundException('Workspaces not found');
-  //   }
-  //   const chatbots = await this.workspaceService.findAllChatbotsByWorkspace(
-  //     workspaces.id,
-  //   );
-
-  //   return {
-  //     success: true,
-  //     message: 'Get chatbots successfully',
-  //     chatbots,
-  //   };
-  // }
+  @Get('/profile/chatbots')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get list chatbots info' })
+  @ApiResponse({ status: 200, description: 'List Chatbots', type: User })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async findAllChatbotsForUser(
+    @Req() request: Request & { user: { [key: string]: string } },
+  ) {
+    const chatbots = await this.chatbotService.findAllChatbotsForUser(
+      request.user.id,
+    );
+    if (!chatbots) {
+      throw new NotFoundException('List chatbots not found');
+    }
+    return {
+      success: true,
+      message: 'Get chatbots successfully',
+      chatbots,
+    };
+  }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a user by ID' })

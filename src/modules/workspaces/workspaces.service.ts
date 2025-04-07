@@ -27,20 +27,19 @@ export class WorkspacesService {
   //   return workspaces;
   // }
 
-  // async findWorkspaceByUserId(userId: string, id: string) {
-  //   const workspace = await this.workspaceRepository.findOne({
-  //     where: {
-  //       id,
-  //       user: {
-  //         id: userId,
-  //       },
-  //     },
-  //   });
-  //   if (!workspace) {
-  //     return false;
-  //   }
-  //   return workspace;
-  // }
+  async findWorkspaceByUserId(userId: string) {
+    const workspace = await this.workspaceRepository.findOne({
+      where: {
+        users: {
+          id: userId,
+        },
+      },
+    });
+    if (!workspace) {
+      return false;
+    }
+    return workspace;
+  }
 
   // findAll() {
   //   return 'This action find all';

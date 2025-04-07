@@ -9,9 +9,6 @@ export class CreateChatbotDto {
   @IsNotEmpty({ message: 'Name chatbot required' })
   chatbot_name: string;
 
-  @IsNotEmpty({ message: 'Workspace id required' })
-  workspace_id: string;
-
   @ApiProperty({
     example: 'Desciption chatbot',
     description: 'Desciption chatbot',
