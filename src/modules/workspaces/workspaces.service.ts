@@ -11,21 +11,7 @@ export class WorkspacesService {
     @InjectRepository(Workspace)
     private readonly workspaceRepository: Repository<Workspace>,
   ) {}
-  async create(createWorkspaceDto: CreateWorkspaceDto) {
-    // const response = await fetch('https://api.coze.com/api/workspaces', {
-    //   method: 'POST',
-    //   headers: {
-    //     Authorization: `Bearer pat_dcnRMS4yMyiDzDdYyvlrnMD4oBHGXAYQedh9vxTTIb1AlOBiyudEnlzAUyGiUKqt`,
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify({
-    //     name: 'Tên Workspace',
-    //     description: 'Mô tả Workspace',
-    //   }),
-    // });
-    // const data = await response.json();
-    // return data;
-  }
+  async create(createWorkspaceDto: CreateWorkspaceDto) {}
 
   async findAllWorkspacesByUserId(userId: string) {
     const workspaces = await this.workspaceRepository.find({
@@ -41,9 +27,10 @@ export class WorkspacesService {
     return workspaces;
   }
 
-  async findWorkspaceByUserId(userId: string) {
+  async findWorkspaceByUserId(userId: string, id: string) {
     const workspace = await this.workspaceRepository.findOne({
       where: {
+        id,
         user: {
           id: userId,
         },
