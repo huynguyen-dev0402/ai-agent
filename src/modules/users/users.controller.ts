@@ -23,7 +23,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { User } from './entities/user.entity';
-import { Request } from 'express';
+import { request, Request } from 'express';
 import { AuthService } from '../auth/auth.service';
 import { ApiTokensService } from '../api-tokens/api-tokens.service';
 import { WorkspacesService } from '../workspaces/workspaces.service';
@@ -39,6 +39,24 @@ export class UsersController {
     private readonly apiTokenService: ApiTokensService,
     private readonly workspaceService: WorkspacesService,
   ) {}
+
+  @Get('/profile/api-token')
+  @ApiOperation({ summary: 'Create a API Token for user' })
+  @ApiResponse({
+    status: 201,
+    description: 'The API Token has been successfully created.',
+    type: User,
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  async createApiToken(
+    @Req() request: Request & { user: { [key: string]: string } },
+  ) {
+    const token = await this.usersService.getApiTokenForUser(request.user.id);
+    if (!token) {
+      throw new BadRequestException('Cannot create API Token');
+    }
+    return token;
+  }
 
   @Post()
   @ApiOperation({ summary: 'Create a new user' })

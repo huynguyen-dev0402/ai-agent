@@ -9,6 +9,8 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
 import { RedisModule } from '@nestjs-modules/ioredis';
+import { Workspace } from '../workspaces/entities/workspace.entity';
+import { ApiToken } from '../api-tokens/entities/api-token.entity';
 
 @Module({
   imports: [
@@ -21,7 +23,7 @@ import { RedisModule } from '@nestjs-modules/ioredis';
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: process.env.JWT_EXPIRED },
     }),
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, Workspace, ApiToken]),
     RedisModule.forRootAsync({
       useFactory: () => ({
         type: 'single',
