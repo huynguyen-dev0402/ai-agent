@@ -88,99 +88,99 @@ export class UsersController {
     };
   }
 
-  @Get('/profile/api-tokens')
-  @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Get api key info' })
-  @ApiResponse({ status: 200, description: 'API key found', type: User })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getApiKeyForUser(
-    @Req() request: Request & { user: { [key: string]: string } },
-  ) {
-    const apiToken = await this.apiTokenService.findApiTokenByUserId(
-      request.user.id,
-    );
-    if (!apiToken) {
-      throw new NotFoundException('Api token not found');
-    }
-    return {
-      success: true,
-      message: 'Get api token successfully',
-      apiToken,
-    };
-  }
+  // @Get('/profile/api-tokens')
+  // @ApiBearerAuth('access-token')
+  // @ApiOperation({ summary: 'Get api key info' })
+  // @ApiResponse({ status: 200, description: 'API key found', type: User })
+  // @ApiResponse({ status: 401, description: 'Unauthorized' })
+  // async getApiKeyForUser(
+  //   @Req() request: Request & { user: { [key: string]: string } },
+  // ) {
+  //   const apiToken = await this.apiTokenService.findApiTokenByUserId(
+  //     request.user.id,
+  //   );
+  //   if (!apiToken) {
+  //     throw new NotFoundException('Api token not found');
+  //   }
+  //   return {
+  //     success: true,
+  //     message: 'Get api token successfully',
+  //     apiToken,
+  //   };
+  // }
 
-  @Get('/profile/workspaces')
-  @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Get workspaces info' })
-  @ApiResponse({ status: 200, description: 'Workspaces found', type: User })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async findAllWorkspacesForUser(
-    @Req() request: Request & { user: { [key: string]: string } },
-  ) {
-    const workspaces = await this.workspaceService.findAllWorkspacesByUserId(
-      request.user.id,
-    );
-    if (!workspaces) {
-      throw new NotFoundException('Workspaces not found');
-    }
-    return {
-      success: true,
-      message: 'Get workspaces successfully',
-      workspaces,
-    };
-  }
+  // @Get('/profile/workspaces')
+  // @ApiBearerAuth('access-token')
+  // @ApiOperation({ summary: 'Get workspaces info' })
+  // @ApiResponse({ status: 200, description: 'Workspaces found', type: User })
+  // @ApiResponse({ status: 401, description: 'Unauthorized' })
+  // async findAllWorkspacesForUser(
+  //   @Req() request: Request & { user: { [key: string]: string } },
+  // ) {
+  //   const workspaces = await this.workspaceService.findAllWorkspacesByUserId(
+  //     request.user.id,
+  //   );
+  //   if (!workspaces) {
+  //     throw new NotFoundException('Workspaces not found');
+  //   }
+  //   return {
+  //     success: true,
+  //     message: 'Get workspaces successfully',
+  //     workspaces,
+  //   };
+  // }
 
-  @Get('/profile/workspaces/chatbots')
-  @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Get list chatbots info' })
-  @ApiResponse({ status: 200, description: 'List Chatbots', type: User })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async findAllChatbotsForUser(
-    @Req() request: Request & { user: { [key: string]: string } },
-  ) {
-    const workspaces = await this.workspaceService.findAllWorkspacesByUserId(
-      request.user.id,
-    );
-    if (!workspaces) {
-      throw new NotFoundException('Workspaces not found');
-    }
-    const ids = workspaces.map((workspace) => workspace.id);
-    const data =
-      await this.workspaceService.findAllChatbotsByMultiWorkspaces(ids);
+  // @Get('/profile/workspaces/chatbots')
+  // @ApiBearerAuth('access-token')
+  // @ApiOperation({ summary: 'Get list chatbots info' })
+  // @ApiResponse({ status: 200, description: 'List Chatbots', type: User })
+  // @ApiResponse({ status: 401, description: 'Unauthorized' })
+  // async findAllChatbotsForUser(
+  //   @Req() request: Request & { user: { [key: string]: string } },
+  // ) {
+  //   const workspaces = await this.workspaceService.findAllWorkspacesByUserId(
+  //     request.user.id,
+  //   );
+  //   if (!workspaces) {
+  //     throw new NotFoundException('Workspaces not found');
+  //   }
+  //   const ids = workspaces.map((workspace) => workspace.id);
+  //   const data =
+  //     await this.workspaceService.findAllChatbotsByMultiWorkspaces(ids);
 
-    return {
-      success: true,
-      message: 'Get chatbots successfully',
-      data,
-    };
-  }
+  //   return {
+  //     success: true,
+  //     message: 'Get chatbots successfully',
+  //     data,
+  //   };
+  // }
 
-  @Get('/profile/workspaces/:workspaceId/chatbots')
-  @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Get list chatbots info' })
-  @ApiResponse({ status: 200, description: 'List Chatbots', type: User })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async findAllChatbotsForUserByWorkspace(
-    @Req() request: Request & { user: { [key: string]: string } },
-    @Param('workspaceId') workspaceId: string,
-  ) {
-    const workspaces = await this.workspaceService.findWorkspaceByUserId(
-      request.user.id,
-      workspaceId,
-    );
-    if (!workspaces) {
-      throw new NotFoundException('Workspaces not found');
-    }
-    const chatbots = await this.workspaceService.findAllChatbotsByWorkspace(
-      workspaces.id,
-    );
+  // @Get('/profile/workspaces/:workspaceId/chatbots')
+  // @ApiBearerAuth('access-token')
+  // @ApiOperation({ summary: 'Get list chatbots info' })
+  // @ApiResponse({ status: 200, description: 'List Chatbots', type: User })
+  // @ApiResponse({ status: 401, description: 'Unauthorized' })
+  // async findAllChatbotsForUserByWorkspace(
+  //   @Req() request: Request & { user: { [key: string]: string } },
+  //   @Param('workspaceId') workspaceId: string,
+  // ) {
+  //   const workspaces = await this.workspaceService.findWorkspaceByUserId(
+  //     request.user.id,
+  //     workspaceId,
+  //   );
+  //   if (!workspaces) {
+  //     throw new NotFoundException('Workspaces not found');
+  //   }
+  //   const chatbots = await this.workspaceService.findAllChatbotsByWorkspace(
+  //     workspaces.id,
+  //   );
 
-    return {
-      success: true,
-      message: 'Get chatbots successfully',
-      chatbots,
-    };
-  }
+  //   return {
+  //     success: true,
+  //     message: 'Get chatbots successfully',
+  //     chatbots,
+  //   };
+  // }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a user by ID' })
