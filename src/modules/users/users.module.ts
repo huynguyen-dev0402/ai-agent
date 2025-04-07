@@ -8,16 +8,20 @@ import { ApiTokensModule } from '../api-tokens/api-tokens.module';
 import { WorkspacesModule } from '../workspaces/workspaces.module';
 import { Workspace } from '../workspaces/entities/workspace.entity';
 import { ApiToken } from '../api-tokens/entities/api-token.entity';
+import { Chatbot } from '../chatbots/entities/chatbot.entity';
+import { ChatbotsService } from '../chatbots/chatbots.service';
+import { ChatbotModelsModule } from '../chatbot-models/chatbot-models.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Workspace, ApiToken]),
+    TypeOrmModule.forFeature([User, Workspace, ApiToken, Chatbot]),
     AuthModule,
     ApiTokensModule,
     WorkspacesModule,
+    ChatbotModelsModule,
   ],
   controllers: [UsersController],
-  providers: [UsersService],
+  providers: [UsersService, ChatbotsService],
   exports: [UsersService],
 })
 export class UsersModule {}
