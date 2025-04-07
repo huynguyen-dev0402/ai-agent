@@ -32,6 +32,7 @@ import { CreateChatbotDto } from '../chatbots/dto/create-chatbot.dto';
 import { ChatbotsService } from '../chatbots/chatbots.service';
 import { UpdateChatbotDto } from '../chatbots/dto/update-chatbot.dto';
 import { PublishChatbotDto } from '../chatbots/dto/publish-chatbot.dto';
+import { ChatWithChatbotDto } from '../chatbots/dto/chat-with-chatbot.dto';
 
 @Controller('users')
 @UseGuards(AuthGuard)
@@ -157,6 +158,23 @@ export class UsersController {
       message: 'The Chatbot has been successfully published.',
       publishedChatbot,
     };
+  }
+
+  @Post(':userId/chatbots/:chatbotId/chat')
+  async chatWithBot(
+    @Param('chatbotId') chatbotId: string,
+    @Param('userId') userId: string,
+    @Req() request: Request & { user: { [key: string]: string } },
+    @Body() chatWithChatbotDto: ChatWithChatbotDto,
+  ) {
+    if (userId != request.user.id) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+    return await this.chatbotService.chatWithBot(
+      request.user.external_user_id,
+      chatbotId,
+      chatWithChatbotDto,
+    );
   }
 
   @Post()

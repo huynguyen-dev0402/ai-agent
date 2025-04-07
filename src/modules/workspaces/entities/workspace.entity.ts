@@ -35,9 +35,6 @@ export class Workspace {
   @Column({ type: 'varchar', nullable: false, unique: true })
   external_space_id: string;
 
-  @Column({ type: 'varchar', nullable: false, default: '7486079853985907729' })
-  external_user_id: string;
-
   @Column({
     type: 'enum',
     enum: WorkspaceStatus,

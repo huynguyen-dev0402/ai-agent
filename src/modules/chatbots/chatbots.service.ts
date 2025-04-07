@@ -1,13 +1,19 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateChatbotDto } from './dto/create-chatbot.dto';
 import { UpdateChatbotDto } from './dto/update-chatbot.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Chatbot } from './entities/chatbot.entity';
+import { Chatbot, ChatbotStatus } from './entities/chatbot.entity';
 import { Repository } from 'typeorm';
 import { UsersService } from '../users/users.service';
 import { PublishChatbotDto } from './dto/publish-chatbot.dto';
 import { ChatbotModelsService } from '../chatbot-models/chatbot-models.service';
 import { WorkspacesService } from '../workspaces/workspaces.service';
+import { ChatWithChatbotDto } from './dto/chat-with-chatbot.dto';
 
 @Injectable()
 export class ChatbotsService {
@@ -31,6 +37,90 @@ export class ChatbotsService {
       return false;
     }
     return chatbots;
+  }
+
+  async chatWithBot(
+    externalUserId: string,
+    chatbotId: string,
+    chatWithChatbotDto: ChatWithChatbotDto,
+  ) {
+    const chatbot = await this.chatbotRepository.findOne({
+      where: {
+        id: chatbotId,
+      },
+    });
+    if (!chatbot) {
+      return false;
+    }
+    try {
+      const response = await fetch('https://api.coze.com/v3/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${chatWithChatbotDto.api_token}`,
+        },
+        body: JSON.stringify({
+          bot_id: chatbot.external_bot_id,
+          user_id: externalUserId,
+          stream: true,
+          auto_save_history: true,
+          additional_messages: [
+            {
+              role: 'user',
+              content: chatWithChatbotDto.message,
+              content_type: 'text',
+            },
+          ],
+        }),
+      });
+
+      // Check HTTP encryption status
+      if (!response.ok) {
+        throw new BadRequestException(
+          `Coze API request failed with status ${response.status}: ${response.statusText}`,
+        );
+      }
+
+      // Check if response.body exists
+      if (!response.body) {
+        throw new InternalServerErrorException(
+          'No response body received from Coze API',
+        );
+      }
+
+      // Stream data processing
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let result = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        // Decode data from stream
+        const chunk = decoder.decode(value, { stream: true });
+        result += chunk;
+      }
+
+      // (Optional) Parse the data if the API returns JSON or a specific format
+      // Assuming result is a JSON string, you can parse it
+      try {
+        const parsedResult = JSON.parse(result);
+        return parsedResult;
+      } catch (error) {
+        return result;
+      }
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof InternalServerErrorException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        `Failed to communicate with Coze API: ${error.message}`,
+      );
+    }
   }
 
   findAll() {
@@ -103,6 +193,9 @@ export class ChatbotsService {
       const data = await response.json();
       if (!data?.data?.bot_id) return false;
 
+      await this.chatbotRepository.update(chatbot.id, {
+        status: ChatbotStatus.PUBLISHED,
+      });
       return data;
     } catch (error) {
       console.error('Error:', error);
