@@ -8,9 +8,9 @@ import {
   OneToMany,
 } from 'typeorm';
 
-export enum ApiTokenStatus {
+export enum TokenStatus {
   ACTIVE = 'active',
-  REVOKED = 'revoked',
+  INACTIVE = 'inactive',
 }
 
 @Entity('api_tokens')
@@ -26,6 +26,9 @@ export class ApiToken {
 
   @Column({ type: 'text', nullable: false, unique: true })
   token: string;
+
+  @Column({ type: 'enum', enum: TokenStatus, default: TokenStatus.ACTIVE })
+  status: TokenStatus;
 
   @CreateDateColumn({
     type: 'timestamp',
