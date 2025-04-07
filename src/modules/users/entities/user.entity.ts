@@ -28,6 +28,9 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ type: 'varchar', nullable: false, default: '7486079853985907729' })
+  external_user_id: string;
+
   @Column({ type: 'varchar', nullable: false })
   username: string;
 
