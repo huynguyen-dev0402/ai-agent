@@ -166,6 +166,7 @@ export class UsersController {
   ) {
     const workspaces = await this.workspaceService.findWorkspaceByUserId(
       request.user.id,
+      workspaceId,
     );
     if (!workspaces) {
       throw new NotFoundException('Workspaces not found');
