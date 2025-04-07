@@ -29,11 +29,14 @@ export class Workspace {
   })
   workspace_name: string;
 
-  @Column({ type: 'text', nullable: true, collation: 'utf8mb4_unicode_ci' })
+  @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ type: 'int', nullable: true, collation: 'utf8mb4_unicode_ci' })
-  index: number;
+  @Column({ type: 'varchar', nullable: false, unique: true })
+  external_space_id: string;
+
+  @Column({ type: 'varchar', nullable: false, default: '7486079853985907729' })
+  external_user_id: string;
 
   @Column({
     type: 'enum',
@@ -48,12 +51,6 @@ export class Workspace {
   @UpdateDateColumn({ type: 'timestamp', nullable: true })
   updated_at: Date;
 
-  @ManyToOne(() => User, (user) => user.workspaces, {
-    onDelete: 'CASCADE',
-  })
-  @JoinColumn({ name: 'user_id' })
-  user: User;
-
-  @OneToMany(() => Chatbot, (chatbot) => chatbot.workspace)
-  chatbots: Chatbot[];
+  @OneToMany(() => User, (user) => user.workspace)
+  users: User[];
 }

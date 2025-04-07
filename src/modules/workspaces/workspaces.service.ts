@@ -13,69 +13,69 @@ export class WorkspacesService {
   ) {}
   async create(createWorkspaceDto: CreateWorkspaceDto) {}
 
-  async findAllWorkspacesByUserId(userId: string) {
-    const workspaces = await this.workspaceRepository.find({
-      where: {
-        user: {
-          id: userId,
-        },
-      },
-    });
-    if (!workspaces.length) {
-      return false;
-    }
-    return workspaces;
-  }
+  // async findAllWorkspacesByUserId(userId: string) {
+  //   const workspaces = await this.workspaceRepository.find({
+  //     where: {
+  //       user: {
+  //         id: userId,
+  //       },
+  //     },
+  //   });
+  //   if (!workspaces.length) {
+  //     return false;
+  //   }
+  //   return workspaces;
+  // }
 
-  async findWorkspaceByUserId(userId: string, id: string) {
-    const workspace = await this.workspaceRepository.findOne({
-      where: {
-        id,
-        user: {
-          id: userId,
-        },
-      },
-    });
-    if (!workspace) {
-      return false;
-    }
-    return workspace;
-  }
+  // async findWorkspaceByUserId(userId: string, id: string) {
+  //   const workspace = await this.workspaceRepository.findOne({
+  //     where: {
+  //       id,
+  //       user: {
+  //         id: userId,
+  //       },
+  //     },
+  //   });
+  //   if (!workspace) {
+  //     return false;
+  //   }
+  //   return workspace;
+  // }
 
-  findAll() {
-    return 'This action find all';
-  }
+  // findAll() {
+  //   return 'This action find all';
+  // }
 
-  async findAllChatbotsByWorkspace(id: string) {
-    const workspace = await this.workspaceRepository.findOne({
-      where: {
-        id,
-      },
-      relations: {
-        chatbots: true,
-      },
-    });
-    if (!workspace?.chatbots) {
-      return false;
-    }
-    return workspace.chatbots;
-  }
+  // async findAllChatbotsByWorkspace(id: string) {
+  //   const workspace = await this.workspaceRepository.findOne({
+  //     where: {
+  //       id,
+  //     },
+  //     relations: {
+  //       chatbots: true,
+  //     },
+  //   });
+  //   if (!workspace?.chatbots) {
+  //     return false;
+  //   }
+  //   return workspace.chatbots;
+  // }
 
-  async findAllChatbotsByMultiWorkspaces(ids: string[]) {
-    const chatbots = await this.workspaceRepository.find({
-      where: {
-        id: In(ids),
-      },
-      relations: {
-        chatbots: true,
-      },
-      select: {
-        id: true,
-        chatbots: true,
-      },
-    });
-    return chatbots;
-  }
+  // async findAllChatbotsByMultiWorkspaces(ids: string[]) {
+  //   const chatbots = await this.workspaceRepository.find({
+  //     where: {
+  //       id: In(ids),
+  //     },
+  //     relations: {
+  //       chatbots: true,
+  //     },
+  //     select: {
+  //       id: true,
+  //       chatbots: true,
+  //     },
+  //   });
+  //   return chatbots;
+  // }
 
   async findOne(id: string) {
     const workspace = await this.workspaceRepository.findOne({

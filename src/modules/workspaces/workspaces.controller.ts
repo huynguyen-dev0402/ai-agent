@@ -12,10 +12,10 @@ export class WorkspacesController {
     return this.workspacesService.create(createWorkspaceDto);
   }
 
-  @Get()
-  findAll() {
-    return this.workspacesService.findAll();
-  }
+  // @Get()
+  // findAll() {
+  //   return this.workspacesService.findAll();
+  // }
 
   @Get(':id')
   findOne(@Param('id') id: string) {

@@ -1,5 +1,6 @@
 import { Exclude } from 'class-transformer';
 import { ApiToken } from 'src/modules/api-tokens/entities/api-token.entity';
+import { Chatbot } from 'src/modules/chatbots/entities/chatbot.entity';
 import { Workspace } from 'src/modules/workspaces/entities/workspace.entity';
 import {
   Entity,
@@ -8,6 +9,8 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 
 export enum UserStatus {
@@ -73,6 +76,18 @@ export class User {
   })
   updated_at: Date;
 
-  @OneToMany(() => Workspace, (workspace) => workspace.user)
-  workspaces: Workspace[];
+  @ManyToOne(() => Workspace, (workspace) => workspace.users, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'workspace_id' })
+  workspace: Workspace;
+
+  @ManyToOne(() => ApiToken, (api_token) => api_token.users, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'token_id' })
+  api_token: ApiToken;
+
+  @OneToMany(() => Chatbot, (chatbot) => chatbot.user)
+  chatbots: Chatbot[];
 }

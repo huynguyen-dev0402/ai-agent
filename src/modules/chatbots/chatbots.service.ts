@@ -23,13 +23,13 @@ export class ChatbotsService {
     if (!workspace) {
       return false;
     }
-    const newChatbot = this.chatbotRepository.create({
-      ...createChatbotDto,
-      workspace,
-    });
-    await this.chatbotRepository.save(newChatbot);
+    // const newChatbot = this.chatbotRepository.create({
+    //   ...createChatbotDto,
+    //   workspace,
+    // });
+    // await this.chatbotRepository.save(newChatbot);
 
-    return newChatbot;
+    return workspace;
   }
 
   async publish(externalBotId: string, publishChatbotDto: PublishChatbotDto) {
@@ -103,12 +103,12 @@ export class ChatbotsService {
             suggested_questions: ['Câu hỏi 1'],
           },
           model_info_config: {
-            model_id: chatbot.model.id,
+            model_id: 'chatbot.model.id',
           },
           prompt_info: {
             prompt: updateChatbotDto.prompt_info,
           },
-          space_id: chatbot.workspace.id,
+          space_id: 'chatbot.workspace.id',
           name: chatbot.chatbot_name,
         }),
       });

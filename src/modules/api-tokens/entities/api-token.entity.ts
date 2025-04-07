@@ -5,8 +5,6 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  JoinColumn,
-  OneToOne,
   OneToMany,
 } from 'typeorm';
 
@@ -49,7 +47,6 @@ export class ApiToken {
   })
   updated_at: Date;
 
-  @OneToOne(() => User)
-  @JoinColumn({ name: 'user_id' })
-  user: User;
+  @OneToMany(() => User, (user) => user.api_token)
+  users: User[];
 }
