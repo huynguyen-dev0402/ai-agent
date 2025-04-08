@@ -236,9 +236,6 @@ export class UsersController {
     const workspaces = await this.workspaceService.findWorkspaceByUserId(
       request.user.id,
     );
-    if (!workspaces) {
-      throw new NotFoundException('Workspaces not found');
-    }
     return {
       success: true,
       message: 'Get workspaces successfully',
@@ -257,9 +254,6 @@ export class UsersController {
     const chatbots = await this.chatbotService.findAllChatbotsForUser(
       request.user.id,
     );
-    if (!chatbots) {
-      throw new NotFoundException('List chatbots not found');
-    }
     return {
       success: true,
       message: 'Get chatbots successfully',

@@ -33,9 +33,6 @@ export class ChatbotsService {
         },
       },
     });
-    if (!chatbots.length) {
-      return false;
-    }
     return chatbots;
   }
 
