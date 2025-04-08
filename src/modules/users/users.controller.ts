@@ -261,6 +261,26 @@ export class UsersController {
     };
   }
 
+  @Get('/profile/chatbots/:chatbotId')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get a chatbot info' })
+  @ApiResponse({ status: 200, description: 'Infomation Chatbots', type: User })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async findChatbotForUser(
+    @Param('chatbotId') chatbotId:string,
+    @Req() request: Request & { user: { [key: string]: string } },
+  ) {
+    const chatbots = await this.chatbotService.findChatbotForUser(
+      request.user.id,
+      chatbotId
+    );
+    return {
+      success: true,
+      message: 'Get chatbot successfully',
+      chatbots,
+    };
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a user by ID' })
   @ApiResponse({ status: 200, description: 'The found user', type: User })

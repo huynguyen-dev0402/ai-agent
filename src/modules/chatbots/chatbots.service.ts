@@ -36,6 +36,18 @@ export class ChatbotsService {
     return chatbots;
   }
 
+  async findChatbotForUser(userId: string, chatbotId:string) {
+    const chatbot = await this.chatbotRepository.findOne({
+      where: {
+        id:chatbotId,
+        user: {
+          id: userId,
+        },
+      },
+    });
+    return chatbot;
+  }
+
   async chatWithBot(
     externalUserId: string,
     chatbotId: string,
