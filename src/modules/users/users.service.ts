@@ -81,17 +81,11 @@ export class UsersService {
       },
       relations: {
         api_token: true,
-      },
-      select: {
-        api_token: {
-          id: true,
-          token: true,
-        },
-      },
+      }
     });
-    if (user?.api_token.token) {
+    if (user?.api_token?.token) {
       return {
-        token: user?.api_token.token,
+        token: user?.api_token?.token,
       };
     }
     const token = await this.getTokenWithFewestUsers();
@@ -103,7 +97,7 @@ export class UsersService {
       .createQueryBuilder()
       .update(User)
       .set({ api_token: token })
-      .where('id = :userId', { id })
+      .where('id = :id', { id })
       .execute();
 
     if (result.affected === 0) {
