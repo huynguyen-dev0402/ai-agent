@@ -1,6 +1,7 @@
 import { Exclude } from 'class-transformer';
 import { ApiToken } from 'src/modules/api-tokens/entities/api-token.entity';
 import { Chatbot } from 'src/modules/chatbots/entities/chatbot.entity';
+import { Resource } from 'src/modules/resources/entities/resource.entity';
 import { Workspace } from 'src/modules/workspaces/entities/workspace.entity';
 import {
   Entity,
@@ -46,7 +47,7 @@ export class User {
   @Column({ type: 'varchar', unique: true, nullable: true })
   domain?: string;
 
-  @Column({ type: 'text', unique: true, nullable: true })
+  @Column({ type: 'text', nullable: true })
   address?: string;
 
   @Exclude()
@@ -93,4 +94,7 @@ export class User {
 
   @OneToMany(() => Chatbot, (chatbot) => chatbot.user)
   chatbots: Chatbot[];
+
+  @OneToMany(() => Resource, (resource) => resource.user)
+  resources: Resource[];
 }
