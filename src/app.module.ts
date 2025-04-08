@@ -23,6 +23,8 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module';
 import { ChatbotPublishedModule } from './modules/chatbot_published/chatbot_published.module';
 import { Workspace } from './modules/workspaces/entities/workspace.entity';
 import { ChatbotPublished } from './modules/chatbot_published/entities/chatbot_published.entity';
+import { ResourcesModule } from './modules/resources/resources.module';
+import { Resource } from './modules/resources/entities/resource.entity';
 
 @Module({
   imports: [
@@ -41,6 +43,7 @@ import { ChatbotPublished } from './modules/chatbot_published/entities/chatbot_p
         Chatbot,
         ApiToken,
         Workspace,
+        Resource,
         ChatbotPublished,
         ChatbotModel,
         ChatbotConfig,
@@ -61,6 +64,7 @@ import { ChatbotPublished } from './modules/chatbot_published/entities/chatbot_p
     OnboardingSuggestedQuestionsModule,
     WorkspacesModule,
     ChatbotPublishedModule,
+    ResourcesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
