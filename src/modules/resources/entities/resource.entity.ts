@@ -1,3 +1,4 @@
+import { Document } from 'src/modules/documents/entities/document.entity';
 import { User } from 'src/modules/users/entities/user.entity';
 import {
   Entity,
@@ -8,6 +9,7 @@ import {
   Index,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 
 export enum ExternalType {
@@ -38,7 +40,7 @@ export class Resource {
   user_id: string;
 
   @Column({ type: 'text', nullable: true })
-  external_icon_url: string | null;
+  external_icon_url: string;
 
   @Column({ type: 'varchar', length: 255, unique: true })
   external_resource_id: string;
@@ -53,9 +55,13 @@ export class Resource {
   name: string;
 
   @Column({ type: 'text', nullable: true })
-  description: string | null;
+  description: string;
 
-  @Column({ type: 'enum', enum: ResourceStatus, default: ResourceStatus.ACTIVE })
+  @Column({
+    type: 'enum',
+    enum: ResourceStatus,
+    default: ResourceStatus.ACTIVE,
+  })
   status: ResourceStatus;
 
   @CreateDateColumn({
@@ -75,4 +81,7 @@ export class Resource {
   @ManyToOne(() => User, (user) => user.resources)
   @JoinColumn({ name: 'user_id' })
   user: User;
+
+  @OneToMany(() => Document, (document) => document.resource)
+  documents: Document[];
 }
