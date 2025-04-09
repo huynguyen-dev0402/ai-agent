@@ -57,7 +57,7 @@ export class ChatbotsService {
     return chatbot;
   }
 
- async chatWithBot(
+  async chatWithBot(
     externalUserId: string,
     chatbotId: string,
     chatWithChatbotDto: ChatWithChatbotDto,
@@ -328,6 +328,63 @@ export class ChatbotsService {
       return updatedChatbot;
     } catch (error) {
       console.error('Error:', error);
+    }
+  }
+
+  async updatePromptChatbot(
+    chatbotId: string,
+    updateChatbotDto: UpdateChatbotDto,
+  ) {
+    const chatbot = await this.chatbotRepository.findOne({
+      where: {
+        id: chatbotId,
+      },
+      relations: {
+        model: true,
+      },
+      select: {
+        model: {
+          id: true,
+          model_name: true,
+        },
+      },
+    });
+    if (!chatbot) {
+      return false;
+    }
+    try {
+      const response = await fetch('https://api.coze.com/v1/bot/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${updateChatbotDto.api_token}`,
+        },
+        body: JSON.stringify({
+          bot_id: chatbot.external_bot_id,
+          description: updateChatbotDto.description || chatbot.description,
+          prompt_info: {
+            prompt: updateChatbotDto.prompt_info,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.code != 0) {
+        throw new BadRequestException('Cannot update external');
+      }
+      const newData = await this.chatbotRepository.update(chatbot.id, {
+        prompt_info: updateChatbotDto.prompt_info,
+      });
+      if (!newData.affected) {
+        throw new BadRequestException('Cannot update prompt');
+      }
+      return chatbot;
+    } catch (error) {
+      console.error('Error updating bot:', error.message);
     }
   }
 

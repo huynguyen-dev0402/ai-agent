@@ -6,6 +6,7 @@ import {
   ManyToOne,
   CreateDateColumn,
   UpdateDateColumn,
+  JoinColumn,
 } from 'typeorm';
 
 @Entity('chatbot_prompts')
@@ -17,10 +18,10 @@ export class ChatbotPrompt {
   resourceId: string;
 
   @Column({ name: 'prompt_name', type: 'varchar', length: 255 })
-  promptName: string;
+  prompt_name: string;
 
   @Column({ name: 'prompt_info', type: 'text' })
-  promptInfo: string;
+  prompt_info: string;
 
   @Column({ type: 'text', nullable: true })
   description?: string;
@@ -40,5 +41,6 @@ export class ChatbotPrompt {
   updated_at: Date;
 
   @ManyToOne(() => Resource, (resource) => resource.prompts)
+  @JoinColumn({ name: 'resource_id' })
   resource: Resource;
 }

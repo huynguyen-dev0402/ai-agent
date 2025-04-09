@@ -15,5 +15,8 @@ export class UpdateChatbotDto extends PartialType(CreateChatbotDto) {
   description?: string;
 
   @IsOptional()
+  prompt_name?: string;
+
+  @IsOptional()
   prompt_info?: string;
 }

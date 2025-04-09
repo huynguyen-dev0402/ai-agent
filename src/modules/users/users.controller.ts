@@ -40,6 +40,7 @@ import { extname } from 'path';
 import { UploadMultiDto } from '../documents/dto/upload-multi.dto';
 import { DocumentsService } from '../documents/documents.service';
 import { GetDocumentDto } from '../documents/dto/get-document.dto';
+import { ChatbotPromptService } from '../chatbot-prompt/chatbot-prompt.service';
 
 @Controller('users')
 @UseGuards(AuthGuard)
@@ -52,6 +53,7 @@ export class UsersController {
     private readonly workspaceService: WorkspacesService,
     private readonly resourceService: ResourcesService,
     private readonly documentService: DocumentsService,
+    private readonly chatbotPromptService: ChatbotPromptService,
   ) {}
 
   @Get('/profile/api-token')
@@ -134,6 +136,37 @@ export class UsersController {
     return {
       success: true,
       message: 'The Chatbot has been successfully updated',
+      updatedChatbot,
+    };
+  }
+
+  @Patch('/:userId/chatbots/:chatbotId/prompts')
+  @ApiOperation({ summary: 'Update a prompt for chatbot' })
+  @ApiResponse({
+    status: 201,
+    description: 'The prompt chatbot has been successfully updated.',
+    type: User,
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  async updatePromptChatbotByUser(
+    @Req() request: Request & { user: { [key: string]: string } },
+    @Param('userId') id: string,
+    @Param('chatbotId') chatbotId: string,
+    @Body(new ValidationPipe()) updateChatbotDto: UpdateChatbotDto,
+  ) {
+    if (request.user.id != id) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+    const updatedChatbot = await this.chatbotService.updatePromptChatbot(
+      chatbotId,
+      updateChatbotDto,
+    );
+    if (!updatedChatbot) {
+      throw new BadRequestException('Cannot update prompt chatbot');
+    }
+    return {
+      success: true,
+      message: 'The prompt chatbot has been successfully updated',
       updatedChatbot,
     };
   }
@@ -251,6 +284,40 @@ export class UsersController {
       success: true,
       message: 'Resource has been successfully created.',
       listDocument,
+    };
+  }
+
+  @Post('/:userId/resources/:resourceId/prompts')
+  @ApiOperation({ summary: 'Create prompts' })
+  @ApiResponse({
+    status: 201,
+    description: 'prompts has been successfully get.',
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  async submitPromptToResource(
+    @Req() request: Request & { user: { [key: string]: string } },
+    @Param('userId') id: string,
+    @Param('resourceId') resourceId: string,
+    @Body(new ValidationPipe()) updateChatbotDto: UpdateChatbotDto,
+  ) {
+    if (request.user.id != id) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+    if (!updateChatbotDto.prompt_name || !updateChatbotDto.prompt_info) {
+      throw new BadRequestException('Must have name and prompt info');
+    }
+    const prompt =
+      await this.chatbotPromptService.submitPromptChatbotToResource(
+        resourceId,
+        updateChatbotDto,
+      );
+    if (!prompt) {
+      throw new BadRequestException('Cannot create prompt');
+    }
+    return {
+      success: true,
+      message: 'prompts has been successfully created.',
+      prompt,
     };
   }
 
@@ -449,6 +516,27 @@ export class UsersController {
       success: true,
       message: 'Get resources successfully',
       resources,
+    };
+  }
+
+  @Get('/profile/resources/:resourceId')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get resources info' })
+  @ApiResponse({ status: 200, description: 'Resources found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async findOneResourceForUser(
+    @Param('resourceId') resourceId: string,
+    @Req()
+    request: Request & { user: { [key: string]: string } },
+  ) {
+    const resource = await this.resourceService.findOneResourceForUser(
+      request.user.id,
+      resourceId,
+    );
+    return {
+      success: true,
+      message: 'Get resources successfully',
+      resource,
     };
   }
 

@@ -226,6 +226,24 @@ export class ResourcesService {
       where: {
         user_id: userId,
       },
+      relations: {
+        prompts: true,
+        documents: true,
+      },
+    });
+    return resources;
+  }
+
+  async findOneResourceForUser(userId: string, resourceId: string) {
+    const resources = await this.resourceRepository.find({
+      where: {
+        id: resourceId,
+        user_id: userId,
+      },
+      relations: {
+        prompts: true,
+        documents: true,
+      },
     });
     return resources;
   }

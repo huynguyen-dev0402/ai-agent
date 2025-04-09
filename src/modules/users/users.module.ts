@@ -14,6 +14,7 @@ import { ChatbotModelsModule } from '../chatbot-models/chatbot-models.module';
 import { ResourcesModule } from '../resources/resources.module';
 import { UploadModule } from '../upload/upload.module';
 import { DocumentsModule } from '../documents/documents.module';
+import { ChatbotPromptModule } from '../chatbot-prompt/chatbot-prompt.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { DocumentsModule } from '../documents/documents.module';
     ChatbotModelsModule,
     UploadModule,
     DocumentsModule,
+    ChatbotPromptModule,
     forwardRef(() => ResourcesModule),
   ],
   controllers: [UsersController],
