@@ -254,11 +254,11 @@ export class UsersController {
     };
   }
 
-  @Post('/:userId/resources/:resourceId/documents/files')
-  @ApiOperation({ summary: 'Create resource' })
+  @Post('/:userId/resources/:resourceId/documents/')
+  @ApiOperation({ summary: 'Get resource' })
   @ApiResponse({
     status: 201,
-    description: 'Resource has been successfully get.',
+    description: 'documents has been successfully get.',
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async getListDocument(
@@ -277,12 +277,12 @@ export class UsersController {
     if (!listDocument) {
       return {
         success: false,
-        message: 'Cannot create resource',
+        message: 'Cannot create documents',
       };
     }
     return {
       success: true,
-      message: 'Resource has been successfully created.',
+      message: 'documents has been successfully created.',
       listDocument,
     };
   }
@@ -381,7 +381,7 @@ export class UsersController {
     };
   }
 
-  @Post('/:userId/resources/:resourceId/documents')
+  @Post('/:userId/resources/:resourceId/documents/files')
   @ApiOperation({ summary: 'Create documents' })
   @ApiResponse({
     status: 201,
