@@ -57,19 +57,19 @@ export class ChatbotsService {
     return chatbot;
   }
 
-  async chatWithBot(
+ async chatWithBot(
     externalUserId: string,
     chatbotId: string,
     chatWithChatbotDto: ChatWithChatbotDto,
   ) {
     const chatbot = await this.chatbotRepository.findOne({
-      where: {
-        id: chatbotId,
-      },
+      where: { id: chatbotId },
     });
+
     if (!chatbot) {
-      return false;
+      throw new BadRequestException('Chatbot not found');
     }
+
     try {
       const response = await fetch('https://api.coze.com/v3/chat', {
         method: 'POST',
@@ -92,42 +92,76 @@ export class ChatbotsService {
         }),
       });
 
-      // Check HTTP encryption status
       if (!response.ok) {
         throw new BadRequestException(
           `Coze API request failed with status ${response.status}: ${response.statusText}`,
         );
       }
 
-      // Check if response.body exists
       if (!response.body) {
         throw new InternalServerErrorException(
-          'No response body received from Coze API',
+          'No response body from Coze API',
         );
       }
 
-      // Stream data processing
       const reader = response.body.getReader();
       const decoder = new TextDecoder('utf-8');
-      let result = '';
+
+      let botReply = '';
+      let buffer = '';
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        // Decode data from stream
-        const chunk = decoder.decode(value, { stream: true });
-        result += chunk;
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split('\n\n');
+
+        for (let i = 0; i < parts.length - 1; i++) {
+          const part = parts[i];
+          const lines = part.split('\n');
+          let eventType = '';
+          let dataRaw = '';
+
+          for (const line of lines) {
+            if (line.startsWith('event:')) {
+              eventType = line.replace('event:', '').trim();
+            } else if (line.startsWith('data:')) {
+              dataRaw += line.replace('data:', '').trim();
+            }
+          }
+
+          if (eventType && dataRaw) {
+            try {
+              const data = JSON.parse(dataRaw);
+              console.log('Parsed event:', eventType, 'Data:', data);
+
+              if (
+                eventType === 'conversation.message.delta' &&
+                data.role === 'assistant'
+              ) {
+                botReply += data.content;
+                console.log('botReply', botReply);
+              } else if (
+                eventType === 'conversation.message.completed' &&
+                data.role === 'assistant' &&
+                data.type === 'answer'
+              ) {
+                botReply = data.content;
+                console.log('botReply', botReply);
+              } else if (eventType === 'done') {
+                console.log('Stream completed.');
+                break;
+              }
+            } catch (error) {
+              console.error('Error parsing data:', error, 'Raw data:', dataRaw);
+            }
+          }
+        }
+        buffer = parts[parts.length - 1];
       }
 
-      // (Optional) Parse the data if the API returns JSON or a specific format
-      // Assuming result is a JSON string, you can parse it
-      try {
-        const parsedResult = JSON.parse(result);
-        return parsedResult;
-      } catch (error) {
-        return result;
-      }
+      return botReply;
     } catch (error) {
       if (
         error instanceof BadRequestException ||
