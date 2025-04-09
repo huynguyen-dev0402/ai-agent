@@ -221,7 +221,7 @@ export class UsersController {
     };
   }
 
-  @Get('/:userId/resources/:resourceId/documents')
+  @Post('/:userId/resources/:resourceId/documents')
   @ApiOperation({ summary: 'Create resource' })
   @ApiResponse({
     status: 201,
@@ -254,7 +254,7 @@ export class UsersController {
     };
   }
 
-  @Get('/:userId/resources/:resourceId/documents/images')
+  @Post('/:userId/resources/:resourceId/documents/images')
   @ApiOperation({ summary: 'Create resource' })
   @ApiResponse({
     status: 201,
