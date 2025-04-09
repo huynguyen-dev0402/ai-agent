@@ -254,7 +254,7 @@ export class UsersController {
     };
   }
 
-  @Post('/:userId/resources/:resourceId/documents')
+  @Post('/:userId/resources/:resourceId/documents/files')
   @ApiOperation({ summary: 'Create resource' })
   @ApiResponse({
     status: 201,
