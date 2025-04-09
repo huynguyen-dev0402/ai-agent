@@ -7,10 +7,10 @@ import { UpdateResourceDto } from './dto/update-resource.dto';
 export class ResourcesController {
   constructor(private readonly resourcesService: ResourcesService) {}
 
-  @Post()
-  create(@Body() createResourceDto: CreateResourceDto) {
-    return this.resourcesService.create(createResourceDto);
-  }
+  // @Post()
+  // create(@Body() createResourceDto: CreateResourceDto) {
+  //   return this.resourcesService.create(createResourceDto);
+  // }
 
   @Get()
   findAll() {
