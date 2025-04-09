@@ -25,6 +25,9 @@ import { Workspace } from './modules/workspaces/entities/workspace.entity';
 import { ChatbotPublished } from './modules/chatbot_published/entities/chatbot_published.entity';
 import { ResourcesModule } from './modules/resources/resources.module';
 import { Resource } from './modules/resources/entities/resource.entity';
+import { UploadModule } from './modules/upload/upload.module';
+import { DocumentsModule } from './modules/documents/documents.module';
+import { Document } from './modules/documents/entities/document.entity';
 
 @Module({
   imports: [
@@ -44,6 +47,7 @@ import { Resource } from './modules/resources/entities/resource.entity';
         ApiToken,
         Workspace,
         Resource,
+        Document,
         ChatbotPublished,
         ChatbotModel,
         ChatbotConfig,
@@ -65,6 +69,8 @@ import { Resource } from './modules/resources/entities/resource.entity';
     WorkspacesModule,
     ChatbotPublishedModule,
     ResourcesModule,
+    UploadModule,
+    DocumentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

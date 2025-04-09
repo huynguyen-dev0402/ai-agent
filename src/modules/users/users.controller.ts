@@ -12,6 +12,8 @@ import {
   NotFoundException,
   Req,
   UnauthorizedException,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -24,15 +26,18 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { User } from './entities/user.entity';
-import { request, Request } from 'express';
-import { AuthService } from '../auth/auth.service';
-import { ApiTokensService } from '../api-tokens/api-tokens.service';
 import { WorkspacesService } from '../workspaces/workspaces.service';
 import { CreateChatbotDto } from '../chatbots/dto/create-chatbot.dto';
 import { ChatbotsService } from '../chatbots/chatbots.service';
 import { UpdateChatbotDto } from '../chatbots/dto/update-chatbot.dto';
 import { PublishChatbotDto } from '../chatbots/dto/publish-chatbot.dto';
 import { ChatWithChatbotDto } from '../chatbots/dto/chat-with-chatbot.dto';
+import { ResourcesService } from '../resources/resources.service';
+import { CreateResourceDto } from '../resources/dto/create-resource.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { UploadService } from '../upload/upload.service';
+import { extname } from 'path';
+import { UploadDocumentLocalDto } from '../documents/dto/upload-document.dto';
 
 @Controller('users')
 @UseGuards(AuthGuard)
@@ -43,6 +48,8 @@ export class UsersController {
     private readonly usersService: UsersService,
     private readonly chatbotService: ChatbotsService,
     private readonly workspaceService: WorkspacesService,
+    private readonly resourceService: ResourcesService,
+    private readonly uploadService: UploadService,
   ) {}
 
   @Get('/profile/api-token')
@@ -129,7 +136,7 @@ export class UsersController {
     };
   }
 
-  @Post('/:userId/chatbots/:chatbotId')
+  @Post('/:userId/chatbots/:chatbotId/publish')
   @ApiOperation({ summary: 'Publish a chatbot' })
   @ApiResponse({
     status: 201,
@@ -151,7 +158,10 @@ export class UsersController {
       publishChatbotDto,
     );
     if (!publishedChatbot) {
-      throw new BadRequestException('Cannot publish Chatbot');
+      return {
+        success: false,
+        message: `Cannot publish chatbot id: ${chatbotId}`,
+      };
     }
     return {
       success: true,
@@ -175,6 +185,98 @@ export class UsersController {
       chatbotId,
       chatWithChatbotDto,
     );
+  }
+
+  @Post('/:userId/resources')
+  @ApiOperation({ summary: 'Create resource' })
+  @ApiResponse({
+    status: 201,
+    description: 'Resource has been successfully created.',
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  async createResource(
+    @Req() request: Request & { user: { [key: string]: string } },
+    @Param('userId') id: string,
+    @Body(new ValidationPipe()) createResourceDto: CreateResourceDto,
+  ) {
+    if (request.user.id != id) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+    const createdResource = await this.resourceService.createResourceForUser(
+      id,
+      createResourceDto,
+    );
+    if (!createdResource) {
+      return {
+        success: false,
+        message: 'Cannot create resource',
+      };
+    }
+    return {
+      success: true,
+      message: 'Resource has been successfully created.',
+      createdResource,
+    };
+  }
+
+  @Post('/:id/endcode-files')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 10 * 1024 * 1024 },
+      fileFilter: (req, file, cb) => {
+        const allowedExt = ['.txt', '.pdf', '.doc', '.docx'];
+        const fileExt = extname(file.originalname).toLowerCase();
+        if (!allowedExt.includes(fileExt)) {
+          return cb(new BadRequestException('Invalid file type'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  async encodeFileBase64(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    const base64 = file.buffer.toString('base64');
+    return {
+      filename: file.originalname,
+      mimetype: file.mimetype,
+      base64,
+    };
+  }
+
+  @Post('/:userId/resources/:resourceId/documents')
+  @ApiOperation({ summary: 'Create documents' })
+  @ApiResponse({
+    status: 201,
+    description: 'Documents has been successfully created.',
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  async uploadFileLocalToResource(
+    @Req() request: Request & { user: { [key: string]: string } },
+    @Param('userId') id: string,
+    @Param('resourceId') resourceId: string,
+    @Body(new ValidationPipe()) UploadDocumentLocalDto: UploadDocumentLocalDto,
+  ) {
+    if (request.user.id != id) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+    const uploadedResource = await this.resourceService.uploadDocument(
+      resourceId,
+      UploadDocumentLocalDto,
+    );
+    if (!uploadedResource) {
+      return {
+        success: false,
+        message: 'Cannot upload file to resource',
+      };
+    }
+    return {
+      success: true,
+      message: 'Upload success.',
+      uploadedResource,
+    };
   }
 
   @Post()
@@ -243,6 +345,24 @@ export class UsersController {
     };
   }
 
+  @Get('/profile/resources')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get resources info' })
+  @ApiResponse({ status: 200, description: 'Resources found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async findAllResourceForUser(
+    @Req() request: Request & { user: { [key: string]: string } },
+  ) {
+    const resources = await this.resourceService.findAllResourceForUser(
+      request.user.id,
+    );
+    return {
+      success: true,
+      message: 'Get resources successfully',
+      resources,
+    };
+  }
+
   @Get('/profile/chatbots')
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Get list chatbots info' })
@@ -267,12 +387,12 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'Infomation Chatbots', type: User })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async findChatbotForUser(
-    @Param('chatbotId') chatbotId:string,
+    @Param('chatbotId') chatbotId: string,
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
     const chatbots = await this.chatbotService.findChatbotForUser(
       request.user.id,
-      chatbotId
+      chatbotId,
     );
     return {
       success: true,
