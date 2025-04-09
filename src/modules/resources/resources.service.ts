@@ -235,7 +235,7 @@ export class ResourcesService {
   }
 
   async findOneResourceForUser(userId: string, resourceId: string) {
-    const resources = await this.resourceRepository.find({
+    const resources = await this.resourceRepository.findOne({
       where: {
         id: resourceId,
         user_id: userId,
