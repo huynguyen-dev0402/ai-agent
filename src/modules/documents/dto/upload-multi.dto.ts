@@ -19,7 +19,7 @@ export class UploadMultiDto {
 
   @ValidateIf((o) => o.filebase_64 === undefined)
   @IsNotEmpty({ message: 'Must have document_source' })
-  document_source?: string;
+  document_source?: number;
 
   @ValidateIf((o) => o.source_file_id === undefined)
   @IsNotEmpty({ message: 'Must have file base64' })

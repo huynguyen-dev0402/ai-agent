@@ -39,6 +39,9 @@ export class Chatbot {
   external_bot_id?: string;
 
   @Column({ type: 'text', nullable: true })
+  prompt_name?: string;
+
+  @Column({ type: 'text', nullable: true })
   prompt_info?: string;
 
   @Column({ type: 'text', nullable: true })

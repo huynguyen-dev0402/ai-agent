@@ -13,6 +13,7 @@ import { ChatbotsService } from '../chatbots/chatbots.service';
 import { ChatbotModelsModule } from '../chatbot-models/chatbot-models.module';
 import { ResourcesModule } from '../resources/resources.module';
 import { UploadModule } from '../upload/upload.module';
+import { DocumentsModule } from '../documents/documents.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { UploadModule } from '../upload/upload.module';
     WorkspacesModule,
     ChatbotModelsModule,
     UploadModule,
+    DocumentsModule,
     forwardRef(() => ResourcesModule),
   ],
   controllers: [UsersController],

@@ -38,6 +38,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadService } from '../upload/upload.service';
 import { extname } from 'path';
 import { UploadMultiDto } from '../documents/dto/upload-multi.dto';
+import { DocumentsService } from '../documents/documents.service';
+import { GetDocumentDto } from '../documents/dto/get-document.dto';
 
 @Controller('users')
 @UseGuards(AuthGuard)
@@ -49,7 +51,7 @@ export class UsersController {
     private readonly chatbotService: ChatbotsService,
     private readonly workspaceService: WorkspacesService,
     private readonly resourceService: ResourcesService,
-    private readonly uploadService: UploadService,
+    private readonly documentService: DocumentsService,
   ) {}
 
   @Get('/profile/api-token')
@@ -216,6 +218,72 @@ export class UsersController {
       success: true,
       message: 'Resource has been successfully created.',
       createdResource,
+    };
+  }
+
+  @Get('/:userId/resources/:resourceId/documents')
+  @ApiOperation({ summary: 'Create resource' })
+  @ApiResponse({
+    status: 201,
+    description: 'Resource has been successfully get.',
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  async getListDocument(
+    @Req() request: Request & { user: { [key: string]: string } },
+    @Param('userId') id: string,
+    @Param('resourceId') resourceId: string,
+    @Body(new ValidationPipe()) getDocumentDto: GetDocumentDto,
+  ) {
+    if (request.user.id != id) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+    const listDocument = await this.documentService.getListDocumentForUser(
+      resourceId,
+      getDocumentDto,
+    );
+    if (!listDocument) {
+      return {
+        success: false,
+        message: 'Cannot create resource',
+      };
+    }
+    return {
+      success: true,
+      message: 'Resource has been successfully created.',
+      listDocument,
+    };
+  }
+
+  @Get('/:userId/resources/:resourceId/documents/images')
+  @ApiOperation({ summary: 'Create resource' })
+  @ApiResponse({
+    status: 201,
+    description: 'Resource has been successfully get.',
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  async getListImagesUploaded(
+    @Req() request: Request & { user: { [key: string]: string } },
+    @Param('userId') id: string,
+    @Param('resourceId') resourceId: string,
+    @Body(new ValidationPipe()) getDocumentDto: GetDocumentDto,
+  ) {
+    if (request.user.id != id) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+    const listDocument = await this.documentService.getListDocumentForUser(
+      resourceId,
+      getDocumentDto,
+    );
+    if (!listDocument) {
+      return {
+        success: false,
+        message: 'Cannot create resource',
+      };
+    }
+    return {
+      success: true,
+      message: 'Resource has been successfully created.',
+      listDocument,
     };
   }
 

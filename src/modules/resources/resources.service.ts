@@ -75,9 +75,9 @@ export class ResourcesService {
     if (!resource) {
       return false;
     }
-    if (Number(resource.external_type) != Number(uploadMultiDto.format_type)) {
-      return false;
-    }
+    // if (Number(resource.external_type) != Number(uploadMultiDto.format_type)) {
+    //   return false;
+    // }
     try {
       const response = await fetch(
         'https://api.coze.com/open_api/knowledge/document/create',
@@ -184,6 +184,8 @@ export class ResourcesService {
         },
       );
 
+      //console.log(BigInt(uploadMultiDto.source_file_id as BigInt));
+
       const text = await response.text();
 
       if (!response.ok) {
@@ -197,6 +199,8 @@ export class ResourcesService {
         throw new InternalServerErrorException(`Coze API error ${data}`);
       }
 
+      console.log(data);
+
       const uploadData = {
         resource_id: resource.id,
         resource,
@@ -205,10 +209,10 @@ export class ResourcesService {
         document_name: data.document_infos[0].name,
         source_type: Number(resource.external_type),
         source_file_id: uploadMultiDto.source_file_id,
-        type: uploadMultiDto.document_source == '5' ? 'image' : 'text',
+        type: uploadMultiDto.document_source == 5 ? 'image' : 'text',
       };
-      const newDocument = this.documentRepository.create(uploadData);
-      await this.documentRepository.save(newDocument);
+      // const newDocument = this.documentRepository.create(uploadData);
+      // await this.documentRepository.save(newDocument);
       return data;
     } catch (error) {
       throw new InternalServerErrorException(

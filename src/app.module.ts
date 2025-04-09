@@ -28,6 +28,8 @@ import { Resource } from './modules/resources/entities/resource.entity';
 import { UploadModule } from './modules/upload/upload.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { Document } from './modules/documents/entities/document.entity';
+import { ChatbotPromptModule } from './modules/chatbot-prompt/chatbot-prompt.module';
+import { ChatbotPrompt } from './modules/chatbot-prompt/entities/chatbot-prompt.entity';
 
 @Module({
   imports: [
@@ -51,6 +53,7 @@ import { Document } from './modules/documents/entities/document.entity';
         ChatbotPublished,
         ChatbotModel,
         ChatbotConfig,
+        ChatbotPrompt,
         ChatbotOnboarding,
         OnboardingSuggestedQuestion,
       ],
@@ -71,6 +74,7 @@ import { Document } from './modules/documents/entities/document.entity';
     ResourcesModule,
     UploadModule,
     DocumentsModule,
+    ChatbotPromptModule,
   ],
   controllers: [AppController],
   providers: [AppService],
