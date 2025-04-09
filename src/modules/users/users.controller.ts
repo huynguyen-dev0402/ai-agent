@@ -37,7 +37,7 @@ import { CreateResourceDto } from '../resources/dto/create-resource.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadService } from '../upload/upload.service';
 import { extname } from 'path';
-import { UploadDocumentLocalDto } from '../documents/dto/upload-document.dto';
+import { UploadMultiDto } from '../documents/dto/upload-multi.dto';
 
 @Controller('users')
 @UseGuards(AuthGuard)
@@ -257,26 +257,47 @@ export class UsersController {
     @Req() request: Request & { user: { [key: string]: string } },
     @Param('userId') id: string,
     @Param('resourceId') resourceId: string,
-    @Body(new ValidationPipe()) UploadDocumentLocalDto: UploadDocumentLocalDto,
+    @Body(new ValidationPipe())
+    uploadMultiDto: UploadMultiDto,
   ) {
     if (request.user.id != id) {
       throw new UnauthorizedException('Unauthorized');
     }
-    const uploadedResource = await this.resourceService.uploadDocument(
-      resourceId,
-      UploadDocumentLocalDto,
-    );
-    if (!uploadedResource) {
+    if (uploadMultiDto.file_type) {
+      const uploadedResource = await this.resourceService.uploadDocument(
+        resourceId,
+        uploadMultiDto,
+      );
+      if (!uploadedResource) {
+        return {
+          success: false,
+          message: 'Cannot upload file to resource',
+        };
+      }
       return {
-        success: false,
-        message: 'Cannot upload file to resource',
+        success: true,
+        message: 'Upload success.',
+        uploadedResource,
       };
     }
-    return {
-      success: true,
-      message: 'Upload success.',
-      uploadedResource,
-    };
+
+    if (uploadMultiDto.document_source) {
+      const uploadedResource = await this.resourceService.uploadImageDocument(
+        resourceId,
+        uploadMultiDto,
+      );
+      if (!uploadedResource) {
+        return {
+          success: false,
+          message: 'Cannot upload file to resource',
+        };
+      }
+      return {
+        success: true,
+        message: 'Upload success.',
+        uploadedResource,
+      };
+    }
   }
 
   @Post()

@@ -7,10 +7,10 @@ import {
   ExternalTypeName,
   Resource,
 } from './entities/resource.entity';
-import { DeepPartial, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { UsersService } from '../users/users.service';
-import { UploadDocumentLocalDto } from '../documents/dto/upload-document.dto';
 import { Document } from '../documents/entities/document.entity';
+import { UploadMultiDto } from '../documents/dto/upload-multi.dto';
 
 @Injectable()
 export class ResourcesService {
@@ -66,10 +66,7 @@ export class ResourcesService {
     }
   }
 
-  async uploadDocument(
-    resourceId: string,
-    uploadDocumentLocalDto: UploadDocumentLocalDto,
-  ) {
+  async uploadDocument(resourceId: string, uploadMultiDto: UploadMultiDto) {
     const resource = await this.resourceRepository.findOne({
       where: {
         id: resourceId,
@@ -78,10 +75,7 @@ export class ResourcesService {
     if (!resource) {
       return false;
     }
-    if (
-      Number(resource.external_type) !=
-      Number(uploadDocumentLocalDto.format_type)
-    ) {
+    if (Number(resource.external_type) != Number(uploadMultiDto.format_type)) {
       return false;
     }
     try {
@@ -90,19 +84,19 @@ export class ResourcesService {
         {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${uploadDocumentLocalDto.api_token}`,
+            Authorization: `Bearer ${uploadMultiDto.api_token}`,
             'Content-Type': 'application/json',
             'Agw-Js-Conv': 'str',
           },
           body: JSON.stringify({
             dataset_id: resource.external_resource_id,
-            format_type: Number(uploadDocumentLocalDto.format_type),
+            format_type: Number(uploadMultiDto.format_type),
             document_bases: [
               {
-                name: uploadDocumentLocalDto.name,
+                name: uploadMultiDto.name_document,
                 source_info: {
-                  file_base64: uploadDocumentLocalDto.filebase_64,
-                  file_type: uploadDocumentLocalDto.file_type,
+                  file_base64: uploadMultiDto.filebase_64,
+                  file_type: uploadMultiDto.file_type,
                 },
               },
             ],
@@ -137,7 +131,81 @@ export class ResourcesService {
         format_type: data.document_infos[0].format_type,
         document_name: data.document_infos[0].name,
         source_type: data.document_infos[0].source_type,
-        type: uploadDocumentLocalDto.file_type,
+        type: uploadMultiDto.file_type,
+      };
+      const newDocument = this.documentRepository.create(uploadData);
+      await this.documentRepository.save(newDocument);
+      return data;
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Failed to create document in Coze: ${error.message}`,
+      );
+    }
+  }
+
+  async uploadImageDocument(
+    resourceId: string,
+    uploadMultiDto: UploadMultiDto,
+  ) {
+    const resource = await this.resourceRepository.findOne({
+      where: {
+        id: resourceId,
+      },
+    });
+    if (!resource) {
+      return false;
+    }
+    if (Number(resource.external_type) != Number(uploadMultiDto.format_type)) {
+      return false;
+    }
+    try {
+      const response = await fetch(
+        'https://api.coze.com/open_api/knowledge/document/create',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${uploadMultiDto.api_token}`,
+            'Content-Type': 'application/json',
+            'Agw-Js-Conv': 'str',
+          },
+          body: JSON.stringify({
+            dataset_id: resource.external_resource_id,
+            format_type: Number(uploadMultiDto.format_type),
+            document_bases: [
+              {
+                name: uploadMultiDto.name_image,
+                source_info: {
+                  source_file_id: uploadMultiDto.source_file_id,
+                  document_source: uploadMultiDto.document_source,
+                },
+              },
+            ],
+          }),
+        },
+      );
+
+      const text = await response.text();
+
+      if (!response.ok) {
+        throw new InternalServerErrorException(
+          `Coze API error ${response.status}: ${text}`,
+        );
+      }
+
+      const data = await JSON.parse(text);
+      if (!data.document_infos) {
+        throw new InternalServerErrorException(`Coze API error ${data}`);
+      }
+
+      const uploadData = {
+        resource_id: resource.id,
+        resource,
+        external_document_id: data.document_infos[0].document_id,
+        format_type: uploadMultiDto.format_type,
+        document_name: data.document_infos[0].name,
+        source_type: Number(resource.external_type),
+        source_file_id: uploadMultiDto.source_file_id,
+        type: uploadMultiDto.document_source == '5' ? 'image' : 'text',
       };
       const newDocument = this.documentRepository.create(uploadData);
       await this.documentRepository.save(newDocument);
