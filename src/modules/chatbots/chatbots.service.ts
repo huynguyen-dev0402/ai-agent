@@ -331,10 +331,7 @@ export class ChatbotsService {
     }
   }
 
-  async configChatbot(
-    chatbotId: string,
-    updateChatbotDto: UpdateChatbotDto,
-  ) {
+  async configChatbot(chatbotId: string, updateChatbotDto: UpdateChatbotDto) {
     const chatbot = await this.chatbotRepository.findOne({
       where: {
         id: chatbotId,
@@ -388,7 +385,19 @@ export class ChatbotsService {
       if (!newData.affected) {
         throw new BadRequestException('Cannot update prompt');
       }
-      return chatbot;
+      return this.chatbotRepository.findOne({
+        where: {
+          id: chatbot.id,
+        },
+        relations: {
+          model: true,
+        },
+        select: {
+          model: {
+            id: true,
+          },
+        },
+      });
     } catch (error) {
       console.error('Error updating bot:', error.message);
     }
