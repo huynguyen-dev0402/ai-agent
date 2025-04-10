@@ -302,18 +302,9 @@ export class ChatbotsService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          onboarding_info: {
-            prologue: 'Xin chào, tôi có thể giúp gì cho bạn?',
-            suggested_questions: ['Câu hỏi 1'],
-          },
-          model_info_config: {
-            model_id: chatbot.model.id,
-          },
-          prompt_info: {
-            prompt: updateChatbotDto.prompt_info,
-          },
           space_id: workspace.external_space_id,
           name: chatbot.chatbot_name,
+          description: updateChatbotDto.description || null,
         }),
       });
 
@@ -321,7 +312,6 @@ export class ChatbotsService {
       if (!data?.data?.bot_id) return false;
 
       chatbot.external_bot_id = data.data.bot_id;
-      chatbot.prompt_info = updateChatbotDto.prompt_info ?? chatbot.prompt_info;
       chatbot.description = updateChatbotDto.description ?? chatbot.description;
       const updatedChatbot = await this.chatbotRepository.save(chatbot);
 
@@ -358,6 +348,7 @@ export class ChatbotsService {
         },
         body: JSON.stringify({
           bot_id: chatbot.external_bot_id,
+          name: updateChatbotDto.chatbot_name,
           description: updateChatbotDto.description || chatbot.description,
           prompt_info: {
             prompt: updateChatbotDto.prompt_info,
