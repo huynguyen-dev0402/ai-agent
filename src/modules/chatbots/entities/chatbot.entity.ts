@@ -10,7 +10,9 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
+import { ChatbotResource } from './chatbot-resources.entity';
 
 export enum ChatbotStatus {
   DRAFT = 'draft',
@@ -72,4 +74,10 @@ export class Chatbot {
   })
   @JoinColumn({ name: 'model_id' })
   model: ChatbotModel;
+
+  @OneToMany(
+    () => ChatbotResource,
+    (chatbot_resources) => chatbot_resources.chatbot,
+  )
+  chatbot_resources: ChatbotResource[];
 }

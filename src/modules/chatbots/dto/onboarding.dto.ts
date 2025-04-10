@@ -2,6 +2,9 @@ import { IsString, IsArray, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class OnboardingInfoDto {
+  @IsNotEmpty({ message: 'Api token required' })
+  api_token: string;
+  
   @IsString()
   @ApiProperty({ example: 'Welcome to the chatbot!' })
   @IsNotEmpty({ message: 'Must have prologue' })

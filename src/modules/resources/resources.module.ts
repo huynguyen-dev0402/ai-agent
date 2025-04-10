@@ -4,12 +4,12 @@ import { ResourcesController } from './resources.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Resource } from './entities/resource.entity';
 import { UsersModule } from '../users/users.module';
-import { DocumentsService } from '../documents/documents.service';
 import { Document } from '../documents/entities/document.entity';
+import { ChatbotResource } from '../chatbots/entities/chatbot-resources.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Resource, Document]),
+    TypeOrmModule.forFeature([Resource, Document,ChatbotResource]),
     forwardRef(() => UsersModule),
   ],
   controllers: [ResourcesController],

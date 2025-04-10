@@ -7,6 +7,7 @@ import { Resource } from '../resources/entities/resource.entity';
 import { Repository } from 'typeorm';
 import { ChatbotPrompt } from './entities/chatbot-prompt.entity';
 import { User } from '../users/entities/user.entity';
+import { PromptInfoDto } from '../chatbots/dto/prompt.dto';
 
 @Injectable()
 export class ChatbotPromptService {
@@ -26,7 +27,7 @@ export class ChatbotPromptService {
 
   async createPromptChatbotForUser(
     userId: string,
-    updateChatbotDto: UpdateChatbotDto,
+    promptInfoDto: PromptInfoDto,
   ) {
     const user = await this.userRepository.findOne({
       where: {
@@ -37,7 +38,7 @@ export class ChatbotPromptService {
       return false;
     }
     const newPrompt = this.chatbotPromptRepository.create({
-      ...updateChatbotDto,
+      ...promptInfoDto,
       user,
     });
     await this.chatbotPromptRepository.save(newPrompt);

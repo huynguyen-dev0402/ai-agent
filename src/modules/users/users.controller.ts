@@ -41,6 +41,9 @@ import { UploadMultiDto } from '../documents/dto/upload-multi.dto';
 import { DocumentsService } from '../documents/documents.service';
 import { GetDocumentDto } from '../documents/dto/get-document.dto';
 import { ChatbotPromptService } from '../chatbot-prompt/chatbot-prompt.service';
+import { PromptInfoDto } from '../chatbots/dto/prompt.dto';
+import { KnowledgeDto } from '../chatbots/dto/knowledge.dto';
+import { OnboardingInfoDto } from '../chatbots/dto/onboarding.dto';
 
 @Controller('users')
 @UseGuards(AuthGuard)
@@ -140,7 +143,7 @@ export class UsersController {
     };
   }
 
-  @Patch('/:userId/chatbots/:chatbotId/config')
+  @Patch('/:userId/chatbots/:chatbotId/config-basic')
   @ApiOperation({ summary: 'Config chatbot' })
   @ApiResponse({
     status: 201,
@@ -156,16 +159,110 @@ export class UsersController {
     if (request.user.id != id) {
       throw new UnauthorizedException('Unauthorized');
     }
-    const updatedChatbot = await this.chatbotService.configChatbot(
+    const updatedChatbot = await this.chatbotService.updateBasicInfoChatbot(
       chatbotId,
       updateChatbotDto,
     );
+
+    if (!updatedChatbot) {
+      throw new BadRequestException('Cannot update info chatbot');
+    }
+    return {
+      success: true,
+      message: 'Info chatbot has been successfully updated',
+      updatedChatbot,
+    };
+  }
+
+  @Patch('/:userId/chatbots/:chatbotId/import-prompts')
+  @ApiOperation({ summary: 'Import prompt chatbot' })
+  @ApiResponse({
+    status: 201,
+    description: 'Prompt has been successfully imported.',
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  async importPrompt(
+    @Req() request: Request & { user: { [key: string]: string } },
+    @Param('userId') id: string,
+    @Param('chatbotId') chatbotId: string,
+    @Body(new ValidationPipe()) promptInfoDto: PromptInfoDto,
+  ) {
+    if (request.user.id != id) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+    const updatedChatbot = await this.chatbotService.importPrompt(
+      chatbotId,
+      promptInfoDto,
+    );
+
     if (!updatedChatbot) {
       throw new BadRequestException('Cannot update prompt chatbot');
     }
     return {
       success: true,
       message: 'The prompt chatbot has been successfully updated',
+      updatedChatbot,
+    };
+  }
+
+  @Patch('/:userId/chatbots/:chatbotId/import-documents')
+  @ApiOperation({ summary: 'Import knowledge chatbot' })
+  @ApiResponse({
+    status: 201,
+    description: 'Knowledge has been successfully imported.',
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  async importKnowledge(
+    @Req() request: Request & { user: { [key: string]: string } },
+    @Param('userId') id: string,
+    @Param('chatbotId') chatbotId: string,
+    @Body(new ValidationPipe()) knowledgeDto: KnowledgeDto,
+  ) {
+    if (request.user.id != id) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+    const updatedChatbot = await this.chatbotService.importKnowledge(
+      chatbotId,
+      knowledgeDto,
+    );
+
+    if (!updatedChatbot) {
+      throw new BadRequestException('Cannot update knowledge chatbot');
+    }
+    return {
+      success: true,
+      message: 'Knowledge chatbot has been successfully updated',
+      updatedChatbot,
+    };
+  }
+
+  @Patch('/:userId/chatbots/:chatbotId/import-onboarding')
+  @ApiOperation({ summary: 'Import onboarding chatbot' })
+  @ApiResponse({
+    status: 201,
+    description: 'Onboarding has been successfully imported.',
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  async importOnboarding(
+    @Req() request: Request & { user: { [key: string]: string } },
+    @Param('userId') id: string,
+    @Param('chatbotId') chatbotId: string,
+    @Body(new ValidationPipe()) onboardingInfoDto: OnboardingInfoDto,
+  ) {
+    if (request.user.id != id) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+    const updatedChatbot = await this.chatbotService.importOnboarding(
+      chatbotId,
+      onboardingInfoDto,
+    );
+
+    if (!updatedChatbot) {
+      throw new BadRequestException('Cannot update onboarding chatbot');
+    }
+    return {
+      success: true,
+      message: 'Onboarding chatbot has been successfully updated',
       updatedChatbot,
     };
   }
@@ -296,17 +393,14 @@ export class UsersController {
   async createPromptChatbotForUser(
     @Req() request: Request & { user: { [key: string]: string } },
     @Param('userId') id: string,
-    @Body(new ValidationPipe()) updateChatbotDto: UpdateChatbotDto,
+    @Body(new ValidationPipe()) promptInfoDto: PromptInfoDto,
   ) {
     if (request.user.id != id) {
       throw new UnauthorizedException('Unauthorized');
     }
-    if (!updateChatbotDto.prompt_name || !updateChatbotDto.prompt_info) {
-      throw new BadRequestException('Must have name and prompt info');
-    }
     const prompt = await this.chatbotPromptService.createPromptChatbotForUser(
       id,
-      updateChatbotDto,
+      promptInfoDto,
     );
     if (!prompt) {
       throw new BadRequestException('User not found');

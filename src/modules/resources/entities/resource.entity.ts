@@ -1,4 +1,5 @@
 import { ChatbotPrompt } from 'src/modules/chatbot-prompt/entities/chatbot-prompt.entity';
+import { ChatbotResource } from 'src/modules/chatbots/entities/chatbot-resources.entity';
 import { Document } from 'src/modules/documents/entities/document.entity';
 import { User } from 'src/modules/users/entities/user.entity';
 import {
@@ -85,4 +86,10 @@ export class Resource {
 
   @OneToMany(() => Document, (document) => document.resource)
   documents: Document[];
+
+  @OneToMany(
+    () => ChatbotResource,
+    (chatbot_resources) => chatbot_resources.resource,
+  )
+  chatbot_resources: ChatbotResource[];
 }

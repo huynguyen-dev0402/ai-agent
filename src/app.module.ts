@@ -30,6 +30,7 @@ import { DocumentsModule } from './modules/documents/documents.module';
 import { Document } from './modules/documents/entities/document.entity';
 import { ChatbotPromptModule } from './modules/chatbot-prompt/chatbot-prompt.module';
 import { ChatbotPrompt } from './modules/chatbot-prompt/entities/chatbot-prompt.entity';
+import { ChatbotResource } from './modules/chatbots/entities/chatbot-resources.entity';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { ChatbotPrompt } from './modules/chatbot-prompt/entities/chatbot-prompt.
         ChatbotPublished,
         ChatbotModel,
         ChatbotConfig,
+        ChatbotResource,
         ChatbotPrompt,
         ChatbotOnboarding,
         OnboardingSuggestedQuestion,

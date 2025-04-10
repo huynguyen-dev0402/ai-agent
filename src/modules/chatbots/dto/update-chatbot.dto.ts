@@ -12,7 +12,7 @@ export class UpdateChatbotDto extends PartialType(CreateChatbotDto) {
   api_token: string;
 
   @IsOptional()
-  chatbot_name?: string;
+  chatbot_name: string;
 
   @ApiProperty({
     example: 'Desciption chatbot',
@@ -22,20 +22,6 @@ export class UpdateChatbotDto extends PartialType(CreateChatbotDto) {
   description?: string;
 
   @IsOptional()
-  @Type(() => OnboardingInfoDto)
-  onboarding_info?: OnboardingInfoDto;
-
-  @IsOptional()
-  @Type(() => KnowledgeDto)
-  knowledge?: KnowledgeDto;
-
-  @IsOptional()
   @Type(() => ModelConfigDto)
   model_info_config?: ModelConfigDto;
-
-  @IsOptional()
-  prompt_name?: string;
-
-  @IsOptional()
-  prompt_info?: string;
 }

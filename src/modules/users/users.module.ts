@@ -15,10 +15,23 @@ import { ResourcesModule } from '../resources/resources.module';
 import { UploadModule } from '../upload/upload.module';
 import { DocumentsModule } from '../documents/documents.module';
 import { ChatbotPromptModule } from '../chatbot-prompt/chatbot-prompt.module';
+import { ChatbotResource } from '../chatbots/entities/chatbot-resources.entity';
+import { Resource } from '../resources/entities/resource.entity';
+import { ChatbotOnboarding } from '../chatbot-onboarding/entities/chatbot-onboarding.entity';
+import { OnboardingSuggestedQuestion } from '../onboarding-suggested-questions/entities/onboarding-suggested-question.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Workspace, ApiToken, Chatbot]),
+    TypeOrmModule.forFeature([
+      User,
+      Workspace,
+      ApiToken,
+      Chatbot,
+      ChatbotResource,
+      Resource,
+      ChatbotOnboarding,
+      OnboardingSuggestedQuestion
+    ]),
     AuthModule,
     ApiTokensModule,
     WorkspacesModule,

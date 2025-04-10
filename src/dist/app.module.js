@@ -39,6 +39,7 @@ var documents_module_1 = require("./modules/documents/documents.module");
 var document_entity_1 = require("./modules/documents/entities/document.entity");
 var chatbot_prompt_module_1 = require("./modules/chatbot-prompt/chatbot-prompt.module");
 var chatbot_prompt_entity_1 = require("./modules/chatbot-prompt/entities/chatbot-prompt.entity");
+var chatbot_resources_entity_1 = require("./modules/chatbots/entities/chatbot-resources.entity");
 var AppModule = /** @class */ (function () {
     function AppModule() {
     }
@@ -65,6 +66,7 @@ var AppModule = /** @class */ (function () {
                         chatbot_published_entity_1.ChatbotPublished,
                         chatbot_model_entity_1.ChatbotModel,
                         chatbot_config_entity_1.ChatbotConfig,
+                        chatbot_resources_entity_1.ChatbotResource,
                         chatbot_prompt_entity_1.ChatbotPrompt,
                         chatbot_onboarding_entity_1.ChatbotOnboarding,
                         onboarding_suggested_question_entity_1.OnboardingSuggestedQuestion,
