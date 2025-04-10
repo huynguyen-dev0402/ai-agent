@@ -130,6 +130,11 @@ export class UsersService {
         prompts: true,
         resources: true,
       },
+      select: {
+        id: true,
+        resources: true,
+        prompts: true,
+      },
     });
     return resources;
   }
