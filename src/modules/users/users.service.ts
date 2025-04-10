@@ -81,7 +81,7 @@ export class UsersService {
       },
       relations: {
         api_token: true,
-      }
+      },
     });
     if (user?.api_token?.token) {
       return {
@@ -119,6 +119,19 @@ export class UsersService {
       .getRawOne();
 
     return result || null;
+  }
+
+  async findAllResourceForUser(id: string) {
+    const resources = await this.userRepository.findOne({
+      where: {
+        id,
+      },
+      relations: {
+        prompts: true,
+        resources: true,
+      },
+    });
+    return resources;
   }
 
   async findAll() {

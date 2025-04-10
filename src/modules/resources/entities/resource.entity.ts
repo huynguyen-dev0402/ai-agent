@@ -85,7 +85,4 @@ export class Resource {
 
   @OneToMany(() => Document, (document) => document.resource)
   documents: Document[];
-
-  @OneToMany(() => ChatbotPrompt, (prompt) => prompt.resource)
-  prompts: ChatbotPrompt[];
 }

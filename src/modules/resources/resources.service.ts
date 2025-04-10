@@ -227,7 +227,6 @@ export class ResourcesService {
         user_id: userId,
       },
       relations: {
-        prompts: true,
         documents: true,
       },
     });
@@ -241,7 +240,6 @@ export class ResourcesService {
         user_id: userId,
       },
       relations: {
-        prompts: true,
         documents: true,
       },
     });

@@ -1,4 +1,4 @@
-import { Resource } from 'src/modules/resources/entities/resource.entity';
+import { User } from 'src/modules/users/entities/user.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -13,9 +13,6 @@ import {
 export class ChatbotPrompt {
   @PrimaryGeneratedColumn('uuid')
   id: string;
-
-  @Column({ name: 'resource_id' })
-  resourceId: string;
 
   @Column({ name: 'prompt_name', type: 'varchar', length: 255 })
   prompt_name: string;
@@ -40,7 +37,7 @@ export class ChatbotPrompt {
   })
   updated_at: Date;
 
-  @ManyToOne(() => Resource, (resource) => resource.prompts)
-  @JoinColumn({ name: 'resource_id' })
-  resource: Resource;
+  @ManyToOne(() => User, (user) => user.prompts)
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 }

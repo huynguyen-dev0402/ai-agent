@@ -6,12 +6,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Resource } from '../resources/entities/resource.entity';
 import { Repository } from 'typeorm';
 import { ChatbotPrompt } from './entities/chatbot-prompt.entity';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class ChatbotPromptService {
   constructor(
-    @InjectRepository(Resource)
-    private readonly resourceRepository: Repository<Resource>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     @InjectRepository(ChatbotPrompt)
     private readonly chatbotPromptRepository: Repository<ChatbotPrompt>,
   ) {}
@@ -23,21 +24,21 @@ export class ChatbotPromptService {
     return 'This action adds a new chatbotPrompt';
   }
 
-  async submitPromptChatbotToResource(
-    resourceId: string,
+  async createPromptChatbotForUser(
+    userId: string,
     updateChatbotDto: UpdateChatbotDto,
   ) {
-    const resource = await this.resourceRepository.findOne({
+    const user = await this.userRepository.findOne({
       where: {
-        id: resourceId,
+        id: userId,
       },
     });
-    if (!resource) {
+    if (!user) {
       return false;
     }
     const newPrompt = this.chatbotPromptRepository.create({
       ...updateChatbotDto,
-      resource,
+      user,
     });
     await this.chatbotPromptRepository.save(newPrompt);
     return newPrompt;

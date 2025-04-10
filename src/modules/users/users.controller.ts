@@ -286,17 +286,16 @@ export class UsersController {
     };
   }
 
-  @Post('/:userId/resources/:resourceId/prompts')
+  @Post('/:userId/prompts')
   @ApiOperation({ summary: 'Create prompts' })
   @ApiResponse({
     status: 201,
     description: 'prompts has been successfully get.',
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  async submitPromptToResource(
+  async createPromptChatbotForUser(
     @Req() request: Request & { user: { [key: string]: string } },
     @Param('userId') id: string,
-    @Param('resourceId') resourceId: string,
     @Body(new ValidationPipe()) updateChatbotDto: UpdateChatbotDto,
   ) {
     if (request.user.id != id) {
@@ -305,13 +304,12 @@ export class UsersController {
     if (!updateChatbotDto.prompt_name || !updateChatbotDto.prompt_info) {
       throw new BadRequestException('Must have name and prompt info');
     }
-    const prompt =
-      await this.chatbotPromptService.submitPromptChatbotToResource(
-        resourceId,
-        updateChatbotDto,
-      );
+    const prompt = await this.chatbotPromptService.createPromptChatbotForUser(
+      id,
+      updateChatbotDto,
+    );
     if (!prompt) {
-      throw new BadRequestException('Cannot create prompt');
+      throw new BadRequestException('User not found');
     }
     return {
       success: true,
@@ -508,7 +506,7 @@ export class UsersController {
   async findAllResourceForUser(
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
-    const resources = await this.resourceService.findAllResourceForUser(
+    const resources = await this.usersService.findAllResourceForUser(
       request.user.id,
     );
     return {

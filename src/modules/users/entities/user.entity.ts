@@ -1,5 +1,6 @@
 import { Exclude } from 'class-transformer';
 import { ApiToken } from 'src/modules/api-tokens/entities/api-token.entity';
+import { ChatbotPrompt } from 'src/modules/chatbot-prompt/entities/chatbot-prompt.entity';
 import { Chatbot } from 'src/modules/chatbots/entities/chatbot.entity';
 import { Resource } from 'src/modules/resources/entities/resource.entity';
 import { Workspace } from 'src/modules/workspaces/entities/workspace.entity';
@@ -97,4 +98,7 @@ export class User {
 
   @OneToMany(() => Resource, (resource) => resource.user)
   resources: Resource[];
+
+  @OneToMany(() => ChatbotPrompt, (prompt) => prompt.user)
+  prompts: ChatbotPrompt[];
 }
