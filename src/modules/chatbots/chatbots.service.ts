@@ -331,7 +331,7 @@ export class ChatbotsService {
     }
   }
 
-  async updatePromptChatbot(
+  async configChatbot(
     chatbotId: string,
     updateChatbotDto: UpdateChatbotDto,
   ) {
@@ -365,6 +365,9 @@ export class ChatbotsService {
           prompt_info: {
             prompt: updateChatbotDto.prompt_info,
           },
+          onboarding_info: updateChatbotDto.onboarding_info,
+          knowledge: updateChatbotDto.knowledge,
+          model_info_config: updateChatbotDto.model_info_config,
         }),
       });
 
@@ -378,6 +381,9 @@ export class ChatbotsService {
       }
       const newData = await this.chatbotRepository.update(chatbot.id, {
         prompt_info: updateChatbotDto.prompt_info,
+        model: {
+          id: updateChatbotDto.model_info_config?.model_id || chatbot.model.id,
+        },
       });
       if (!newData.affected) {
         throw new BadRequestException('Cannot update prompt');

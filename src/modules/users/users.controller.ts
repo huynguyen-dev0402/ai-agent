@@ -140,15 +140,14 @@ export class UsersController {
     };
   }
 
-  @Patch('/:userId/chatbots/:chatbotId/prompts')
-  @ApiOperation({ summary: 'Update a prompt for chatbot' })
+  @Patch('/:userId/chatbots/:chatbotId/config')
+  @ApiOperation({ summary: 'Config chatbot' })
   @ApiResponse({
     status: 201,
-    description: 'The prompt chatbot has been successfully updated.',
-    type: User,
+    description: 'chatbot has been successfully updated.',
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  async updatePromptChatbotByUser(
+  async configChatbotByUser(
     @Req() request: Request & { user: { [key: string]: string } },
     @Param('userId') id: string,
     @Param('chatbotId') chatbotId: string,
@@ -157,7 +156,7 @@ export class UsersController {
     if (request.user.id != id) {
       throw new UnauthorizedException('Unauthorized');
     }
-    const updatedChatbot = await this.chatbotService.updatePromptChatbot(
+    const updatedChatbot = await this.chatbotService.configChatbot(
       chatbotId,
       updateChatbotDto,
     );
