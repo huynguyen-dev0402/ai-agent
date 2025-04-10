@@ -11,6 +11,9 @@ export class UpdateChatbotDto extends PartialType(CreateChatbotDto) {
   @IsNotEmpty({ message: 'Api token required' })
   api_token: string;
 
+  @IsOptional()
+  chatbot_name?: string;
+
   @ApiProperty({
     example: 'Desciption chatbot',
     description: 'Desciption chatbot',
