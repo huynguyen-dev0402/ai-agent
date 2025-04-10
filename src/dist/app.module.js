@@ -68,7 +68,8 @@ var AppModule = /** @class */ (function () {
                         chatbot_prompt_entity_1.ChatbotPrompt,
                         chatbot_onboarding_entity_1.ChatbotOnboarding,
                         onboarding_suggested_question_entity_1.OnboardingSuggestedQuestion,
-                    ]
+                    ],
+                    synchronize: true
                 }),
                 users_module_1.UsersModule,
                 auth_module_1.AuthModule,

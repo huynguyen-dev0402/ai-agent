@@ -5,8 +5,6 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToOne,
-  JoinColumn,
   OneToMany,
 } from 'typeorm';
 
@@ -32,17 +30,19 @@ export class ChatbotModel {
   })
   model_name: string;
 
-  @Column({ type: 'text', nullable: true, collation: 'utf8mb4_unicode_ci' })
+  @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ type: 'int', nullable: true, collation: 'utf8mb4_unicode_ci' })
+  @Column({ type: 'text', nullable: true })
+  icon_url: string;
+
+  @Column({ type: 'int', nullable: true })
   context_length: number;
 
   @Column({
     type: 'varchar',
     length: 255,
     nullable: true,
-    collation: 'utf8mb4_unicode_ci',
   })
   features: string;
 
@@ -50,7 +50,6 @@ export class ChatbotModel {
     type: 'varchar',
     length: 255,
     nullable: true,
-    collation: 'utf8mb4_unicode_ci',
   })
   provider: string;
 
