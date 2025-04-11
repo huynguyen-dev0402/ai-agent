@@ -43,6 +43,10 @@ import { ChatbotPromptService } from '../chatbot-prompt/chatbot-prompt.service';
 import { PromptInfoDto } from '../chatbots/dto/prompt.dto';
 import { KnowledgeDto } from '../chatbots/dto/knowledge.dto';
 import { CreateChatbotOnboardingDto } from '../chatbot-onboarding/dto/create-chatbot-onboarding.dto';
+import { UpdateChatbotOnboardingDto } from '../chatbot-onboarding/dto/update-chatbot-onboarding.dto';
+import { CreateOnboardingSuggestedQuestionDto } from '../onboarding-suggested-questions/dto/create-onboarding-suggested-question.dto';
+import { UpdateOnboardingSuggestedQuestionDto } from '../onboarding-suggested-questions/dto/update-onboarding-suggested-question.dto';
+import { UpdateOneQuestionDto } from '../onboarding-suggested-questions/dto/update-one.dto';
 
 @Controller('users')
 @UseGuards(AuthGuard)
@@ -263,6 +267,79 @@ export class UsersController {
     return {
       success: true,
       message: 'Onboarding chatbot has been successfully created',
+      updatedChatbot,
+    };
+  }
+
+  @Patch('/:userId/chatbots/:chatbotId/onboarding/:onboardingId')
+  @ApiOperation({ summary: 'create onboarding chatbot' })
+  @ApiResponse({
+    status: 201,
+    description: 'Onboarding has been successfully updated.',
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  async updateOnboarding(
+    @Req() request: Request & { user: { [key: string]: string } },
+    @Param('userId') id: string,
+    @Param('chatbotId') chatbotId: string,
+    @Param('onboardingId') onboardingId: string,
+    @Body(new ValidationPipe())
+    updateChatbotOnboardingDto: UpdateChatbotOnboardingDto,
+  ) {
+    if (request.user.id != id) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+
+    if (updateChatbotOnboardingDto.suggested_questions) {
+      throw new BadRequestException('Action false');
+    }
+    const updatedChatbot = await this.chatbotService.updateOnboarding(
+      chatbotId,
+      onboardingId,
+      updateChatbotOnboardingDto,
+    );
+
+    if (!updatedChatbot) {
+      throw new BadRequestException('Cannot update onboarding chatbot');
+    }
+    return {
+      success: true,
+      message: 'Onboarding chatbot has been successfully updated',
+      updatedChatbot,
+    };
+  }
+
+  @Patch('/:userId/chatbots/:chatbotId/questions/:questionId')
+  @ApiOperation({ summary: 'create onboarding questions chatbot' })
+  @ApiResponse({
+    status: 201,
+    description: 'Onboarding questions has been successfully updated.',
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  async updateQuestions(
+    @Req() request: Request & { user: { [key: string]: string } },
+    @Param('userId') id: string,
+    @Param('chatbotId') chatbotId: string,
+    @Param('questionId') questionId: string,
+    @Body(new ValidationPipe())
+    updateOneQuestionDto: UpdateOneQuestionDto,
+  ) {
+    if (request.user.id != id) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+
+    const updatedChatbot = await this.chatbotService.updateSuggestedSquestions(
+      chatbotId,
+      questionId,
+      updateOneQuestionDto,
+    );
+
+    if (!updatedChatbot) {
+      throw new BadRequestException('Cannot update onboarding chatbot');
+    }
+    return {
+      success: true,
+      message: 'Onboarding chatbot has been successfully updated',
       updatedChatbot,
     };
   }
