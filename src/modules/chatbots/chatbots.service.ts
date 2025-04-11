@@ -18,11 +18,10 @@ import { ChatWithChatbotDto } from './dto/chat-with-chatbot.dto';
 import { GetConfigDto } from './dto/get-config.dto';
 import { ChatbotResource } from './entities/chatbot-resources.entity';
 import { Resource } from '../resources/entities/resource.entity';
-import { UpdateChatbotOnboardingDto } from '../chatbot-onboarding/dto/update-chatbot-onboarding.dto';
-import { OnboardingInfoDto } from './dto/onboarding.dto';
 import { PromptInfoDto } from './dto/prompt.dto';
 import { ChatbotOnboarding } from '../chatbot-onboarding/entities/chatbot-onboarding.entity';
 import { OnboardingSuggestedQuestion } from '../onboarding-suggested-questions/entities/onboarding-suggested-question.entity';
+import { CreateChatbotOnboardingDto } from '../chatbot-onboarding/dto/create-chatbot-onboarding.dto';
 
 @Injectable()
 export class ChatbotsService {
@@ -63,11 +62,26 @@ export class ChatbotsService {
       },
       relations: {
         model: true,
+        chatbot_resources: {
+          resource: true,
+        },
+        onboarding: {
+          suggested_questions: true,
+        },
       },
       select: {
         model: {
           id: true,
           model_name: true,
+        },
+        onboarding: {
+          id: true,
+          prologue: true,
+          suggested_questions: {
+            id: true,
+            position: true,
+            question: true,
+          },
         },
       },
     });
@@ -536,9 +550,9 @@ export class ChatbotsService {
     }
   }
 
-  async importOnboarding(
+  async createOnboarding(
     chatbotId: string,
-    updateOnboarding: OnboardingInfoDto,
+    createChatbotOnboardingDto: CreateChatbotOnboardingDto,
   ) {
     const chatbot = await this.chatbotRepository.findOne({
       where: { id: chatbotId },
@@ -550,16 +564,28 @@ export class ChatbotsService {
 
     if (!chatbot) return false;
 
+    const onboardingInfo: Record<string, any> = {
+      prologue: createChatbotOnboardingDto.prologue,
+    };
+
+    if (
+      Array.isArray(createChatbotOnboardingDto.suggested_questions) &&
+      createChatbotOnboardingDto.suggested_questions.length > 0
+    ) {
+      onboardingInfo.suggested_questions =
+        createChatbotOnboardingDto.suggested_questions.map((q) => q.question);
+    }
+
     try {
       const response = await fetch('https://api.coze.com/v1/bot/update', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${updateOnboarding.api_token}`,
+          Authorization: `Bearer ${createChatbotOnboardingDto.api_token}`,
         },
         body: JSON.stringify({
           bot_id: chatbot.external_bot_id,
-          onboarding_info: updateOnboarding,
+          onboarding_info: createChatbotOnboardingDto,
         }),
       });
 
@@ -572,29 +598,28 @@ export class ChatbotsService {
         throw new BadRequestException('Cannot update external bot');
       }
 
-      // await this.chatbotRepository.update(chatbot.id, {
-      //   prompt_info: updateChatbotDto.prompt_info,
-      //   chatbot_name: updateChatbotDto.chatbot_name,
-      //   description: updateChatbotDto.description || chatbot.description,
-      //   model: {
-      //     id: updateChatbotDto.model_info_config?.model_id || chatbot.model.id,
-      //   },
-      // });
+      const newOnboarding = this.chatbotOnboardingRepository.create(
+        createChatbotOnboardingDto,
+      );
+      await this.chatbotOnboardingRepository.save(newOnboarding);
 
-      return this.chatbotRepository.findOne({
-        where: {
-          id: chatbotId,
-        },
-        select: {
-          model: {
-            id: true,
-            model_name: true,
-          },
-        },
-        relations: {
-          model: true,
-        },
-      });
+      if (
+        Array.isArray(createChatbotOnboardingDto.suggested_questions) &&
+        createChatbotOnboardingDto.suggested_questions.length > 0
+      ) {
+        const questionsToSave =
+          createChatbotOnboardingDto.suggested_questions.map((q) =>
+            this.suggestRepository.create({
+              chatbot_onboarding: newOnboarding,
+              question: q.question,
+              position: q.position,
+            }),
+          );
+
+        await this.suggestRepository.save(questionsToSave);
+      }
+
+      return newOnboarding;
     } catch (error) {
       console.error('Error updating bot:', error.message);
       throw new InternalServerErrorException('Failed to update chatbot.');

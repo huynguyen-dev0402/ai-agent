@@ -3,7 +3,7 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as bodyParser from 'body-parser';
 
-async function bootstrap() {
+export const createApp = async () => {
   const app = await NestFactory.create(AppModule);
 
   app.use(bodyParser.json({ limit: '50mb' }));
@@ -17,7 +17,6 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Setting Swagger
   const config = new DocumentBuilder()
     .setTitle('Auth API')
     .setDescription('API for authentication and user management')
@@ -30,13 +29,22 @@ async function bootstrap() {
         description: 'Enter JWT token',
       },
       'access-token',
-    ) // Add JWT Authentication
-    .addSecurityRequirements('JWT-auth')
+    )
+    .addSecurityRequirements('access-token')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document); // Swagger path definition
+  SwaggerModule.setup('api/docs', app, document);
 
-  await app.listen(process.env.PORT ?? 3001);
+  return app;
+};
+
+if (require.main === module) {
+  createApp().then((app) =>
+    app.listen(process.env.PORT || 3001, () => {
+      console.log(
+        `App running on http://localhost:${process.env.PORT || 3001}`,
+      );
+    }),
+  );
 }
-bootstrap();

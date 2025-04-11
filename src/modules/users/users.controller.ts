@@ -35,7 +35,6 @@ import { ChatWithChatbotDto } from '../chatbots/dto/chat-with-chatbot.dto';
 import { ResourcesService } from '../resources/resources.service';
 import { CreateResourceDto } from '../resources/dto/create-resource.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { UploadService } from '../upload/upload.service';
 import { extname } from 'path';
 import { UploadMultiDto } from '../documents/dto/upload-multi.dto';
 import { DocumentsService } from '../documents/documents.service';
@@ -43,7 +42,7 @@ import { GetDocumentDto } from '../documents/dto/get-document.dto';
 import { ChatbotPromptService } from '../chatbot-prompt/chatbot-prompt.service';
 import { PromptInfoDto } from '../chatbots/dto/prompt.dto';
 import { KnowledgeDto } from '../chatbots/dto/knowledge.dto';
-import { OnboardingInfoDto } from '../chatbots/dto/onboarding.dto';
+import { CreateChatbotOnboardingDto } from '../chatbot-onboarding/dto/create-chatbot-onboarding.dto';
 
 @Controller('users')
 @UseGuards(AuthGuard)
@@ -236,33 +235,34 @@ export class UsersController {
     };
   }
 
-  @Patch('/:userId/chatbots/:chatbotId/import-onboarding')
-  @ApiOperation({ summary: 'Import onboarding chatbot' })
+  @Post('/:userId/chatbots/:chatbotId/onboarding')
+  @ApiOperation({ summary: 'create onboarding chatbot' })
   @ApiResponse({
     status: 201,
-    description: 'Onboarding has been successfully imported.',
+    description: 'Onboarding has been successfully created.',
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  async importOnboarding(
+  async createOnboarding(
     @Req() request: Request & { user: { [key: string]: string } },
     @Param('userId') id: string,
     @Param('chatbotId') chatbotId: string,
-    @Body(new ValidationPipe()) onboardingInfoDto: OnboardingInfoDto,
+    @Body(new ValidationPipe())
+    createChatbotOnboardingDto: CreateChatbotOnboardingDto,
   ) {
     if (request.user.id != id) {
       throw new UnauthorizedException('Unauthorized');
     }
-    const updatedChatbot = await this.chatbotService.importOnboarding(
+    const updatedChatbot = await this.chatbotService.createOnboarding(
       chatbotId,
-      onboardingInfoDto,
+      createChatbotOnboardingDto,
     );
 
     if (!updatedChatbot) {
-      throw new BadRequestException('Cannot update onboarding chatbot');
+      throw new BadRequestException('Cannot create onboarding chatbot');
     }
     return {
       success: true,
-      message: 'Onboarding chatbot has been successfully updated',
+      message: 'Onboarding chatbot has been successfully created',
       updatedChatbot,
     };
   }

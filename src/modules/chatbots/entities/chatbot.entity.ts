@@ -11,6 +11,7 @@ import {
   UpdateDateColumn,
   JoinColumn,
   OneToMany,
+  OneToOne,
 } from 'typeorm';
 import { ChatbotResource } from './chatbot-resources.entity';
 
@@ -74,6 +75,9 @@ export class Chatbot {
   })
   @JoinColumn({ name: 'model_id' })
   model: ChatbotModel;
+
+  @OneToOne(() => ChatbotOnboarding, (onboarding) => onboarding.chatbot)
+  onboarding: ChatbotOnboarding;
 
   @OneToMany(
     () => ChatbotResource,
