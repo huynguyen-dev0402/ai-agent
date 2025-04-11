@@ -5,6 +5,7 @@ provider:
   name: aws
   runtime: nodejs18.x
   region: us-east-1
+  stage: ${opt:stage, 'dev'}
   environment:
     NODE_ENV: production
     JWT_SECRET: ${ssm:/nestjs-lambda/JWT_SECRET}
@@ -23,10 +24,10 @@ provider:
     DATABASE_NAME: ${ssm:/nestjs-lambda/DATABASE_NAME}
   vpc:
     securityGroupIds:
-      - sg-xxxxxxxxxxxxxxxxx # Thay bằng Security Group của RDS
+      - sg-xxxxxxxxxxxxxxxxx
     subnetIds:
-      - subnet-xxxxxxxxxxxxxxxxx # Thay bằng Subnet ID của VPC
-      - subnet-yyyyyyyyyyyyyyyyy
+      - subnet-xxxxxxxxxxxx
+      - subnet-yyyyyyyyyyyy
   iam:
     role:
       statements:
@@ -35,16 +36,10 @@ provider:
             - ssm:GetParameter
             - secretsmanager:GetSecretValue
           Resource: '*'
-        - Effect: Allow
-          Action:
-            - rds:*
-            - ec2:DescribeSecurityGroups
-            - ec2:DescribeSubnets
-          Resource: '*'
 
 functions:
   app:
-    handler: dist/main.handler
+    handler: dist/lambda.handler
     events:
       - http:
           path: /
@@ -58,5 +53,12 @@ functions:
     memorySize: 256
 
 plugins:
-  - serverless-offline
   - serverless-plugin-typescript
+  - serverless-offline
+
+package:
+  exclude:
+    - node_modules/**
+    - .git/**
+    - test/**
+    - .env

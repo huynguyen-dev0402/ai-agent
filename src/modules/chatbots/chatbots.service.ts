@@ -391,7 +391,7 @@ export class ChatbotsService {
       }
 
       const data = await response.json();
-      if (data.code !== 0) {
+      if (data.code != 0) {
         throw new BadRequestException('Cannot update external bot');
       }
 
@@ -452,7 +452,7 @@ export class ChatbotsService {
       }
 
       const data = await response.json();
-      if (data.code !== 0) {
+      if (data.code != 0) {
         throw new BadRequestException('Cannot update external bot');
       }
 
@@ -531,7 +531,7 @@ export class ChatbotsService {
       }
 
       const data = await response.json();
-      if (data.code !== 0) {
+      if (data.code != 0) {
         throw new BadRequestException('Cannot update external bot');
       }
 
@@ -594,7 +594,7 @@ export class ChatbotsService {
       }
 
       const data = await response.json();
-      if (data.code !== 0) {
+      if (data.code != 0) {
         throw new BadRequestException('Cannot update external bot');
       }
 
