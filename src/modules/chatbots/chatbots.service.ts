@@ -598,9 +598,10 @@ export class ChatbotsService {
         throw new BadRequestException('Cannot update external bot');
       }
 
-      const newOnboarding = this.chatbotOnboardingRepository.create(
-        createChatbotOnboardingDto,
-      );
+      const newOnboarding = this.chatbotOnboardingRepository.create({
+        ...createChatbotOnboardingDto,
+        chatbot,
+      });
       await this.chatbotOnboardingRepository.save(newOnboarding);
 
       if (

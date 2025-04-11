@@ -24,10 +24,11 @@ provider:
     DATABASE_NAME: ${ssm:/nestjs-lambda/DATABASE_NAME}
   vpc:
     securityGroupIds:
-      - sg-xxxxxxxxxxxxxxxxx
+      - sg-09146d00dfee7dd2d
     subnetIds:
-      - subnet-xxxxxxxxxxxx
-      - subnet-yyyyyyyyyyyy
+      - subnet-00bc49b3479442233
+      - subnet-0b454843d3edf19a6
+      - subnet-0be441e1fbf22259d 
   iam:
     role:
       statements:
