@@ -3,7 +3,6 @@ import { CreateChatbotDto } from './create-chatbot.dto';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
-import { OnboardingInfoDto } from './onboarding.dto';
 import { KnowledgeDto } from './knowledge.dto';
 import { ModelConfigDto } from './model-config.dto';
 
