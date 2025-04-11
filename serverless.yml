@@ -1,0 +1,62 @@
+service: nestjs-lambda
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  environment:
+    NODE_ENV: production
+    JWT_SECRET: ${ssm:/nestjs-lambda/JWT_SECRET}
+    JWT_EXPIRED: ${ssm:/nestjs-lambda/JWT_EXPIRED}
+    JWT_REFRESH_SECRET: ${ssm:/nestjs-lambda/JWT_REFRESH_SECRET}
+    JWT_REFRESH_EXPIRED: ${ssm:/nestjs-lambda/JWT_REFRESH_EXPIRED}
+    REDIS_HOST: ${ssm:/nestjs-lambda/REDIS_HOST}
+    REDIS_PORT: ${ssm:/nestjs-lambda/REDIS_PORT}
+    REDIS_USERNAME: ${ssm:/nestjs-lambda/REDIS_USERNAME}
+    REDIS_PASSWORD: ${ssm:/nestjs-lambda/REDIS_PASSWORD}
+    DATABASE_TYPE: ${ssm:/nestjs-lambda/DATABASE_TYPE}
+    DATABASE_HOST: ${ssm:/nestjs-lambda/DATABASE_HOST}
+    DATABASE_USERNAME: ${ssm:/nestjs-lambda/DATABASE_USERNAME}
+    DATABASE_PASSWORD: ${ssm:/nestjs-lambda/DATABASE_PASSWORD}
+    DATABASE_PORT: ${ssm:/nestjs-lambda/DATABASE_PORT}
+    DATABASE_NAME: ${ssm:/nestjs-lambda/DATABASE_NAME}
+  vpc:
+    securityGroupIds:
+      - sg-xxxxxxxxxxxxxxxxx # Thay bằng Security Group của RDS
+    subnetIds:
+      - subnet-xxxxxxxxxxxxxxxxx # Thay bằng Subnet ID của VPC
+      - subnet-yyyyyyyyyyyyyyyyy
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - ssm:GetParameter
+            - secretsmanager:GetSecretValue
+          Resource: '*'
+        - Effect: Allow
+          Action:
+            - rds:*
+            - ec2:DescribeSecurityGroups
+            - ec2:DescribeSubnets
+          Resource: '*'
+
+functions:
+  app:
+    handler: dist/main.handler
+    events:
+      - http:
+          path: /
+          method: ANY
+          cors: true
+      - http:
+          path: /{proxy+}
+          method: ANY
+          cors: true
+    timeout: 30
+    memorySize: 256
+
+plugins:
+  - serverless-offline
+  - serverless-plugin-typescript
