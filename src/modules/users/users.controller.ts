@@ -289,35 +289,6 @@ export class UsersController {
     };
   }
 
-  @Patch('/:userId/chatbots/:chatbotId/questions/:questionId')
-  @ApiOperation({ summary: 'create onboarding questions chatbot' })
-  @ApiResponse({
-    status: 201,
-    description: 'Onboarding questions has been successfully updated.',
-  })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
-  async updateQuestions(
-    @Param('chatbotId') chatbotId: string,
-    @Param('questionId') questionId: string,
-    @Body(new ValidationPipe())
-    updateOneQuestionDto: UpdateOneQuestionDto,
-  ) {
-    const updatedChatbot = await this.chatbotService.updateSuggestedSquestions(
-      chatbotId,
-      questionId,
-      updateOneQuestionDto,
-    );
-
-    if (!updatedChatbot) {
-      throw new BadRequestException('Cannot update onboarding chatbot');
-    }
-    return {
-      success: true,
-      message: 'Onboarding chatbot has been successfully updated',
-      updatedChatbot,
-    };
-  }
-
   @Post('/:userId/chatbots/:chatbotId/publish')
   @ApiOperation({ summary: 'Publish a chatbot' })
   @ApiResponse({

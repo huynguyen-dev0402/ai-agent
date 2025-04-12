@@ -26,7 +26,6 @@ import { UpdateChatbotOnboardingDto } from '../chatbot-onboarding/dto/update-cha
 import { UpdateOnboardingSuggestedQuestionDto } from '../onboarding-suggested-questions/dto/update-onboarding-suggested-question.dto';
 import { UpdateOneQuestionDto } from '../onboarding-suggested-questions/dto/update-one.dto';
 
-
 @Injectable()
 export class ChatbotsService {
   constructor(
@@ -314,6 +313,9 @@ export class ChatbotsService {
     const chatbot = await this.chatbotRepository.findOne({
       where: {
         id: chatbotId,
+        user: {
+          id: userId,
+        },
       },
       relations: {
         model: true,
@@ -638,7 +640,12 @@ export class ChatbotsService {
     updateChatbotOnboardingDto: UpdateChatbotOnboardingDto,
   ) {
     const chatbot = await this.chatbotRepository.findOne({
-      where: { id: chatbotId },
+      where: {
+        id: chatbotId,
+        onboarding: {
+          id: onboardingId,
+        },
+      },
       select: {
         id: true,
         external_bot_id: true,
@@ -691,7 +698,12 @@ export class ChatbotsService {
     updateChatbotOnboardingDto: UpdateChatbotOnboardingDto,
   ) {
     const chatbot = await this.chatbotRepository.findOne({
-      where: { id: chatbotId },
+      where: {
+        id: chatbotId,
+        onboarding: {
+          id: onboardingId,
+        },
+      },
       select: {
         id: true,
         external_bot_id: true,
@@ -742,7 +754,6 @@ export class ChatbotsService {
         await queryRunner.release();
       }
 
-      // Chuẩn bị dữ liệu gửi Coze API
       onboardingInfo.suggested_questions = suggested_questions.map(
         (q) => q.question,
       );
@@ -770,14 +781,18 @@ export class ChatbotsService {
         throw new BadRequestException('Cannot update external bot');
       }
 
-      return this.chatbotOnboardingRepository.findOne({
-        where: {
-          id: onboardingId,
-        },
-        select: {
-          suggested_questions: true,
-        },
-      });
+      return this.chatbotOnboardingRepository
+        .createQueryBuilder('onboarding')
+        .leftJoinAndSelect('onboarding.suggested_questions', 'sq')
+        .select([
+          'onboarding.id',
+          'onboarding.prologue',
+          'sq.id',
+          'sq.position',
+          'sq.question',
+        ])
+        .where('onboarding.id = :id', { id: onboardingId })
+        .getOne();
     } catch (error) {
       console.error('Error updating bot:', error.message);
       throw new InternalServerErrorException('Failed to update chatbot.');
