@@ -634,11 +634,17 @@ export class ChatbotsService {
     }
   }
 
-  async updateOnboarding(
+  async updateChatbotOnboarding(
     chatbotId: string,
     onboardingId: string,
     updateChatbotOnboardingDto: UpdateChatbotOnboardingDto,
   ) {
+    const {
+      prologue,
+      suggested_questions = [],
+      api_token,
+    } = updateChatbotOnboardingDto;
+
     const chatbot = await this.chatbotRepository.findOne({
       where: {
         id: chatbotId,
@@ -653,112 +659,65 @@ export class ChatbotsService {
     });
 
     if (!chatbot) return false;
-    try {
-      const response = await fetch('https://api.coze.com/v1/bot/update', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${updateChatbotOnboardingDto.api_token}`,
-        },
-        body: JSON.stringify({
-          bot_id: chatbot.external_bot_id,
-          onboarding_info: {
-            prologue: updateChatbotOnboardingDto.prologue,
-          },
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      if (data.code != 0) {
-        throw new BadRequestException('Cannot update external bot');
-      }
-
-      await this.chatbotOnboardingRepository.update(onboardingId, {
-        prologue: updateChatbotOnboardingDto.prologue,
-      });
-
-      return this.chatbotOnboardingRepository.findOne({
-        where: {
-          id: onboardingId,
-        },
-      });
-    } catch (error) {
-      console.error('Error updating bot:', error.message);
-      throw new InternalServerErrorException('Failed to update chatbot.');
-    }
-  }
-
-  async updateSuggestedSquestions(
-    chatbotId: string,
-    onboardingId: string,
-    updateChatbotOnboardingDto: UpdateChatbotOnboardingDto,
-  ) {
-    const chatbot = await this.chatbotRepository.findOne({
-      where: {
-        id: chatbotId,
-        onboarding: {
-          id: onboardingId,
-        },
-      },
-      select: {
-        id: true,
-        external_bot_id: true,
-      },
-    });
-
-    if (!chatbot) return false;
-
     if (!chatbot.external_bot_id) {
       throw new BadRequestException('External bot ID is missing');
     }
 
     const onboardingInfo: Record<string, any> = {};
+    const queryRunner = this.dataSource.createQueryRunner();
 
-    const { suggested_questions = [], api_token } = updateChatbotOnboardingDto;
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    if (Array.isArray(suggested_questions) && suggested_questions.length > 0) {
-      const queryRunner = this.dataSource.createQueryRunner();
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
-
-      try {
-        await queryRunner.manager.delete(OnboardingSuggestedQuestion, {
-          chatbot_onboarding: {
-            id: onboardingId,
+    try {
+      // Update prologue in database
+      if (prologue !== undefined) {
+        await queryRunner.manager.update(
+          this.chatbotOnboardingRepository.target,
+          onboardingId,
+          {
+            prologue,
           },
-        });
+        );
+        onboardingInfo.prologue = prologue;
+      }
 
+      // Always delete old suggested questions
+      await queryRunner.manager.delete(OnboardingSuggestedQuestion, {
+        chatbot_onboarding: { id: onboardingId },
+      });
+
+      // If client sent suggested_questions, insert them
+      if (
+        Array.isArray(suggested_questions) &&
+        suggested_questions.length > 0
+      ) {
         await queryRunner.manager.insert(
           OnboardingSuggestedQuestion,
           suggested_questions.map((q) => ({
             position: q.position,
             question: q.question,
-            chatbot_onboarding: {
-              id: onboardingId,
-            },
+            chatbot_onboarding: { id: onboardingId },
           })),
         );
 
-        await queryRunner.commitTransaction();
-      } catch (err) {
-        await queryRunner.rollbackTransaction();
-        console.error('DB transaction error:', err);
-        throw new InternalServerErrorException(
-          'Failed to update suggested questions',
+        onboardingInfo.suggested_questions = suggested_questions.map(
+          (q) => q.question,
         );
-      } finally {
-        await queryRunner.release();
       }
 
-      onboardingInfo.suggested_questions = suggested_questions.map(
-        (q) => q.question,
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      console.error('DB transaction error:', err);
+      throw new InternalServerErrorException(
+        'Failed to update onboarding data',
       );
+    } finally {
+      await queryRunner.release();
     }
 
+    // Call Coze API
     try {
       const response = await fetch('https://api.coze.com/v1/bot/update', {
         method: 'POST',
@@ -795,7 +754,7 @@ export class ChatbotsService {
         .getOne();
     } catch (error) {
       console.error('Error updating bot:', error.message);
-      throw new InternalServerErrorException('Failed to update chatbot.');
+      throw new InternalServerErrorException('Failed to update chatbot');
     }
   }
 

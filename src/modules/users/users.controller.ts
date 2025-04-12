@@ -256,24 +256,7 @@ export class UsersController {
     @Body(new ValidationPipe())
     updateChatbotOnboardingDto: UpdateChatbotOnboardingDto,
   ) {
-
-    if (updateChatbotOnboardingDto.suggested_questions) {
-      const updatedChatbot =
-        await this.chatbotService.updateSuggestedSquestions(
-          chatbotId,
-          onboardingId,
-          updateChatbotOnboardingDto,
-        );
-        if(!updatedChatbot){
-          throw new BadRequestException('Cannot update onboarding sugguested questions chatbot');
-        }
-        return {
-          success: true,
-          message: 'Onboarding suggested questions chatbot has been successfully updated',
-          updatedChatbot,
-        };
-    }
-    const updatedChatbot = await this.chatbotService.updateOnboarding(
+    const updatedChatbot = await this.chatbotService.updateChatbotOnboarding(
       chatbotId,
       onboardingId,
       updateChatbotOnboardingDto,
