@@ -9,7 +9,7 @@ import { CreateChatbotDto } from './dto/create-chatbot.dto';
 import { UpdateChatbotDto } from './dto/update-chatbot.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Chatbot, ChatbotStatus } from './entities/chatbot.entity';
-import { In, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { UsersService } from '../users/users.service';
 import { PublishChatbotDto } from './dto/publish-chatbot.dto';
 import { ChatbotModelsService } from '../chatbot-models/chatbot-models.service';
@@ -25,6 +25,7 @@ import { CreateChatbotOnboardingDto } from '../chatbot-onboarding/dto/create-cha
 import { UpdateChatbotOnboardingDto } from '../chatbot-onboarding/dto/update-chatbot-onboarding.dto';
 import { UpdateOnboardingSuggestedQuestionDto } from '../onboarding-suggested-questions/dto/update-onboarding-suggested-question.dto';
 import { UpdateOneQuestionDto } from '../onboarding-suggested-questions/dto/update-one.dto';
+
 
 @Injectable()
 export class ChatbotsService {
@@ -42,6 +43,7 @@ export class ChatbotsService {
     private chatbotOnboardingRepository: Repository<ChatbotOnboarding>,
     @InjectRepository(OnboardingSuggestedQuestion)
     private suggestRepository: Repository<OnboardingSuggestedQuestion>,
+    private dataSource: DataSource,
   ) {}
 
   async findAllChatbotsForUser(userId: string) {
@@ -685,8 +687,8 @@ export class ChatbotsService {
 
   async updateSuggestedSquestions(
     chatbotId: string,
-    questionId: string,
-    updateOneQuestionDto: UpdateOneQuestionDto,
+    onboardingId: string,
+    updateChatbotOnboardingDto: UpdateChatbotOnboardingDto,
   ) {
     const chatbot = await this.chatbotRepository.findOne({
       where: { id: chatbotId },
@@ -698,18 +700,64 @@ export class ChatbotsService {
 
     if (!chatbot) return false;
 
+    if (!chatbot.external_bot_id) {
+      throw new BadRequestException('External bot ID is missing');
+    }
+
+    const onboardingInfo: Record<string, any> = {};
+
+    const { suggested_questions = [], api_token } = updateChatbotOnboardingDto;
+
+    if (Array.isArray(suggested_questions) && suggested_questions.length > 0) {
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
+      try {
+        await queryRunner.manager.delete(OnboardingSuggestedQuestion, {
+          chatbot_onboarding: {
+            id: onboardingId,
+          },
+        });
+
+        await queryRunner.manager.insert(
+          OnboardingSuggestedQuestion,
+          suggested_questions.map((q) => ({
+            position: q.position,
+            question: q.question,
+            chatbot_onboarding: {
+              id: onboardingId,
+            },
+          })),
+        );
+
+        await queryRunner.commitTransaction();
+      } catch (err) {
+        await queryRunner.rollbackTransaction();
+        console.error('DB transaction error:', err);
+        throw new InternalServerErrorException(
+          'Failed to update suggested questions',
+        );
+      } finally {
+        await queryRunner.release();
+      }
+
+      // Chuẩn bị dữ liệu gửi Coze API
+      onboardingInfo.suggested_questions = suggested_questions.map(
+        (q) => q.question,
+      );
+    }
+
     try {
       const response = await fetch('https://api.coze.com/v1/bot/update', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${updateOneQuestionDto.api_token}`,
+          Authorization: `Bearer ${api_token}`,
         },
         body: JSON.stringify({
           bot_id: chatbot.external_bot_id,
-          onboarding_info: {
-            suggested_questions:[updateOneQuestionDto.question]
-          },
+          onboarding_info: onboardingInfo,
         }),
       });
 
@@ -721,14 +769,13 @@ export class ChatbotsService {
       if (data.code != 0) {
         throw new BadRequestException('Cannot update external bot');
       }
-      
-      await this.suggestRepository.update(questionId,{
-        question:updateOneQuestionDto.question
-      })
 
-      return this.suggestRepository.findOne({
+      return this.chatbotOnboardingRepository.findOne({
         where: {
-          id: questionId,
+          id: onboardingId,
+        },
+        select: {
+          suggested_questions: true,
         },
       });
     } catch (error) {

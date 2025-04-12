@@ -11,7 +11,6 @@ import {
   BadRequestException,
   NotFoundException,
   Req,
-  UnauthorizedException,
   UseInterceptors,
   UploadedFile,
 } from '@nestjs/common';
@@ -44,12 +43,12 @@ import { PromptInfoDto } from '../chatbots/dto/prompt.dto';
 import { KnowledgeDto } from '../chatbots/dto/knowledge.dto';
 import { CreateChatbotOnboardingDto } from '../chatbot-onboarding/dto/create-chatbot-onboarding.dto';
 import { UpdateChatbotOnboardingDto } from '../chatbot-onboarding/dto/update-chatbot-onboarding.dto';
-import { CreateOnboardingSuggestedQuestionDto } from '../onboarding-suggested-questions/dto/create-onboarding-suggested-question.dto';
-import { UpdateOnboardingSuggestedQuestionDto } from '../onboarding-suggested-questions/dto/update-onboarding-suggested-question.dto';
 import { UpdateOneQuestionDto } from '../onboarding-suggested-questions/dto/update-one.dto';
+import { UserIdMatchGuard } from 'src/guards/user-id-match.guard';
+import { successResponse } from 'src/utils/response/response.util';
 
 @Controller('users')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, UserIdMatchGuard)
 @ApiTags('Users')
 @ApiBearerAuth('access-token')
 export class UsersController {
@@ -67,7 +66,7 @@ export class UsersController {
   @ApiResponse({
     status: 201,
     description: 'The API Token has been successfully created.',
-    type: User,
+  
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async createApiToken(
@@ -89,19 +88,16 @@ export class UsersController {
   @ApiResponse({
     status: 201,
     description: 'The Chatbot has been successfully created.',
-    type: User,
+  
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async createChatbotByUser(
-    @Req() request: Request & { user: { [key: string]: string } },
     @Param('id') id: string,
     @Body(new ValidationPipe()) createChatbotDto: CreateChatbotDto,
   ) {
-    if (request.user.id != id) {
-      throw new UnauthorizedException('Unauthorized');
-    }
+
     const newChatbot = await this.chatbotService.createChatbotByUser(
-      request.user.id,
+      id,
       createChatbotDto,
     );
     if (!newChatbot) {
@@ -119,18 +115,14 @@ export class UsersController {
   @ApiResponse({
     status: 201,
     description: 'The Chatbot has been successfully updated.',
-    type: User,
+  
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async updateChatbotByUser(
-    @Req() request: Request & { user: { [key: string]: string } },
     @Param('userId') id: string,
     @Param('chatbotId') chatbotId: string,
     @Body(new ValidationPipe()) updateChatbotDto: UpdateChatbotDto,
   ) {
-    if (request.user.id != id) {
-      throw new UnauthorizedException('Unauthorized');
-    }
     const updatedChatbot = await this.chatbotService.updateChatbotByUser(
       id,
       chatbotId,
@@ -154,14 +146,9 @@ export class UsersController {
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async configChatbotByUser(
-    @Req() request: Request & { user: { [key: string]: string } },
-    @Param('userId') id: string,
     @Param('chatbotId') chatbotId: string,
     @Body(new ValidationPipe()) updateChatbotDto: UpdateChatbotDto,
   ) {
-    if (request.user.id != id) {
-      throw new UnauthorizedException('Unauthorized');
-    }
     const updatedChatbot = await this.chatbotService.updateBasicInfoChatbot(
       chatbotId,
       updateChatbotDto,
@@ -185,14 +172,9 @@ export class UsersController {
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async importPrompt(
-    @Req() request: Request & { user: { [key: string]: string } },
-    @Param('userId') id: string,
     @Param('chatbotId') chatbotId: string,
     @Body(new ValidationPipe()) promptInfoDto: PromptInfoDto,
   ) {
-    if (request.user.id != id) {
-      throw new UnauthorizedException('Unauthorized');
-    }
     const updatedChatbot = await this.chatbotService.importPrompt(
       chatbotId,
       promptInfoDto,
@@ -216,14 +198,9 @@ export class UsersController {
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async importKnowledge(
-    @Req() request: Request & { user: { [key: string]: string } },
-    @Param('userId') id: string,
     @Param('chatbotId') chatbotId: string,
     @Body(new ValidationPipe()) knowledgeDto: KnowledgeDto,
   ) {
-    if (request.user.id != id) {
-      throw new UnauthorizedException('Unauthorized');
-    }
     const updatedChatbot = await this.chatbotService.importKnowledge(
       chatbotId,
       knowledgeDto,
@@ -247,15 +224,10 @@ export class UsersController {
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async createOnboarding(
-    @Req() request: Request & { user: { [key: string]: string } },
-    @Param('userId') id: string,
     @Param('chatbotId') chatbotId: string,
     @Body(new ValidationPipe())
     createChatbotOnboardingDto: CreateChatbotOnboardingDto,
   ) {
-    if (request.user.id != id) {
-      throw new UnauthorizedException('Unauthorized');
-    }
     const updatedChatbot = await this.chatbotService.createOnboarding(
       chatbotId,
       createChatbotOnboardingDto,
@@ -272,26 +244,34 @@ export class UsersController {
   }
 
   @Patch('/:userId/chatbots/:chatbotId/onboarding/:onboardingId')
-  @ApiOperation({ summary: 'create onboarding chatbot' })
+  @ApiOperation({ summary: 'update onboarding chatbot' })
   @ApiResponse({
     status: 201,
     description: 'Onboarding has been successfully updated.',
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async updateOnboarding(
-    @Req() request: Request & { user: { [key: string]: string } },
-    @Param('userId') id: string,
     @Param('chatbotId') chatbotId: string,
     @Param('onboardingId') onboardingId: string,
     @Body(new ValidationPipe())
     updateChatbotOnboardingDto: UpdateChatbotOnboardingDto,
   ) {
-    if (request.user.id != id) {
-      throw new UnauthorizedException('Unauthorized');
-    }
 
     if (updateChatbotOnboardingDto.suggested_questions) {
-      throw new BadRequestException('Action false');
+      const updatedChatbot =
+        await this.chatbotService.updateSuggestedSquestions(
+          chatbotId,
+          onboardingId,
+          updateChatbotOnboardingDto,
+        );
+        if(!updatedChatbot){
+          throw new BadRequestException('Cannot update onboarding sugguested questions chatbot');
+        }
+        return {
+          success: true,
+          message: 'Onboarding suggested questions chatbot has been successfully updated',
+          updatedChatbot,
+        };
     }
     const updatedChatbot = await this.chatbotService.updateOnboarding(
       chatbotId,
@@ -317,17 +297,11 @@ export class UsersController {
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async updateQuestions(
-    @Req() request: Request & { user: { [key: string]: string } },
-    @Param('userId') id: string,
     @Param('chatbotId') chatbotId: string,
     @Param('questionId') questionId: string,
     @Body(new ValidationPipe())
     updateOneQuestionDto: UpdateOneQuestionDto,
   ) {
-    if (request.user.id != id) {
-      throw new UnauthorizedException('Unauthorized');
-    }
-
     const updatedChatbot = await this.chatbotService.updateSuggestedSquestions(
       chatbotId,
       questionId,
@@ -349,18 +323,13 @@ export class UsersController {
   @ApiResponse({
     status: 201,
     description: 'The Chatbot has been successfully published.',
-    type: User,
+  
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async publishChatbotByUser(
-    @Req() request: Request & { user: { [key: string]: string } },
-    @Param('userId') id: string,
     @Param('chatbotId') chatbotId: string,
     @Body(new ValidationPipe()) publishChatbotDto: PublishChatbotDto,
   ) {
-    if (request.user.id != id) {
-      throw new UnauthorizedException('Unauthorized');
-    }
     const publishedChatbot = await this.chatbotService.publishChatbotByUser(
       chatbotId,
       publishChatbotDto,
@@ -385,9 +354,6 @@ export class UsersController {
     @Req() request: Request & { user: { [key: string]: string } },
     @Body() chatWithChatbotDto: ChatWithChatbotDto,
   ) {
-    if (userId != request.user.id) {
-      throw new UnauthorizedException('Unauthorized');
-    }
     return await this.chatbotService.chatWithBot(
       request.user.external_user_id,
       chatbotId,
@@ -403,28 +369,17 @@ export class UsersController {
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async createResource(
-    @Req() request: Request & { user: { [key: string]: string } },
     @Param('userId') id: string,
     @Body(new ValidationPipe()) createResourceDto: CreateResourceDto,
   ) {
-    if (request.user.id != id) {
-      throw new UnauthorizedException('Unauthorized');
-    }
     const createdResource = await this.resourceService.createResourceForUser(
       id,
       createResourceDto,
     );
     if (!createdResource) {
-      return {
-        success: false,
-        message: 'Cannot create resource',
-      };
+      throw new BadRequestException(`Cannot create resource for space_id:${createResourceDto.external_space_id}`)
     }
-    return {
-      success: true,
-      message: 'Resource has been successfully created.',
-      createdResource,
-    };
+    return successResponse("Resource has been successfully created.",createdResource)
   }
 
   @Post('/:userId/resources/:resourceId/documents/')
@@ -435,14 +390,9 @@ export class UsersController {
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async getListDocument(
-    @Req() request: Request & { user: { [key: string]: string } },
-    @Param('userId') id: string,
     @Param('resourceId') resourceId: string,
     @Body(new ValidationPipe()) getDocumentDto: GetDocumentDto,
   ) {
-    if (request.user.id != id) {
-      throw new UnauthorizedException('Unauthorized');
-    }
     const listDocument = await this.documentService.getListDocumentForUser(
       resourceId,
       getDocumentDto,
@@ -450,12 +400,12 @@ export class UsersController {
     if (!listDocument) {
       return {
         success: false,
-        message: 'Cannot create documents',
+        message: 'Cannot get documents',
       };
     }
     return {
       success: true,
-      message: 'documents has been successfully created.',
+      message: 'Get documents successfully.',
       listDocument,
     };
   }
@@ -468,19 +418,15 @@ export class UsersController {
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async createPromptChatbotForUser(
-    @Req() request: Request & { user: { [key: string]: string } },
     @Param('userId') id: string,
     @Body(new ValidationPipe()) promptInfoDto: PromptInfoDto,
   ) {
-    if (request.user.id != id) {
-      throw new UnauthorizedException('Unauthorized');
-    }
     const prompt = await this.chatbotPromptService.createPromptChatbotForUser(
       id,
       promptInfoDto,
     );
     if (!prompt) {
-      throw new BadRequestException('User not found');
+      throw new BadRequestException(`Cannot create prompts for user: ${id}`);
     }
     return {
       success: true,
@@ -490,21 +436,16 @@ export class UsersController {
   }
 
   @Post('/:userId/resources/:resourceId/documents/images')
-  @ApiOperation({ summary: 'Create resource' })
+  @ApiOperation({ summary: 'get list documents' })
   @ApiResponse({
     status: 201,
-    description: 'Resource has been successfully get.',
+    description: 'Get list documents successfully.',
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async getListImagesUploaded(
-    @Req() request: Request & { user: { [key: string]: string } },
-    @Param('userId') id: string,
     @Param('resourceId') resourceId: string,
     @Body(new ValidationPipe()) getDocumentDto: GetDocumentDto,
   ) {
-    if (request.user.id != id) {
-      throw new UnauthorizedException('Unauthorized');
-    }
     const listDocument = await this.documentService.getListDocumentForUser(
       resourceId,
       getDocumentDto,
@@ -512,12 +453,12 @@ export class UsersController {
     if (!listDocument) {
       return {
         success: false,
-        message: 'Cannot create resource',
+        message: 'Get list documents false',
       };
     }
     return {
       success: true,
-      message: 'Resource has been successfully created.',
+      message: 'Get list document successfully.',
       listDocument,
     };
   }
@@ -557,25 +498,17 @@ export class UsersController {
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async uploadFileLocalToResource(
-    @Req() request: Request & { user: { [key: string]: string } },
-    @Param('userId') id: string,
     @Param('resourceId') resourceId: string,
     @Body(new ValidationPipe())
     uploadMultiDto: UploadMultiDto,
   ) {
-    if (request.user.id != id) {
-      throw new UnauthorizedException('Unauthorized');
-    }
     if (uploadMultiDto.file_type) {
       const uploadedResource = await this.resourceService.uploadDocument(
         resourceId,
         uploadMultiDto,
       );
       if (!uploadedResource) {
-        return {
-          success: false,
-          message: 'Cannot upload file to resource',
-        };
+        throw new BadRequestException(`Cannot upload file local to resource: ${resourceId}`)
       }
       return {
         success: true,
@@ -590,10 +523,7 @@ export class UsersController {
         uploadMultiDto,
       );
       if (!uploadedResource) {
-        return {
-          success: false,
-          message: 'Cannot upload file to resource',
-        };
+        throw new BadRequestException(`Cannot upload images to resource: ${resourceId}`)
       }
       return {
         success: true,
@@ -608,7 +538,7 @@ export class UsersController {
   @ApiResponse({
     status: 201,
     description: 'The user has been successfully created.',
-    type: User,
+  
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async create(@Body(new ValidationPipe()) createUserDto: CreateUserDto) {
@@ -770,7 +700,7 @@ export class UsersController {
   @ApiResponse({
     status: 200,
     description: 'The user has been successfully updated.',
-    type: User,
+  
   })
   @ApiResponse({ status: 404, description: 'User not found' })
   update(

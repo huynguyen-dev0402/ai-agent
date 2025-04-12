@@ -4,6 +4,14 @@ export class UpdateOneQuestionDto {
   @IsNotEmpty({ message: 'Api token required' })
   api_token: string;
 
+  @IsNotEmpty({ message: 'Position is required' })
+  @ApiProperty({
+    example: 1,
+    required: false,
+    description: 'position of the question (for update)',
+  })
+  position: number;
+
   @IsNotEmpty({ message: 'Question content is required' })
   @IsString()
   @ApiProperty({

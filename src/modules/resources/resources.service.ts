@@ -56,7 +56,6 @@ export class ResourcesService {
             : ExternalTypeName.IMAGE,
         description: createResourceDto.description,
         user_id: user.id,
-        user,
       };
       const newResource = this.resourceRepository.create(dataResource);
       await this.resourceRepository.save(newResource);
