@@ -592,7 +592,7 @@ export class ChatbotsService {
         },
         body: JSON.stringify({
           bot_id: chatbot.external_bot_id,
-          onboarding_info: createChatbotOnboardingDto,
+          onboarding_info: onboardingInfo,
         }),
       });
 

@@ -48,7 +48,7 @@ import { UserIdMatchGuard } from 'src/guards/user-id-match.guard';
 import { successResponse } from 'src/utils/response/response.util';
 
 @Controller('users')
-@UseGuards(AuthGuard, UserIdMatchGuard)
+@UseGuards(AuthGuard)
 @ApiTags('Users')
 @ApiBearerAuth('access-token')
 export class UsersController {
@@ -66,7 +66,6 @@ export class UsersController {
   @ApiResponse({
     status: 201,
     description: 'The API Token has been successfully created.',
-  
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async createApiToken(
@@ -84,18 +83,17 @@ export class UsersController {
   }
 
   @Post('/:id/chatbots')
+  @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Create a chatbot' })
   @ApiResponse({
     status: 201,
     description: 'The Chatbot has been successfully created.',
-  
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async createChatbotByUser(
     @Param('id') id: string,
     @Body(new ValidationPipe()) createChatbotDto: CreateChatbotDto,
   ) {
-
     const newChatbot = await this.chatbotService.createChatbotByUser(
       id,
       createChatbotDto,
@@ -111,11 +109,11 @@ export class UsersController {
   }
 
   @Patch('/:userId/chatbots/:chatbotId')
+  @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Update a chatbot' })
   @ApiResponse({
     status: 201,
     description: 'The Chatbot has been successfully updated.',
-  
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async updateChatbotByUser(
@@ -139,6 +137,7 @@ export class UsersController {
   }
 
   @Patch('/:userId/chatbots/:chatbotId/config-basic')
+  @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Config chatbot' })
   @ApiResponse({
     status: 201,
@@ -165,6 +164,7 @@ export class UsersController {
   }
 
   @Patch('/:userId/chatbots/:chatbotId/import-prompts')
+  @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Import prompt chatbot' })
   @ApiResponse({
     status: 201,
@@ -191,6 +191,7 @@ export class UsersController {
   }
 
   @Patch('/:userId/chatbots/:chatbotId/import-documents')
+  @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Import knowledge chatbot' })
   @ApiResponse({
     status: 201,
@@ -217,6 +218,7 @@ export class UsersController {
   }
 
   @Post('/:userId/chatbots/:chatbotId/onboarding')
+  @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'create onboarding chatbot' })
   @ApiResponse({
     status: 201,
@@ -244,6 +246,7 @@ export class UsersController {
   }
 
   @Patch('/:userId/chatbots/:chatbotId/onboarding/:onboardingId')
+  @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'update onboarding chatbot' })
   @ApiResponse({
     status: 201,
@@ -273,11 +276,11 @@ export class UsersController {
   }
 
   @Post('/:userId/chatbots/:chatbotId/publish')
+  @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Publish a chatbot' })
   @ApiResponse({
     status: 201,
     description: 'The Chatbot has been successfully published.',
-  
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async publishChatbotByUser(
@@ -302,9 +305,9 @@ export class UsersController {
   }
 
   @Post(':userId/chatbots/:chatbotId/chat')
+  @UseGuards(UserIdMatchGuard)
   async chatWithBot(
     @Param('chatbotId') chatbotId: string,
-    @Param('userId') userId: string,
     @Req() request: Request & { user: { [key: string]: string } },
     @Body() chatWithChatbotDto: ChatWithChatbotDto,
   ) {
@@ -316,6 +319,7 @@ export class UsersController {
   }
 
   @Post('/:userId/resources')
+  @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Create resource' })
   @ApiResponse({
     status: 201,
@@ -331,12 +335,18 @@ export class UsersController {
       createResourceDto,
     );
     if (!createdResource) {
-      throw new BadRequestException(`Cannot create resource for space_id:${createResourceDto.external_space_id}`)
+      throw new BadRequestException(
+        `Cannot create resource for space_id:${createResourceDto.external_space_id}`,
+      );
     }
-    return successResponse("Resource has been successfully created.",createdResource)
+    return successResponse(
+      'Resource has been successfully created.',
+      createdResource,
+    );
   }
 
   @Post('/:userId/resources/:resourceId/documents/')
+  @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Get resource' })
   @ApiResponse({
     status: 201,
@@ -365,6 +375,7 @@ export class UsersController {
   }
 
   @Post('/:userId/prompts')
+  @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Create prompts' })
   @ApiResponse({
     status: 201,
@@ -390,6 +401,7 @@ export class UsersController {
   }
 
   @Post('/:userId/resources/:resourceId/documents/images')
+  @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'get list documents' })
   @ApiResponse({
     status: 201,
@@ -418,6 +430,7 @@ export class UsersController {
   }
 
   @Post('/:id/endcode-files')
+  @UseGuards(UserIdMatchGuard)
   @UseInterceptors(
     FileInterceptor('file', {
       limits: { fileSize: 10 * 1024 * 1024 },
@@ -445,6 +458,7 @@ export class UsersController {
   }
 
   @Post('/:userId/resources/:resourceId/documents/files')
+  @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Create documents' })
   @ApiResponse({
     status: 201,
@@ -462,7 +476,9 @@ export class UsersController {
         uploadMultiDto,
       );
       if (!uploadedResource) {
-        throw new BadRequestException(`Cannot upload file local to resource: ${resourceId}`)
+        throw new BadRequestException(
+          `Cannot upload file local to resource: ${resourceId}`,
+        );
       }
       return {
         success: true,
@@ -477,7 +493,9 @@ export class UsersController {
         uploadMultiDto,
       );
       if (!uploadedResource) {
-        throw new BadRequestException(`Cannot upload images to resource: ${resourceId}`)
+        throw new BadRequestException(
+          `Cannot upload images to resource: ${resourceId}`,
+        );
       }
       return {
         success: true,
@@ -492,7 +510,6 @@ export class UsersController {
   @ApiResponse({
     status: 201,
     description: 'The user has been successfully created.',
-  
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async create(@Body(new ValidationPipe()) createUserDto: CreateUserDto) {
@@ -654,7 +671,6 @@ export class UsersController {
   @ApiResponse({
     status: 200,
     description: 'The user has been successfully updated.',
-  
   })
   @ApiResponse({ status: 404, description: 'User not found' })
   update(
