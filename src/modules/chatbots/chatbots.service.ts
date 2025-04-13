@@ -138,25 +138,25 @@ export class ChatbotsService {
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder(); 
+     const reader = response.body.getReader();
+     const decoder = new TextDecoder();
 
-      const pump = async () => {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          if (value) {
-            const chunk = decoder.decode(value, { stream: true });
-            res.write(chunk); // Sen stream to client
-          }
-        }
-        res.end();
-      };
+     const pump = async () => {
+       while (true) {
+         const { done, value } = await reader.read();
+         if (done) break;
+         if (value) {
+           const chunk = decoder.decode(value);
+           res.write(chunk);
+         }
+       }
+       res.end();
+     };
 
-      pump().catch((err) => {
-        console.error('Streaming error:', err);
-        res.end();
-      });
+     pump().catch((err) => {
+       console.error('Streaming error:', err);
+       res.end();
+     });
     } catch (error) {
       console.error('Chatbot stream error:', error);
       res.status(500).json({ message: 'Failed to communicate with Coze API' });
