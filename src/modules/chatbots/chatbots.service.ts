@@ -23,8 +23,7 @@ import { ChatbotOnboarding } from '../chatbot-onboarding/entities/chatbot-onboar
 import { OnboardingSuggestedQuestion } from '../onboarding-suggested-questions/entities/onboarding-suggested-question.entity';
 import { CreateChatbotOnboardingDto } from '../chatbot-onboarding/dto/create-chatbot-onboarding.dto';
 import { UpdateChatbotOnboardingDto } from '../chatbot-onboarding/dto/update-chatbot-onboarding.dto';
-import { UpdateOnboardingSuggestedQuestionDto } from '../onboarding-suggested-questions/dto/update-onboarding-suggested-question.dto';
-import { UpdateOneQuestionDto } from '../onboarding-suggested-questions/dto/update-one.dto';
+import { Response } from 'express';
 
 @Injectable()
 export class ChatbotsService {
@@ -92,10 +91,11 @@ export class ChatbotsService {
     return chatbot;
   }
 
-  async chatWithBot(
+  async chatWithBotStream(
     externalUserId: string,
     chatbotId: string,
     chatWithChatbotDto: ChatWithChatbotDto,
+    res: Response,
   ) {
     const chatbot = await this.chatbotRepository.findOne({
       where: { id: chatbotId },
@@ -127,86 +127,39 @@ export class ChatbotsService {
         }),
       });
 
-      if (!response.ok) {
-        throw new BadRequestException(
-          `Coze API request failed with status ${response.status}: ${response.statusText}`,
+      if (!response.ok || !response.body) {
+        throw new InternalServerErrorException(
+          `Coze API request failed with status ${response.status}`,
         );
       }
 
-      if (!response.body) {
-        throw new InternalServerErrorException(
-          'No response body from Coze API',
-        );
-      }
+      // Set headers to keep stream format
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
 
       const reader = response.body.getReader();
-      const decoder = new TextDecoder('utf-8');
+      const decoder = new TextDecoder(); 
 
-      let botReply = '';
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const parts = buffer.split('\n\n');
-
-        for (let i = 0; i < parts.length - 1; i++) {
-          const part = parts[i];
-          const lines = part.split('\n');
-          let eventType = '';
-          let dataRaw = '';
-
-          for (const line of lines) {
-            if (line.startsWith('event:')) {
-              eventType = line.replace('event:', '').trim();
-            } else if (line.startsWith('data:')) {
-              dataRaw += line.replace('data:', '').trim();
-            }
-          }
-
-          if (eventType && dataRaw) {
-            try {
-              const data = JSON.parse(dataRaw);
-              console.log('Parsed event:', eventType, 'Data:', data);
-
-              if (
-                eventType === 'conversation.message.delta' &&
-                data.role === 'assistant'
-              ) {
-                botReply += data.content;
-                console.log('botReply', botReply);
-              } else if (
-                eventType === 'conversation.message.completed' &&
-                data.role === 'assistant' &&
-                data.type === 'answer'
-              ) {
-                botReply = data.content;
-                console.log('botReply', botReply);
-              } else if (eventType === 'done') {
-                console.log('Stream completed.');
-                break;
-              }
-            } catch (error) {
-              console.error('Error parsing data:', error, 'Raw data:', dataRaw);
-            }
+      const pump = async () => {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (value) {
+            const chunk = decoder.decode(value, { stream: true });
+            res.write(chunk); // Sen stream to client
           }
         }
-        buffer = parts[parts.length - 1];
-      }
+        res.end();
+      };
 
-      return botReply;
+      pump().catch((err) => {
+        console.error('Streaming error:', err);
+        res.end();
+      });
     } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof InternalServerErrorException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        `Failed to communicate with Coze API: ${error.message}`,
-      );
+      console.error('Chatbot stream error:', error);
+      res.status(500).json({ message: 'Failed to communicate with Coze API' });
     }
   }
 
@@ -501,6 +454,7 @@ export class ChatbotsService {
           await this.chatbotResourceRepository.save(toInsert);
         }
       }
+      return true;
     } catch (error) {
       console.error('Error updating bot:', error.message);
       throw new InternalServerErrorException('Failed to update chatbot.');

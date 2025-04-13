@@ -13,6 +13,7 @@ import {
   Req,
   UseInterceptors,
   UploadedFile,
+  Res,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -46,6 +47,7 @@ import { UpdateChatbotOnboardingDto } from '../chatbot-onboarding/dto/update-cha
 import { UpdateOneQuestionDto } from '../onboarding-suggested-questions/dto/update-one.dto';
 import { UserIdMatchGuard } from 'src/guards/user-id-match.guard';
 import { successResponse } from 'src/utils/response/response.util';
+import { Response } from 'express';
 
 @Controller('users')
 @UseGuards(AuthGuard)
@@ -310,11 +312,13 @@ export class UsersController {
     @Param('chatbotId') chatbotId: string,
     @Req() request: Request & { user: { [key: string]: string } },
     @Body() chatWithChatbotDto: ChatWithChatbotDto,
+    @Res({ passthrough: false }) response: Response,
   ) {
-    return await this.chatbotService.chatWithBot(
+    return await this.chatbotService.chatWithBotStream(
       request.user.external_user_id,
       chatbotId,
       chatWithChatbotDto,
+      response,
     );
   }
 
