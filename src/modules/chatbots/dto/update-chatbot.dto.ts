@@ -2,10 +2,16 @@ import { PartialType } from '@nestjs/swagger';
 import { CreateChatbotDto } from './create-chatbot.dto';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsOptional } from 'class-validator';
+import { Type } from 'class-transformer';
+import { KnowledgeDto } from './knowledge.dto';
+import { ModelConfigDto } from './model-config.dto';
 
 export class UpdateChatbotDto extends PartialType(CreateChatbotDto) {
   @IsNotEmpty({ message: 'Api token required' })
   api_token: string;
+
+  @IsOptional()
+  chatbot_name: string;
 
   @ApiProperty({
     example: 'Desciption chatbot',
@@ -15,5 +21,6 @@ export class UpdateChatbotDto extends PartialType(CreateChatbotDto) {
   description?: string;
 
   @IsOptional()
-  prompt_info?: string;
+  @Type(() => ModelConfigDto)
+  model_info_config?: ModelConfigDto;
 }

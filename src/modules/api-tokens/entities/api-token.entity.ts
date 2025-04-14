@@ -5,14 +5,12 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  JoinColumn,
-  OneToOne,
   OneToMany,
 } from 'typeorm';
 
-export enum ApiTokenStatus {
+export enum TokenStatus {
   ACTIVE = 'active',
-  REVOKED = 'revoked',
+  INACTIVE = 'inactive',
 }
 
 @Entity('api_tokens')
@@ -28,6 +26,9 @@ export class ApiToken {
 
   @Column({ type: 'text', nullable: false, unique: true })
   token: string;
+
+  @Column({ type: 'enum', enum: TokenStatus, default: TokenStatus.ACTIVE })
+  status: TokenStatus;
 
   @CreateDateColumn({
     type: 'timestamp',
@@ -49,7 +50,6 @@ export class ApiToken {
   })
   updated_at: Date;
 
-  @OneToOne(() => User)
-  @JoinColumn({ name: 'user_id' })
-  user: User;
+  @OneToMany(() => User, (user) => user.api_token)
+  users: User[];
 }

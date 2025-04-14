@@ -11,40 +11,26 @@ export class WorkspacesService {
     @InjectRepository(Workspace)
     private readonly workspaceRepository: Repository<Workspace>,
   ) {}
-  async create(createWorkspaceDto: CreateWorkspaceDto) {
-    // const response = await fetch('https://api.coze.com/api/workspaces', {
-    //   method: 'POST',
-    //   headers: {
-    //     Authorization: `Bearer pat_dcnRMS4yMyiDzDdYyvlrnMD4oBHGXAYQedh9vxTTIb1AlOBiyudEnlzAUyGiUKqt`,
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify({
-    //     name: 'Tên Workspace',
-    //     description: 'Mô tả Workspace',
-    //   }),
-    // });
-    // const data = await response.json();
-    // return data;
-  }
+  async create(createWorkspaceDto: CreateWorkspaceDto) {}
 
-  async findAllWorkspacesByUserId(userId: string) {
-    const workspaces = await this.workspaceRepository.find({
-      where: {
-        user: {
-          id: userId,
-        },
-      },
-    });
-    if (!workspaces.length) {
-      return false;
-    }
-    return workspaces;
-  }
+  // async findAllWorkspacesByUserId(userId: string) {
+  //   const workspaces = await this.workspaceRepository.find({
+  //     where: {
+  //       user: {
+  //         id: userId,
+  //       },
+  //     },
+  //   });
+  //   if (!workspaces.length) {
+  //     return false;
+  //   }
+  //   return workspaces;
+  // }
 
   async findWorkspaceByUserId(userId: string) {
     const workspace = await this.workspaceRepository.findOne({
       where: {
-        user: {
+        users: {
           id: userId,
         },
       },
@@ -55,40 +41,40 @@ export class WorkspacesService {
     return workspace;
   }
 
-  findAll() {
-    return 'This action find all';
-  }
+  // findAll() {
+  //   return 'This action find all';
+  // }
 
-  async findAllChatbotsByWorkspace(id: string) {
-    const workspace = await this.workspaceRepository.findOne({
-      where: {
-        id,
-      },
-      relations: {
-        chatbots: true,
-      },
-    });
-    if (!workspace?.chatbots) {
-      return false;
-    }
-    return workspace.chatbots;
-  }
+  // async findAllChatbotsByWorkspace(id: string) {
+  //   const workspace = await this.workspaceRepository.findOne({
+  //     where: {
+  //       id,
+  //     },
+  //     relations: {
+  //       chatbots: true,
+  //     },
+  //   });
+  //   if (!workspace?.chatbots) {
+  //     return false;
+  //   }
+  //   return workspace.chatbots;
+  // }
 
-  async findAllChatbotsByMultiWorkspaces(ids: string[]) {
-    const chatbots = await this.workspaceRepository.find({
-      where: {
-        id: In(ids),
-      },
-      relations: {
-        chatbots: true,
-      },
-      select: {
-        id: true,
-        chatbots: true,
-      },
-    });
-    return chatbots;
-  }
+  // async findAllChatbotsByMultiWorkspaces(ids: string[]) {
+  //   const chatbots = await this.workspaceRepository.find({
+  //     where: {
+  //       id: In(ids),
+  //     },
+  //     relations: {
+  //       chatbots: true,
+  //     },
+  //     select: {
+  //       id: true,
+  //       chatbots: true,
+  //     },
+  //   });
+  //   return chatbots;
+  // }
 
   async findOne(id: string) {
     const workspace = await this.workspaceRepository.findOne({

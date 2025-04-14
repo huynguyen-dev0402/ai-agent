@@ -5,8 +5,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToOne,
-  JoinColumn,
+  OneToMany,
 } from 'typeorm';
 
 export enum ModelStatus {
@@ -31,17 +30,19 @@ export class ChatbotModel {
   })
   model_name: string;
 
-  @Column({ type: 'text', nullable: true, collation: 'utf8mb4_unicode_ci' })
+  @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ type: 'int', nullable: true, collation: 'utf8mb4_unicode_ci' })
+  @Column({ type: 'text', nullable: true })
+  icon_url: string;
+
+  @Column({ type: 'int', nullable: true })
   context_length: number;
 
   @Column({
     type: 'varchar',
     length: 255,
     nullable: true,
-    collation: 'utf8mb4_unicode_ci',
   })
   features: string;
 
@@ -49,7 +50,6 @@ export class ChatbotModel {
     type: 'varchar',
     length: 255,
     nullable: true,
-    collation: 'utf8mb4_unicode_ci',
   })
   provider: string;
 
@@ -81,7 +81,6 @@ export class ChatbotModel {
   })
   updated_at: Date;
 
-  @OneToOne(() => Chatbot)
-  @JoinColumn({ name: 'chatbot_id' })
-  chatbot: Chatbot;
+  @OneToMany(() => Chatbot, (chatbot) => chatbot.model)
+  chatbots: Chatbot[];
 }

@@ -10,8 +10,10 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   JoinColumn,
+  OneToMany,
   OneToOne,
 } from 'typeorm';
+import { ChatbotResource } from './chatbot-resources.entity';
 
 export enum ChatbotStatus {
   DRAFT = 'draft',
@@ -30,16 +32,13 @@ export class Chatbot {
   })
   chatbot_name: string;
 
-  @Column({ name: 'model_id', default: '1716293913' })
-  model_id: string;
-
   @Column({ type: 'varchar', default: '1024' })
   connector_id: string;
 
   @Column({ type: 'text', nullable: true })
   icon_url?: string;
 
-  @Column({ type: 'varchar', nullable: true })
+  @Column({ type: 'varchar', nullable: true, unique: true })
   external_bot_id?: string;
 
   @Column({ type: 'text', nullable: true })
@@ -65,13 +64,24 @@ export class Chatbot {
   })
   updated_at: Date;
 
-  @ManyToOne(() => Workspace, (workspace) => workspace.chatbots, {
+  @ManyToOne(() => User, (user) => user.chatbots, {
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'workspace_id' })
-  workspace: Workspace;
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 
-  @OneToOne(() => ChatbotModel)
+  @ManyToOne(() => ChatbotModel, (model) => model.chatbots, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'model_id' })
   model: ChatbotModel;
+
+  @OneToOne(() => ChatbotOnboarding, (onboarding) => onboarding.chatbot)
+  onboarding: ChatbotOnboarding;
+
+  @OneToMany(
+    () => ChatbotResource,
+    (chatbot_resources) => chatbot_resources.chatbot,
+  )
+  chatbot_resources: ChatbotResource[];
 }

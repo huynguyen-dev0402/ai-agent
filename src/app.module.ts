@@ -23,6 +23,14 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module';
 import { ChatbotPublishedModule } from './modules/chatbot_published/chatbot_published.module';
 import { Workspace } from './modules/workspaces/entities/workspace.entity';
 import { ChatbotPublished } from './modules/chatbot_published/entities/chatbot_published.entity';
+import { ResourcesModule } from './modules/resources/resources.module';
+import { Resource } from './modules/resources/entities/resource.entity';
+import { UploadModule } from './modules/upload/upload.module';
+import { DocumentsModule } from './modules/documents/documents.module';
+import { Document } from './modules/documents/entities/document.entity';
+import { ChatbotPromptModule } from './modules/chatbot-prompt/chatbot-prompt.module';
+import { ChatbotPrompt } from './modules/chatbot-prompt/entities/chatbot-prompt.entity';
+import { ChatbotResource } from './modules/chatbots/entities/chatbot-resources.entity';
 
 @Module({
   imports: [
@@ -36,17 +44,7 @@ import { ChatbotPublished } from './modules/chatbot_published/entities/chatbot_p
       username: process.env.DATABASE_USERNAME,
       password: process.env.DATABASE_PASSWORD,
       database: process.env.DATABASE_NAME,
-      entities: [
-        User,
-        Chatbot,
-        ApiToken,
-        Workspace,
-        ChatbotPublished,
-        ChatbotModel,
-        ChatbotConfig,
-        ChatbotOnboarding,
-        OnboardingSuggestedQuestion,
-      ],
+      entities: [__dirname + '/**/*.entity{.ts,.js}'],
       //synchronize: true,
       //logging: true,
     }),
@@ -61,6 +59,10 @@ import { ChatbotPublished } from './modules/chatbot_published/entities/chatbot_p
     OnboardingSuggestedQuestionsModule,
     WorkspacesModule,
     ChatbotPublishedModule,
+    ResourcesModule,
+    UploadModule,
+    DocumentsModule,
+    ChatbotPromptModule,
   ],
   controllers: [AppController],
   providers: [AppService],

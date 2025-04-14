@@ -1,5 +1,8 @@
 import { Exclude } from 'class-transformer';
 import { ApiToken } from 'src/modules/api-tokens/entities/api-token.entity';
+import { ChatbotPrompt } from 'src/modules/chatbot-prompt/entities/chatbot-prompt.entity';
+import { Chatbot } from 'src/modules/chatbots/entities/chatbot.entity';
+import { Resource } from 'src/modules/resources/entities/resource.entity';
 import { Workspace } from 'src/modules/workspaces/entities/workspace.entity';
 import {
   Entity,
@@ -8,6 +11,8 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 
 export enum UserStatus {
@@ -25,6 +30,9 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ type: 'varchar', nullable: false, default: '7492336468052952080' })
+  external_user_id: string;
+
   @Column({ type: 'varchar', nullable: false })
   username: string;
 
@@ -40,7 +48,7 @@ export class User {
   @Column({ type: 'varchar', unique: true, nullable: true })
   domain?: string;
 
-  @Column({ type: 'text', unique: true, nullable: true })
+  @Column({ type: 'text', nullable: true })
   address?: string;
 
   @Exclude()
@@ -73,6 +81,24 @@ export class User {
   })
   updated_at: Date;
 
-  @OneToMany(() => Workspace, (workspace) => workspace.user)
-  workspaces: Workspace[];
+  @ManyToOne(() => Workspace, (workspace) => workspace.users, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'workspace_id' })
+  workspace: Workspace;
+
+  @ManyToOne(() => ApiToken, (api_token) => api_token.users, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'token_id' })
+  api_token: ApiToken;
+
+  @OneToMany(() => Chatbot, (chatbot) => chatbot.user)
+  chatbots: Chatbot[];
+
+  @OneToMany(() => Resource, (resource) => resource.user)
+  resources: Resource[];
+
+  @OneToMany(() => ChatbotPrompt, (prompt) => prompt.user)
+  prompts: ChatbotPrompt[];
 }
