@@ -13,7 +13,7 @@ import { CreateApiTokenDto } from './dto/create-api-token.dto';
 import { UpdateApiTokenDto } from './dto/update-api-token.dto';
 import { AuthGuard } from '../auth/guards/jwt-auth.guard';
 
-@UseGuards(AuthGuard)
+//@UseGuards(AuthGuard)
 @Controller('api-tokens')
 export class ApiTokensController {
   constructor(private readonly apiTokensService: ApiTokensService) {}
