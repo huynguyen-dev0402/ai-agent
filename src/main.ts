@@ -2,6 +2,11 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as bodyParser from 'body-parser';
+import crypto from 'crypto';
+
+if (!global.crypto) {
+  global.crypto = crypto as any;
+}
 
 export const createApp = async () => {
   const app = await NestFactory.create(AppModule);

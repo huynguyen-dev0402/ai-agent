@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreateApiTokenDto } from './dto/create-api-token.dto';
 import { UpdateApiTokenDto } from './dto/update-api-token.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -14,15 +14,43 @@ export class ApiTokensService {
     @InjectRepository(ApiToken)
     private readonly apiTokenRepository: Repository<ApiToken>,
     private readonly jwtService: JwtService,
+    
   ) {}
+  private readonly logger = new Logger(ApiTokensService.name);
 
   @Cron('*/10 * * * *')
   async refreshAccessTokenJob() {
-    const accessToken = await this.getAccessToken();
+    try {
+      this.logger.log('Starting refreshAccessTokenJob');
 
-    await this.apiTokenRepository.update(1, {
-      token: accessToken.access_token,
-    });
+      const accessToken = await this.getAccessToken();
+      if (!accessToken?.access_token) {
+        this.logger.error('Failed to retrieve access token');
+        return;
+      }
+
+      const tokenEntity = await this.apiTokenRepository.findOne({
+        where: {
+          id: '1',
+        },
+      });
+      if (!tokenEntity) {
+        this.logger.error('Token with ID 1 not found');
+        return;
+      }
+
+      await this.apiTokenRepository.update(1, {
+        token: accessToken.access_token,
+        updated_at: new Date(),
+      });
+
+      this.logger.log('Access token updated successfully');
+    } catch (error) {
+      this.logger.error(
+        `Failed to refresh access token: ${error.message}`,
+        error.stack,
+      );
+    }
   }
 
   generateJWT(): string {
