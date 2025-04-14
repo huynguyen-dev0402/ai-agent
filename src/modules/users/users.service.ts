@@ -12,7 +12,7 @@ import { hashPassword } from 'src/utils/hash-password/hashing.util';
 import { generateUniqueString } from 'src/utils/generate-random/generate-username.util';
 import { plainToInstance } from 'class-transformer';
 import { Workspace } from '../workspaces/entities/workspace.entity';
-import { ApiToken } from '../api-tokens/entities/api-token.entity';
+import { ApiToken, TokenStatus } from '../api-tokens/entities/api-token.entity';
 
 @Injectable()
 export class UsersService {
@@ -74,19 +74,34 @@ export class UsersService {
     return result?.id || null;
   }
 
-  async getApiTokenForUser(id: string) {
+  async getApiTokenForUser(id: string): Promise<string> {
     const user = await this.userRepository.findOne({
+      where: { id },
+      relations: { api_token: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.api_token?.token) {
+      return user.api_token.token;
+    }
+
+    const apiToken = await this.apiTokenRepository.findOne({
       where: {
-        id,
-      },
-      relations: {
-        api_token: true,
+        id: '1',
+        status: TokenStatus.ACTIVE,
       },
     });
-    if (!user?.api_token?.token) {
-      throw new BadRequestException('Cannot get API token');
+
+    if (!apiToken) {
+      throw new NotFoundException('Api token not found');
     }
-    return user.api_token.token;
+
+    await this.userRepository.update(id, { api_token: { id: apiToken.id } });
+
+    return apiToken.token;
   }
 
   async findAllResourceForUser(id: string) {
