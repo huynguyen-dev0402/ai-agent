@@ -83,42 +83,10 @@ export class UsersService {
         api_token: true,
       },
     });
-    if (user?.api_token?.token) {
-      return {
-        token: user?.api_token?.token,
-      };
+    if (!user?.api_token?.token) {
+      throw new BadRequestException('Cannot get API token');
     }
-    const token = await this.getTokenWithFewestUsers();
-
-    if (!token) {
-      throw new Error('No available API tokens found');
-    }
-    const result = await this.userRepository
-      .createQueryBuilder()
-      .update(User)
-      .set({ api_token: token })
-      .where('id = :id', { id })
-      .execute();
-
-    if (result.affected === 0) {
-      throw new Error('User not found or update failed');
-    }
-
-    return token;
-  }
-
-  private async getTokenWithFewestUsers() {
-    const result = await this.apiTokenRepository
-      .createQueryBuilder('api_tokens')
-      .leftJoin('users', 'u', 'u.token_id = api_tokens.id')
-      .where('api_tokens.status = :status', { status: 'active' })
-      .groupBy('api_tokens.id')
-      .orderBy('COUNT(u.id)', 'ASC')
-      .limit(1)
-      .select('api_tokens.*')
-      .getRawOne();
-
-    return result || null;
+    return user.api_token.token;
   }
 
   async findAllResourceForUser(id: string) {
