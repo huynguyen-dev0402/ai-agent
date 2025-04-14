@@ -14,7 +14,6 @@ export class ApiTokensService {
     @InjectRepository(ApiToken)
     private readonly apiTokenRepository: Repository<ApiToken>,
     private readonly jwtService: JwtService,
-    
   ) {}
   private readonly logger = new Logger(ApiTokensService.name);
 
@@ -60,7 +59,7 @@ export class ApiTokensService {
       iss: process.env.APP_ID_EXTERNAL,
       aud: process.env.APP_ENDPOINT,
       iat: now,
-      exp: now + 900,
+      exp: now + 600,
       jti: uuidv4(),
     };
 
