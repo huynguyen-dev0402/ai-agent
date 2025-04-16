@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  Logger
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -18,7 +18,6 @@ import { generateUniqueString } from 'src/utils/generate-random/generate-usernam
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
-
 
 @Injectable()
 export class PasswordResetService {
@@ -67,8 +66,13 @@ export class PasswordResetService {
         otp,
       },
       {
-        removeOnComplete: true,
-        removeOnFail: true,
+        attempts: 3, // thử lại 3 lần nếu lỗi
+        backoff: {
+          type: 'exponential',
+          delay: 3000, // 3s
+        },
+        removeOnComplete: true, // tự xóa nếu thành công (default)
+        removeOnFail: false, // giữ lại job lỗi để kiểm tra log
       },
     );
 

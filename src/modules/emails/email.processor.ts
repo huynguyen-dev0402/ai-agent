@@ -10,6 +10,6 @@ export class MailProcessor extends WorkerHost {
 
   async process(job: Job): Promise<any> {
     const { to, subject, otp } = job.data;
-    return this.mailService.sendMail(to, subject, `Mã OTP của bạn là: ${otp}`);
+    return await this.mailService.sendMail(to, subject, `Mã OTP của bạn là: ${otp}`);
   }
 }
