@@ -19,6 +19,8 @@ import { UploadModule } from './modules/upload/upload.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { ChatbotPromptModule } from './modules/chatbot-prompt/chatbot-prompt.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { PasswordResetModule } from './modules/password-reset/password-reset.module';
+import { MailModule } from './modules/emails/email.module';
 
 @Module({
   imports: [
@@ -52,6 +54,8 @@ import { ScheduleModule } from '@nestjs/schedule';
     UploadModule,
     DocumentsModule,
     ChatbotPromptModule,
+    PasswordResetModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],
