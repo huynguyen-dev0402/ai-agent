@@ -163,6 +163,25 @@ export class UsersService {
     return plainToInstance(User, user);
   }
 
+  async updatePassword(email: string, password: string) {
+    const user = await this.userRepository.findOne({
+      where: {
+        email,
+      },
+    });
+    if (!user) {
+      return false;
+    }
+
+    const data = await this.userRepository.update(user.id, {
+      password: password,
+    });
+    if (!data.affected) {
+      return false;
+    }
+    return true;
+  }
+
   update(id: string, updateUserDto: UpdateUserDto) {
     return `This action updates a #${id} user`;
   }
