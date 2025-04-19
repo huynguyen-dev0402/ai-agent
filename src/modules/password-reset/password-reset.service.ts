@@ -10,7 +10,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { PasswordReset } from './entities/password-reset.entity';
 import { UsersService } from '../users/users.service';
 import { hashPassword } from 'src/utils/hash-password/hashing.util';
@@ -21,29 +20,12 @@ import { VerifyOtpDto } from './dto/verify-otp.dto';
 
 @Injectable()
 export class PasswordResetService {
-  private readonly logger = new Logger(PasswordResetService.name);
   constructor(
     @InjectRepository(PasswordReset)
     private readonly resetRepo: Repository<PasswordReset>,
     @InjectQueue('mail') private mailQueue: Queue,
     private readonly userService: UsersService,
   ) {}
-  @Cron(CronExpression.EVERY_MINUTE)
-  async handleCron() {
-    const now = new Date();
-    const result = await this.resetRepo
-      .createQueryBuilder()
-      .delete()
-      .from(PasswordReset)
-      .where('expires_at < :now', { now })
-      .execute();
-
-    if (result.affected && result.affected > 0) {
-      this.logger.log(
-        `Deleted ${result.affected} expired password reset entries`,
-      );
-    }
-  }
 
   async requestReset(forgotPasswordDto: ForgotPasswordDto) {
     const { email } = forgotPasswordDto;
@@ -108,7 +90,7 @@ export class PasswordResetService {
     }
 
     // Remove OTP used
-    await this.resetRepo.delete(email);
+   await this.resetRepo.delete({ email });
 
     return true;
   }
