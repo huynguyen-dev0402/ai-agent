@@ -3,7 +3,7 @@ import {
   hashPassword,
 } from 'src/utils/hash-password/hashing.util';
 import { UsersService } from './../users/users.service';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
 import { InjectRedis } from '@nestjs-modules/ioredis';
@@ -53,7 +53,14 @@ export class AuthService {
   }
 
   decodeToken(token: string) {
-    return this.jwtService.decode(token);
+    try {
+      return this.jwtService.verify(token);
+    } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        throw new UnauthorizedException('Token has expired');
+      }
+      throw new UnauthorizedException('Invalid token');
+    }
   }
 
   async createRefreshToken(user: User) {

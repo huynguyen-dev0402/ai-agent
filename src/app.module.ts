@@ -18,9 +18,9 @@ import { ResourcesModule } from './modules/resources/resources.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { ChatbotPromptModule } from './modules/chatbot-prompt/chatbot-prompt.module';
-import { ScheduleModule } from '@nestjs/schedule';
 import { PasswordResetModule } from './modules/password-reset/password-reset.module';
 import { MailModule } from './modules/emails/email.module';
+import { CronJobsModule } from './modules/cron-jobs/cron-jobs.module';
 
 @Module({
   imports: [
@@ -38,7 +38,6 @@ import { MailModule } from './modules/emails/email.module';
       //synchronize: true,
       //logging: true,
     }),
-    ScheduleModule.forRoot(),
     UsersModule,
     AuthModule,
     ChatbotsModule,
@@ -56,6 +55,7 @@ import { MailModule } from './modules/emails/email.module';
     ChatbotPromptModule,
     PasswordResetModule,
     MailModule,
+    CronJobsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

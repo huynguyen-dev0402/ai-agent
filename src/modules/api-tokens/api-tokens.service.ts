@@ -6,7 +6,6 @@ import { ApiToken } from './entities/api-token.entity';
 import { Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { JwtService } from '@nestjs/jwt';
-import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class ApiTokensService {
@@ -15,42 +14,6 @@ export class ApiTokensService {
     private readonly apiTokenRepository: Repository<ApiToken>,
     private readonly jwtService: JwtService,
   ) {}
-  private readonly logger = new Logger(ApiTokensService.name);
-
-  @Cron('*/10 * * * *')
-  async refreshAccessTokenJob() {
-    try {
-      this.logger.log('Starting refreshAccessTokenJob');
-
-      const accessToken = await this.getAccessToken();
-      if (!accessToken?.access_token) {
-        this.logger.error('Failed to retrieve access token');
-        return;
-      }
-
-      const tokenEntity = await this.apiTokenRepository.findOne({
-        where: {
-          id: '1',
-        },
-      });
-      if (!tokenEntity) {
-        this.logger.error('Token with ID 1 not found');
-        return;
-      }
-
-      await this.apiTokenRepository.update(1, {
-        token: accessToken.access_token,
-        updated_at: new Date(),
-      });
-
-      this.logger.log('Access token updated successfully');
-    } catch (error) {
-      this.logger.error(
-        `Failed to refresh access token: ${error.message}`,
-        error.stack,
-      );
-    }
-  }
 
   generateJWT(): string {
     const now = Math.floor(Date.now() / 1000);

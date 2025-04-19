@@ -14,7 +14,6 @@ import { ScheduleModule } from '@nestjs/schedule';
       isGlobal: true,
     }),
     TypeOrmModule.forFeature([ApiToken]),
-    ScheduleModule.forRoot(),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
