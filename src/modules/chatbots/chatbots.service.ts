@@ -286,7 +286,7 @@ export class ChatbotsService {
     const chatbot = {
       ...createChatbotDto,
       user_id: userId,
-      model_id: '1716293913',
+      model_id: '1722479058',
       model,
       user,
     };
