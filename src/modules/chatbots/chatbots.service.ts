@@ -24,19 +24,22 @@ import { OnboardingSuggestedQuestion } from '../onboarding-suggested-questions/e
 import { CreateChatbotOnboardingDto } from '../chatbot-onboarding/dto/create-chatbot-onboarding.dto';
 import { UpdateChatbotOnboardingDto } from '../chatbot-onboarding/dto/update-chatbot-onboarding.dto';
 import { Response } from 'express';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class ChatbotsService {
   constructor(
     @InjectRepository(Chatbot)
     private readonly chatbotRepository: Repository<Chatbot>,
-    private readonly UserService: UsersService,
+    private readonly userService: UsersService,
     private readonly chatbotModelsService: ChatbotModelsService,
     private readonly workspaceService: WorkspacesService,
     @InjectRepository(ChatbotResource)
     private chatbotResourceRepository: Repository<ChatbotResource>,
     @InjectRepository(Resource)
     private resourceRepository: Repository<Resource>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
     @InjectRepository(ChatbotOnboarding)
     private chatbotOnboardingRepository: Repository<ChatbotOnboarding>,
     @InjectRepository(OnboardingSuggestedQuestion)
@@ -102,7 +105,7 @@ export class ChatbotsService {
     });
 
     if (!chatbot) {
-      throw new BadRequestException('Chatbot not found');
+      throw new NotFoundException('Chatbot not found');
     }
 
     try {
@@ -138,25 +141,113 @@ export class ChatbotsService {
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
 
-     const reader = response.body.getReader();
-     const decoder = new TextDecoder();
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
 
-     const pump = async () => {
-       while (true) {
-         const { done, value } = await reader.read();
-         if (done) break;
-         if (value) {
-           const chunk = decoder.decode(value);
-           res.write(chunk);
-         }
-       }
-       res.end();
-     };
+      const pump = async () => {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (value) {
+            const chunk = decoder.decode(value);
+            res.write(chunk);
+          }
+        }
+        res.end();
+      };
 
-     pump().catch((err) => {
-       console.error('Streaming error:', err);
-       res.end();
-     });
+      pump().catch((err) => {
+        console.error('Streaming error:', err);
+        res.end();
+      });
+    } catch (error) {
+      console.error('Chatbot stream error:', error);
+      res.status(500).json({ message: 'Failed to communicate with Coze API' });
+    }
+  }
+
+  async chatWithBotStreamIframe(
+    userId: string,
+    chatbotId: string,
+    message: string,
+    res: Response,
+  ) {
+    const chatbot = await this.chatbotRepository.findOne({
+      where: { id: chatbotId },
+    });
+
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['api_token'],
+    });
+
+    if (!chatbot) {
+      throw new NotFoundException('Chatbot not found');
+    }
+
+    if (!user?.external_user_id) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (!user?.api_token.token) {
+      throw new NotFoundException('User not found');
+    }
+
+    try {
+      const response = await fetch('https://api.coze.com/v3/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user.api_token.token}`,
+        },
+        body: JSON.stringify({
+          bot_id: chatbot.external_bot_id,
+          user_id: user.external_user_id,
+          stream: true,
+          auto_save_history: true,
+          additional_messages: [
+            {
+              role: 'user',
+              content: message,
+              content_type: 'text',
+            },
+          ],
+        }),
+      });
+
+      if (!response.ok || !response.body) {
+        throw new InternalServerErrorException(
+          `Coze API request failed with status ${response.status}`,
+        );
+      }
+      //console.log(response);
+
+      // Set headers to keep stream format
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      const pump = async () => {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (value) {
+            const chunk = decoder.decode(value);
+            res.write(chunk);
+          }
+        }
+        res.end();
+      };
+
+      //console.log(pump);
+
+      pump().catch((err) => {
+        console.error('Streaming error:', err);
+        res.end();
+      });
     } catch (error) {
       console.error('Chatbot stream error:', error);
       res.status(500).json({ message: 'Failed to communicate with Coze API' });
@@ -191,7 +282,7 @@ export class ChatbotsService {
     if (!model) {
       throw new NotFoundException('Model not found');
     }
-    const user = await this.UserService.findOne(userId);
+    const user = await this.userService.findOne(userId);
     const chatbot = {
       ...createChatbotDto,
       user_id: userId,

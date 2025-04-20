@@ -11,6 +11,7 @@ import { ChatbotResource } from './entities/chatbot-resources.entity';
 import { Resource } from '../resources/entities/resource.entity';
 import { ChatbotOnboarding } from '../chatbot-onboarding/entities/chatbot-onboarding.entity';
 import { OnboardingSuggestedQuestion } from '../onboarding-suggested-questions/entities/onboarding-suggested-question.entity';
+import { User } from '../users/entities/user.entity';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { OnboardingSuggestedQuestion } from '../onboarding-suggested-questions/e
       Resource,
       ChatbotOnboarding,
       OnboardingSuggestedQuestion,
+      User
     ]),
     AuthModule,
     WorkspacesModule,

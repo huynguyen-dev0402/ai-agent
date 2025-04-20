@@ -9,6 +9,7 @@ import {
   ValidationPipe,
   BadRequestException,
   Query,
+  Res,
 } from '@nestjs/common';
 import { ChatbotsService } from '../chatbots/chatbots.service';
 import { CreateChatbotDto } from '../chatbots/dto/create-chatbot.dto';
@@ -22,9 +23,10 @@ import {
 } from '@nestjs/swagger';
 import { UserIdMatchGuard } from 'src/guards/user-id-match.guard';
 import { ChatWithChatbotDto } from './dto/chat-with-chatbot.dto';
+import { Response } from 'express';
 
 @Controller('users/:userId/chatbots')
-@UseGuards(AuthGuard, UserIdMatchGuard)
+//@UseGuards(AuthGuard, UserIdMatchGuard)
 @ApiTags('Chatbots')
 @ApiBearerAuth('access-token')
 export class ChatbotsController {
@@ -40,4 +42,18 @@ export class ChatbotsController {
   //       chatWithChatbotDto,
   //     );
   //   }
+  @Post('/:chatbotId/iframe/chat')
+  async chatWithBot(
+    @Param('chatbotId') chatbotId: string,
+    @Param('userId') userId: string,
+    @Body() body: any,
+    @Res({ passthrough: false }) response: Response,
+  ) {
+    return await this.chatbotsService.chatWithBotStreamIframe(
+      userId,
+      chatbotId,
+      body.message,
+      response,
+    );
+  }
 }

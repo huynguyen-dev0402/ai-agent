@@ -90,7 +90,7 @@ export class PasswordResetService {
     }
 
     // Remove OTP used
-   await this.resetRepo.delete({ email });
+    await this.resetRepo.delete({ email });
 
     return true;
   }
