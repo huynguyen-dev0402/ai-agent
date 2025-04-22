@@ -26,10 +26,11 @@ jobs:
 
       - name: Deploy to EC2
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME_EC2 }}@${{ secrets.HOST_EC2 }} << 'EOF'
+          ssh ${{ secrets.USERNAME_EC2 }}@${{ secrets.HOST_EC2 }} << 'EOF'
             cd /home/ec2-user/ai-agent-be
             git pull origin main
             pnpm install
             pnpm build
-            pm2 restart all || pm2 start dist/main.js --name ai-agent-be
+            pm2 delete ai-agent-backend || true
+            pm2 start dist/lambda.js --name ai-agent-backend
           EOF
