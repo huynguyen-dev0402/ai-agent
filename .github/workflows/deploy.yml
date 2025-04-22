@@ -16,13 +16,13 @@ jobs:
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.PRIVATE_KEY_EC2 }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.HOST_EC2 }} >> ~/.ssh/known_hosts
 
       - name: Deploy to EC2
         run: |
-          ssh ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh ${{ secrets.USERNAME_EC2 }}@${{ secrets.HOST_EC2 }} << 'EOF'
             cd /home/ec2-user/ai-agent-be
             git pull origin main
             pnpm install
