@@ -277,7 +277,7 @@ export class ChatbotsService {
     userId: string,
     createChatbotDto: CreateChatbotDto,
   ) {
-    const model = await this.chatbotModelsService.findOne('1716293913');
+    const model = await this.chatbotModelsService.findOne('1722479058');
 
     if (!model) {
       throw new NotFoundException('Model not found');
@@ -286,7 +286,7 @@ export class ChatbotsService {
     const chatbot = {
       ...createChatbotDto,
       user_id: userId,
-      model_id: '1716293913',
+      model_id: '1722479058',
       model,
       user,
     };
