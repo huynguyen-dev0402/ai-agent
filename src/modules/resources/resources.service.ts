@@ -89,7 +89,6 @@ export class ResourcesService {
           },
           body: JSON.stringify({
             dataset_id: resource.external_resource_id,
-            format_type: Number(uploadMultiDto.format_type),
             document_bases: [
               {
                 name: uploadMultiDto.name_document,
