@@ -32,5 +32,5 @@ jobs:
             pnpm install
             pnpm build
             pm2 delete ai-agent-backend || true
-            pm2 start dist/lambda.js --name ai-agent-backend
+            pm2 start dist/main.js --name ai-agent-backend
           EOF
