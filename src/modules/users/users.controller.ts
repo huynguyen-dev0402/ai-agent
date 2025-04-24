@@ -22,6 +22,7 @@ import { AuthGuard } from '../auth/guards/jwt-auth.guard';
 import {
   ApiBearerAuth,
   ApiOperation,
+  ApiParam,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -90,6 +91,7 @@ export class UsersController {
   @Post('/:id/chatbots')
   @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Create a chatbot' })
+  @ApiParam({ name: 'userId', required: true, description: 'ID of the user' })
   @ApiResponse({ status: 201, description: 'Chatbot created successfully.' })
   @ApiResponse({ status: 400, description: 'Failed to create chatbot.' })
   async createChatbotByUser(
@@ -109,6 +111,12 @@ export class UsersController {
   @Patch('/:userId/chatbots/:chatbotId')
   @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Update a chatbot' })
+  @ApiParam({ name: 'userId', required: true, description: 'ID of the user' })
+  @ApiParam({
+    name: 'chatbotId',
+    required: true,
+    description: 'ID of the chatbot',
+  })
   @ApiResponse({ status: 200, description: 'Chatbot updated successfully.' })
   @ApiResponse({ status: 400, description: 'Failed to update chatbot.' })
   async updateChatbotByUser(
@@ -130,6 +138,12 @@ export class UsersController {
   @Patch('/:userId/chatbots/:chatbotId/config-basic')
   @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Update basic configuration of chatbot' })
+  @ApiParam({ name: 'userId', required: true, description: 'ID of the user' })
+  @ApiParam({
+    name: 'chatbotId',
+    required: true,
+    description: 'ID of the chatbot',
+  })
   @ApiResponse({ status: 200, description: 'Basic info updated successfully.' })
   @ApiResponse({ status: 400, description: 'Failed to update basic info.' })
   async configChatbotByUser(
@@ -153,6 +167,12 @@ export class UsersController {
   @Patch('/:userId/chatbots/:chatbotId/import-prompts')
   @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Import prompt to chatbot' })
+  @ApiParam({ name: 'userId', required: true, description: 'ID of the user' })
+  @ApiParam({
+    name: 'chatbotId',
+    required: true,
+    description: 'ID of the chatbot',
+  })
   @ApiResponse({ status: 200, description: 'Prompt imported successfully.' })
   @ApiResponse({ status: 400, description: 'Failed to import prompt.' })
   async importPrompt(
@@ -176,6 +196,12 @@ export class UsersController {
   @Patch('/:userId/chatbots/:chatbotId/import-documents')
   @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Import knowledge to chatbot' })
+  @ApiParam({ name: 'userId', required: true, description: 'ID of the user' })
+  @ApiParam({
+    name: 'chatbotId',
+    required: true,
+    description: 'ID of the chatbot',
+  })
   @ApiResponse({
     status: 200,
     description: 'Knowledge imported successfully.',
@@ -199,6 +225,12 @@ export class UsersController {
   @Post('/:userId/chatbots/:chatbotId/onboarding')
   @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Create onboarding for chatbot' })
+  @ApiParam({ name: 'userId', required: true, description: 'ID of the user' })
+  @ApiParam({
+    name: 'chatbotId',
+    required: true,
+    description: 'ID of the chatbot',
+  })
   @ApiResponse({
     status: 200,
     description: 'Onboarding created successfully.',
@@ -226,6 +258,17 @@ export class UsersController {
   @Patch('/:userId/chatbots/:chatbotId/onboarding/:onboardingId')
   @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Update onboarding for chatbot' })
+  @ApiParam({ name: 'userId', required: true, description: 'ID of the user' })
+  @ApiParam({
+    name: 'chatbotId',
+    required: true,
+    description: 'ID of the chatbot',
+  })
+  @ApiParam({
+    name: 'onboardingId',
+    required: true,
+    description: 'ID of the onboarding item',
+  })
   @ApiResponse({
     status: 200,
     description: 'Onboarding updated successfully.',
@@ -256,6 +299,12 @@ export class UsersController {
   @Post('/:userId/chatbots/:chatbotId/publish')
   @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Publish a chatbot' })
+  @ApiParam({ name: 'userId', required: true, description: 'ID of the user' })
+  @ApiParam({
+    name: 'chatbotId',
+    required: true,
+    description: 'ID of the chatbot',
+  })
   @ApiResponse({
     status: 200,
     description: 'Chatbot published successfully.',
@@ -282,6 +331,7 @@ export class UsersController {
   @Post('/:userId/resources')
   @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Create resource for user' })
+  @ApiParam({ name: 'userId', required: true, description: 'ID of the user' })
   @ApiResponse({
     status: 200,
     description: 'Resource created successfully.',
@@ -308,6 +358,12 @@ export class UsersController {
   @Post('/:userId/resources/:resourceId/documents/')
   @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Get list of documents for a resource' })
+  @ApiParam({ name: 'userId', required: true, description: 'ID of the user' })
+  @ApiParam({
+    name: 'resourceId',
+    required: true,
+    description: 'ID of the resource',
+  })
   @ApiResponse({
     status: 200,
     description: 'Documents retrieved successfully.',
@@ -332,6 +388,7 @@ export class UsersController {
   @Post('/:userId/prompts')
   @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Create prompts for chatbot' })
+  @ApiParam({ name: 'userId', required: true, description: 'ID of the user' })
   @ApiResponse({
     status: 201,
     description: 'Prompts created successfully.',
@@ -356,6 +413,12 @@ export class UsersController {
   @Post('/:userId/resources/:resourceId/documents/images')
   @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Get list of images uploaded for a resource' })
+  @ApiParam({ name: 'userId', required: true, description: 'ID of the user' })
+  @ApiParam({
+    name: 'resourceId',
+    required: true,
+    description: 'ID of the resource',
+  })
   @ApiResponse({
     status: 200,
     description: 'Images retrieved successfully.',
@@ -413,6 +476,12 @@ export class UsersController {
   @Post('/:userId/resources/:resourceId/documents/files')
   @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Upload file to resource' })
+  @ApiParam({ name: 'userId', required: true, description: 'ID of the user' })
+  @ApiParam({
+    name: 'resourceId',
+    required: true,
+    description: 'ID of the resource',
+  })
   @ApiResponse({
     status: 201,
     description: 'File has been successfully uploaded to resource.',
@@ -565,6 +634,11 @@ export class UsersController {
   @Get('/profile/resources/:resourceId')
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Get a single resource information' })
+  @ApiParam({
+    name: 'resourceId',
+    required: true,
+    description: 'ID of the resource',
+  })
   @ApiResponse({
     status: 200,
     description: 'Resource retrieved successfully',
@@ -611,6 +685,11 @@ export class UsersController {
   @Get('/profile/chatbots/:chatbotId')
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Get details of a specific chatbot' })
+  @ApiParam({
+    name: 'chatbotId',
+    required: true,
+    description: 'ID of the chatbot',
+  })
   @ApiResponse({
     status: 200,
     description: 'Chatbot details retrieved successfully',
