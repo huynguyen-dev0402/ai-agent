@@ -453,11 +453,16 @@ export class UsersController {
       throw new BadRequestException('No file uploaded');
     }
 
+    const fileExt = extname(file.originalname).toLowerCase(); // e.g., ".txt"
+    const extension = fileExt.replace('.', ''); // e.g., "txt"
     const base64 = file.buffer.toString('base64');
+    const dataUrl = `data:${file.mimetype};base64,${base64}`;
+
     return {
       filename: file.originalname,
-      mimetype: file.mimetype,
+      mimetype: extension,
       base64,
+      dataUrl,
     };
   }
 
