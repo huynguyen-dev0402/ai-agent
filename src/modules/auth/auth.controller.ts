@@ -32,7 +32,10 @@ export class AuthController {
   ) {}
 
   @Post('/refresh-token')
-  @ApiOperation({ summary: 'Refresh access token' })
+  @ApiOperation({
+    summary: 'Refresh access token',
+    description: 'Cung cấp refresh token để lấy access token mới',
+  })
   @ApiResponse({ status: 200, description: 'New access token generated' })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
   async refreshToken(@Body() body: { refreshToken: string }) {
@@ -44,8 +47,12 @@ export class AuthController {
   }
 
   @Delete('/revoke-refresh-token')
-  @ApiOperation({ summary: 'Revoke refresh token' })
+  @ApiOperation({
+    summary: 'Revoke refresh token',
+    description: 'Thu hồi refresh token hiện tại',
+  })
   @ApiResponse({ status: 200, description: 'Token revoked successfully' })
+  @ApiResponse({ status: 400, description: 'Something wrong' })
   revokeRefreshToken(@Body() { refreshToken }) {
     const response = this.authService.revokeRefreshToken(refreshToken);
     if (!response) {
@@ -58,9 +65,15 @@ export class AuthController {
   }
 
   @Post('/register')
-  @ApiOperation({ summary: 'Register new user' })
+  @ApiOperation({
+    summary: 'Register new user',
+    description: 'Đăng ký người dùng thông thường (user)',
+  })
   @ApiResponse({ status: 201, description: 'User registered successfully' })
-  @ApiResponse({ status: 400, description: 'Email already exsits' })
+  @ApiResponse({
+    status: 400,
+    description: 'Email already exists or invalid data',
+  })
   async registerUser(
     @Body(new ValidationPipe()) registerUserDto: RegisterUserDto,
   ) {
@@ -75,9 +88,15 @@ export class AuthController {
   }
 
   @Post('/register-customer')
-  @ApiOperation({ summary: 'Register new customer' })
+  @ApiOperation({
+    summary: 'Register new customer',
+    description: 'Đăng ký tài khoản khách hàng (customer)',
+  })
   @ApiResponse({ status: 201, description: 'Customer registered successfully' })
-  @ApiResponse({ status: 400, description: 'Email already exsits' })
+  @ApiResponse({
+    status: 400,
+    description: 'Email already exists or invalid data',
+  })
   async registerCustomer(
     @Body(new ValidationPipe()) registerCustomerDto: RegisterCustomerDto,
   ) {
@@ -92,8 +111,14 @@ export class AuthController {
   }
 
   @Post('/login')
-  @ApiOperation({ summary: 'Login user' })
-  @ApiResponse({ status: 200, description: 'Login successful' })
+  @ApiOperation({
+    summary: 'Login user',
+    description: 'Đăng nhập bằng email và mật khẩu',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Login successful. Return access and refresh token',
+  })
   @ApiResponse({ status: 401, description: 'Invalid email or password' })
   async login(@Body(new ValidationPipe()) loginDto: LoginDto) {
     const token = await this.authService.validateUser(loginDto);
@@ -110,7 +135,10 @@ export class AuthController {
   @UseGuards(AuthGuard)
   @Delete('/logout')
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Logout' })
+  @ApiOperation({
+    summary: 'Logout',
+    description: 'Đăng xuất người dùng, thu hồi access token hiện tại',
+  })
   @ApiResponse({ status: 200, description: 'Logout successful' })
   async logout(@Req() request: Request & { user: { [key: string]: string } }) {
     const accessToken = request.user.accessToken;

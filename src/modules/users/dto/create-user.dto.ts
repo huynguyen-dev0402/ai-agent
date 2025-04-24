@@ -10,20 +10,6 @@ export class CreateUserDto {
   fullname?: string;
 
   @ApiProperty({
-    example: 'Business',
-    description: 'Business name',
-  })
-  @IsOptional()
-  business_name?: string;
-
-  @ApiProperty({
-    example: 'https://domain.com',
-    description: 'Domain',
-  })
-  @IsOptional()
-  domain?: string;
-
-  @ApiProperty({
     example: 'Ha Noi',
     description: 'Address',
   })

@@ -4,19 +4,27 @@ import { IsNotEmpty, IsOptional } from 'class-validator';
 export class CreateChatbotDto {
   @ApiProperty({
     example: 'Chatbot demo',
-    description: 'Name chatbot',
+    description: 'The name of the chatbot. This is a required field.',
+    type: String,
   })
   @IsNotEmpty({ message: 'Name chatbot required' })
   chatbot_name: string;
 
   @ApiProperty({
-    example: 'Desciption chatbot',
-    description: 'Desciption chatbot',
+    example: 'Description of the chatbot',
+    description: 'Optional description for the chatbot.',
+    type: String,
+    required: false,
   })
   @IsOptional()
   description?: string;
 
-  @ApiProperty({ example: 'image.png', description: 'Image' })
+  @ApiProperty({
+    example: 'image.png',
+    description: 'Optional thumbnail image for the chatbot.',
+    type: String,
+    required: false,
+  })
   @IsOptional()
   thumbnail?: string;
 }

@@ -48,6 +48,9 @@ import { UpdateOneQuestionDto } from '../onboarding-suggested-questions/dto/upda
 import { UserIdMatchGuard } from 'src/guards/user-id-match.guard';
 import { successResponse } from 'src/utils/response/response.util';
 import { Response } from 'express';
+import { Chatbot } from '../chatbots/entities/chatbot.entity';
+import { Resource } from '../resources/entities/resource.entity';
+import { Workspace } from '../workspaces/entities/workspace.entity';
 
 @Controller('users')
 @UseGuards(AuthGuard)
@@ -64,22 +67,22 @@ export class UsersController {
   ) {}
 
   @Get('/profile/api-token')
-  @ApiOperation({ summary: 'Create a API Token for user' })
+  @ApiOperation({ summary: 'Get or create API Token for authenticated user' })
   @ApiResponse({
-    status: 201,
-    description: 'The API Token has been successfully created.',
+    status: 200,
+    description: 'Successfully retrieved or created API Token.',
   })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 400, description: 'Failed to create API Token.' })
   async createApiToken(
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
     const token = await this.usersService.getApiTokenForUser(request.user.id);
     if (!token) {
-      throw new BadRequestException('Cannot create API Token');
+      throw new BadRequestException('Unable to create API Token.');
     }
     return {
       success: true,
-      message: 'The API Token has been successfully created.',
+      message: 'API Token retrieved or created successfully.',
       token,
     };
   }
@@ -87,11 +90,8 @@ export class UsersController {
   @Post('/:id/chatbots')
   @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Create a chatbot' })
-  @ApiResponse({
-    status: 201,
-    description: 'The Chatbot has been successfully created.',
-  })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 201, description: 'Chatbot created successfully.' })
+  @ApiResponse({ status: 400, description: 'Failed to create chatbot.' })
   async createChatbotByUser(
     @Param('id') id: string,
     @Body(new ValidationPipe()) createChatbotDto: CreateChatbotDto,
@@ -101,23 +101,16 @@ export class UsersController {
       createChatbotDto,
     );
     if (!newChatbot) {
-      throw new BadRequestException('Cannot create Chatbot');
+      throw new BadRequestException('Failed to create chatbot.');
     }
-    return {
-      success: true,
-      message: 'The Chatbot has been successfully created.',
-      newChatbot,
-    };
+    return successResponse('Chatbot created successfully.', newChatbot);
   }
 
   @Patch('/:userId/chatbots/:chatbotId')
   @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Update a chatbot' })
-  @ApiResponse({
-    status: 201,
-    description: 'The Chatbot has been successfully updated.',
-  })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 200, description: 'Chatbot updated successfully.' })
+  @ApiResponse({ status: 400, description: 'Failed to update chatbot.' })
   async updateChatbotByUser(
     @Param('userId') id: string,
     @Param('chatbotId') chatbotId: string,
@@ -129,23 +122,16 @@ export class UsersController {
       updateChatbotDto,
     );
     if (!updatedChatbot) {
-      throw new BadRequestException('Cannot update Chatbot');
+      throw new BadRequestException('Failed to update chatbot.');
     }
-    return {
-      success: true,
-      message: 'The Chatbot has been successfully updated',
-      updatedChatbot,
-    };
+    return successResponse('Chatbot updated successfully.', updatedChatbot);
   }
 
   @Patch('/:userId/chatbots/:chatbotId/config-basic')
   @UseGuards(UserIdMatchGuard)
-  @ApiOperation({ summary: 'Config chatbot' })
-  @ApiResponse({
-    status: 201,
-    description: 'chatbot has been successfully updated.',
-  })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiOperation({ summary: 'Update basic configuration of chatbot' })
+  @ApiResponse({ status: 200, description: 'Basic info updated successfully.' })
+  @ApiResponse({ status: 400, description: 'Failed to update basic info.' })
   async configChatbotByUser(
     @Param('chatbotId') chatbotId: string,
     @Body(new ValidationPipe()) updateChatbotDto: UpdateChatbotDto,
@@ -156,23 +142,19 @@ export class UsersController {
     );
 
     if (!updatedChatbot) {
-      throw new BadRequestException('Cannot update info chatbot');
+      throw new BadRequestException('Failed to update basic chatbot info.');
     }
-    return {
-      success: true,
-      message: 'Info chatbot has been successfully updated',
+    return successResponse(
+      'Basic chatbot information updated successfully.',
       updatedChatbot,
-    };
+    );
   }
 
   @Patch('/:userId/chatbots/:chatbotId/import-prompts')
   @UseGuards(UserIdMatchGuard)
-  @ApiOperation({ summary: 'Import prompt chatbot' })
-  @ApiResponse({
-    status: 201,
-    description: 'Prompt has been successfully imported.',
-  })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiOperation({ summary: 'Import prompt to chatbot' })
+  @ApiResponse({ status: 200, description: 'Prompt imported successfully.' })
+  @ApiResponse({ status: 400, description: 'Failed to import prompt.' })
   async importPrompt(
     @Param('chatbotId') chatbotId: string,
     @Body(new ValidationPipe()) promptInfoDto: PromptInfoDto,
@@ -183,23 +165,22 @@ export class UsersController {
     );
 
     if (!updatedChatbot) {
-      throw new BadRequestException('Cannot update prompt chatbot');
+      throw new BadRequestException('Failed to import prompt to chatbot.');
     }
-    return {
-      success: true,
-      message: 'The prompt chatbot has been successfully updated',
+    return successResponse(
+      'Prompt imported to chatbot successfully.',
       updatedChatbot,
-    };
+    );
   }
 
   @Patch('/:userId/chatbots/:chatbotId/import-documents')
   @UseGuards(UserIdMatchGuard)
-  @ApiOperation({ summary: 'Import knowledge chatbot' })
+  @ApiOperation({ summary: 'Import knowledge to chatbot' })
   @ApiResponse({
-    status: 201,
-    description: 'Knowledge has been successfully imported.',
+    status: 200,
+    description: 'Knowledge imported successfully.',
   })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 400, description: 'Failed to import knowledge.' })
   async importKnowledge(
     @Param('chatbotId') chatbotId: string,
     @Body(new ValidationPipe()) knowledgeDto: KnowledgeDto,
@@ -210,23 +191,19 @@ export class UsersController {
     );
 
     if (!updatedChatbot) {
-      throw new BadRequestException('Cannot update knowledge chatbot');
+      throw new BadRequestException('Failed to import knowledge to chatbot.');
     }
-    return {
-      success: true,
-      message: 'Knowledge chatbot has been successfully updated',
-      updatedChatbot,
-    };
+    return successResponse('Knowledge imported to chatbot successfully.');
   }
 
   @Post('/:userId/chatbots/:chatbotId/onboarding')
   @UseGuards(UserIdMatchGuard)
-  @ApiOperation({ summary: 'create onboarding chatbot' })
+  @ApiOperation({ summary: 'Create onboarding for chatbot' })
   @ApiResponse({
-    status: 201,
-    description: 'Onboarding has been successfully created.',
+    status: 200,
+    description: 'Onboarding created successfully.',
   })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 400, description: 'Failed to create onboarding.' })
   async createOnboarding(
     @Param('chatbotId') chatbotId: string,
     @Body(new ValidationPipe())
@@ -238,23 +215,22 @@ export class UsersController {
     );
 
     if (!updatedChatbot) {
-      throw new BadRequestException('Cannot create onboarding chatbot');
+      throw new BadRequestException('Failed to create onboarding for chatbot.');
     }
-    return {
-      success: true,
-      message: 'Onboarding chatbot has been successfully created',
+    return successResponse(
+      'Onboarding for chatbot created successfully.',
       updatedChatbot,
-    };
+    );
   }
 
   @Patch('/:userId/chatbots/:chatbotId/onboarding/:onboardingId')
   @UseGuards(UserIdMatchGuard)
-  @ApiOperation({ summary: 'update onboarding chatbot' })
+  @ApiOperation({ summary: 'Update onboarding for chatbot' })
   @ApiResponse({
-    status: 201,
-    description: 'Onboarding has been successfully updated.',
+    status: 200,
+    description: 'Onboarding updated successfully.',
   })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 400, description: 'Failed to update onboarding.' })
   async updateOnboarding(
     @Param('chatbotId') chatbotId: string,
     @Param('onboardingId') onboardingId: string,
@@ -268,23 +244,23 @@ export class UsersController {
     );
 
     if (!updatedChatbot) {
-      throw new BadRequestException('Cannot update onboarding chatbot');
+      throw new BadRequestException('Failed to update onboarding for chatbot.');
     }
-    return {
-      success: true,
-      message: 'Onboarding chatbot has been successfully updated',
+
+    return successResponse(
+      'Onboarding for chatbot updated successfully.',
       updatedChatbot,
-    };
+    );
   }
 
   @Post('/:userId/chatbots/:chatbotId/publish')
   @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Publish a chatbot' })
   @ApiResponse({
-    status: 201,
-    description: 'The Chatbot has been successfully published.',
+    status: 200,
+    description: 'Chatbot published successfully.',
   })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 400, description: 'Failed to publish chatbot.' })
   async publishChatbotByUser(
     @Param('chatbotId') chatbotId: string,
     @Body(new ValidationPipe()) publishChatbotDto: PublishChatbotDto,
@@ -293,43 +269,24 @@ export class UsersController {
       chatbotId,
       publishChatbotDto,
     );
-    if (!publishedChatbot) {
-      return {
-        success: false,
-        message: `Cannot publish chatbot id: ${chatbotId}`,
-      };
-    }
-    return {
-      success: true,
-      message: 'The Chatbot has been successfully published.',
-      publishedChatbot,
-    };
-  }
 
-  @Post(':userId/chatbots/:chatbotId/chat')
-  @UseGuards(UserIdMatchGuard)
-  async chatWithBot(
-    @Param('chatbotId') chatbotId: string,
-    @Req() request: Request & { user: { [key: string]: string } },
-    @Body() chatWithChatbotDto: ChatWithChatbotDto,
-    @Res({ passthrough: false }) response: Response,
-  ) {
-    return await this.chatbotService.chatWithBotStream(
-      request.user.external_user_id,
-      chatbotId,
-      chatWithChatbotDto,
-      response,
-    );
+    if (!publishedChatbot) {
+      throw new BadRequestException(
+        `Failed to publish chatbot with ID: ${chatbotId}`,
+      );
+    }
+
+    return successResponse('Chatbot published successfully.', publishedChatbot);
   }
 
   @Post('/:userId/resources')
   @UseGuards(UserIdMatchGuard)
-  @ApiOperation({ summary: 'Create resource' })
+  @ApiOperation({ summary: 'Create resource for user' })
   @ApiResponse({
-    status: 201,
-    description: 'Resource has been successfully created.',
+    status: 200,
+    description: 'Resource created successfully.',
   })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 400, description: 'Failed to create resource.' })
   async createResource(
     @Param('userId') id: string,
     @Body(new ValidationPipe()) createResourceDto: CreateResourceDto,
@@ -338,25 +295,24 @@ export class UsersController {
       id,
       createResourceDto,
     );
+
     if (!createdResource) {
       throw new BadRequestException(
-        `Cannot create resource for space_id:${createResourceDto.external_space_id}`,
+        `Failed to create resource for space_id: ${createResourceDto.external_space_id}`,
       );
     }
-    return successResponse(
-      'Resource has been successfully created.',
-      createdResource,
-    );
+
+    return successResponse('Resource created successfully.', createdResource);
   }
 
   @Post('/:userId/resources/:resourceId/documents/')
   @UseGuards(UserIdMatchGuard)
-  @ApiOperation({ summary: 'Get resource' })
+  @ApiOperation({ summary: 'Get list of documents for a resource' })
   @ApiResponse({
-    status: 201,
-    description: 'documents has been successfully get.',
+    status: 200,
+    description: 'Documents retrieved successfully.',
   })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 400, description: 'Failed to retrieve documents.' })
   async getListDocument(
     @Param('resourceId') resourceId: string,
     @Body(new ValidationPipe()) getDocumentDto: GetDocumentDto,
@@ -365,27 +321,22 @@ export class UsersController {
       resourceId,
       getDocumentDto,
     );
+
     if (!listDocument) {
-      return {
-        success: false,
-        message: 'Cannot get documents',
-      };
+      throw new BadRequestException('Failed to retrieve documents.');
     }
-    return {
-      success: true,
-      message: 'Get documents successfully.',
-      listDocument,
-    };
+
+    return successResponse('Documents retrieved successfully.', listDocument);
   }
 
   @Post('/:userId/prompts')
   @UseGuards(UserIdMatchGuard)
-  @ApiOperation({ summary: 'Create prompts' })
+  @ApiOperation({ summary: 'Create prompts for chatbot' })
   @ApiResponse({
     status: 201,
-    description: 'prompts has been successfully get.',
+    description: 'Prompts created successfully.',
   })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 400, description: 'Failed to create prompts.' })
   async createPromptChatbotForUser(
     @Param('userId') id: string,
     @Body(new ValidationPipe()) promptInfoDto: PromptInfoDto,
@@ -394,24 +345,22 @@ export class UsersController {
       id,
       promptInfoDto,
     );
+
     if (!prompt) {
-      throw new BadRequestException(`Cannot create prompts for user: ${id}`);
+      throw new BadRequestException(`Failed to create prompts for user: ${id}`);
     }
-    return {
-      success: true,
-      message: 'prompts has been successfully created.',
-      prompt,
-    };
+
+    return successResponse('Prompts created successfully.', prompt);
   }
 
   @Post('/:userId/resources/:resourceId/documents/images')
   @UseGuards(UserIdMatchGuard)
-  @ApiOperation({ summary: 'get list documents' })
+  @ApiOperation({ summary: 'Get list of images uploaded for a resource' })
   @ApiResponse({
-    status: 201,
-    description: 'Get list documents successfully.',
+    status: 200,
+    description: 'Images retrieved successfully.',
   })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 400, description: 'Failed to retrieve images.' })
   async getListImagesUploaded(
     @Param('resourceId') resourceId: string,
     @Body(new ValidationPipe()) getDocumentDto: GetDocumentDto,
@@ -420,24 +369,19 @@ export class UsersController {
       resourceId,
       getDocumentDto,
     );
+
     if (!listDocument) {
-      return {
-        success: false,
-        message: 'Get list documents false',
-      };
+      throw new BadRequestException('Failed to retrieve images.');
     }
-    return {
-      success: true,
-      message: 'Get list document successfully.',
-      listDocument,
-    };
+
+    return successResponse('Images retrieved successfully.', listDocument);
   }
 
   @Post('/:id/endcode-files')
   @UseGuards(UserIdMatchGuard)
   @UseInterceptors(
     FileInterceptor('file', {
-      limits: { fileSize: 10 * 1024 * 1024 },
+      limits: { fileSize: 10 * 1024 * 1024 }, // Max file size: 10MB
       fileFilter: (req, file, cb) => {
         const allowedExt = ['.txt', '.pdf', '.doc', '.docx'];
         const fileExt = extname(file.originalname).toLowerCase();
@@ -468,32 +412,35 @@ export class UsersController {
 
   @Post('/:userId/resources/:resourceId/documents/files')
   @UseGuards(UserIdMatchGuard)
-  @ApiOperation({ summary: 'Create documents' })
+  @ApiOperation({ summary: 'Upload file to resource' })
   @ApiResponse({
     status: 201,
-    description: 'Documents has been successfully created.',
+    description: 'File has been successfully uploaded to resource.',
   })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid request or file upload failed.',
+  })
   async uploadFileLocalToResource(
     @Param('resourceId') resourceId: string,
-    @Body(new ValidationPipe())
-    uploadMultiDto: UploadMultiDto,
+    @Body(new ValidationPipe()) uploadMultiDto: UploadMultiDto,
   ) {
     if (uploadMultiDto.file_type) {
       const uploadedResource = await this.resourceService.uploadDocument(
         resourceId,
         uploadMultiDto,
       );
+
       if (!uploadedResource) {
         throw new BadRequestException(
-          `Cannot upload file local to resource: ${resourceId}`,
+          `Failed to upload document to resource: ${resourceId}`,
         );
       }
-      return {
-        success: true,
-        message: 'Upload success.',
+
+      return successResponse(
+        'Document uploaded successfully.',
         uploadedResource,
-      };
+      );
     }
 
     if (uploadMultiDto.document_source) {
@@ -501,17 +448,23 @@ export class UsersController {
         resourceId,
         uploadMultiDto,
       );
+
       if (!uploadedResource) {
         throw new BadRequestException(
-          `Cannot upload images to resource: ${resourceId}`,
+          `Failed to upload image document to resource: ${resourceId}`,
         );
       }
-      return {
-        success: true,
-        message: 'Upload success.',
+
+      return successResponse(
+        'Image document uploaded successfully.',
         uploadedResource,
-      };
+      );
     }
+
+    // If neither file_type nor document_source is provided, return an error.
+    throw new BadRequestException(
+      'Invalid request: Missing file type or document source.',
+    );
   }
 
   @Post()
@@ -547,8 +500,12 @@ export class UsersController {
 
   @Get('/profile')
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Get user info' })
-  @ApiResponse({ status: 200, description: 'User found', type: User })
+  @ApiOperation({ summary: 'Get user information' })
+  @ApiResponse({
+    status: 200,
+    description: 'User information retrieved successfully',
+    type: User,
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getInfoUser(
     @Req() request: Request & { user: { [key: string]: string } },
@@ -556,15 +513,19 @@ export class UsersController {
     const user = await this.usersService.findOne(request.user.id);
     return {
       success: true,
-      message: 'Get user info successfully',
+      message: 'User information retrieved successfully',
       user,
     };
   }
 
   @Get('/profile/workspaces')
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Get workspaces info' })
-  @ApiResponse({ status: 200, description: 'Workspaces found', type: User })
+  @ApiOperation({ summary: 'Get workspaces information' })
+  @ApiResponse({
+    status: 200,
+    description: 'Workspaces retrieved successfully',
+    type: [Workspace],
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async findAllWorkspacesForUser(
     @Req() request: Request & { user: { [key: string]: string } },
@@ -574,15 +535,19 @@ export class UsersController {
     );
     return {
       success: true,
-      message: 'Get workspaces successfully',
+      message: 'Workspaces retrieved successfully',
       workspaces,
     };
   }
 
   @Get('/profile/resources')
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Get resources info' })
-  @ApiResponse({ status: 200, description: 'Resources found' })
+  @ApiOperation({ summary: 'Get resources information' })
+  @ApiResponse({
+    status: 200,
+    description: 'Resources retrieved successfully',
+    type: [Resource],
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async findAllResourceForUser(
     @Req() request: Request & { user: { [key: string]: string } },
@@ -592,20 +557,23 @@ export class UsersController {
     );
     return {
       success: true,
-      message: 'Get resources successfully',
+      message: 'Resources retrieved successfully',
       resources,
     };
   }
 
   @Get('/profile/resources/:resourceId')
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Get resources info' })
-  @ApiResponse({ status: 200, description: 'Resources found' })
+  @ApiOperation({ summary: 'Get a single resource information' })
+  @ApiResponse({
+    status: 200,
+    description: 'Resource retrieved successfully',
+    type: Resource,
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async findOneResourceForUser(
     @Param('resourceId') resourceId: string,
-    @Req()
-    request: Request & { user: { [key: string]: string } },
+    @Req() request: Request & { user: { [key: string]: string } },
   ) {
     const resource = await this.resourceService.findOneResourceForUser(
       request.user.id,
@@ -613,15 +581,19 @@ export class UsersController {
     );
     return {
       success: true,
-      message: 'Get resources successfully',
+      message: 'Resource retrieved successfully',
       resource,
     };
   }
 
   @Get('/profile/chatbots')
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Get list chatbots info' })
-  @ApiResponse({ status: 200, description: 'List Chatbots', type: User })
+  @ApiOperation({ summary: 'Get list of chatbots for user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Chatbots list retrieved successfully',
+    type: [Chatbot],
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async findAllChatbotsForUser(
     @Req() request: Request & { user: { [key: string]: string } },
@@ -631,28 +603,32 @@ export class UsersController {
     );
     return {
       success: true,
-      message: 'Get chatbots successfully',
+      message: 'Chatbots retrieved successfully',
       chatbots,
     };
   }
 
   @Get('/profile/chatbots/:chatbotId')
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Get a chatbot info' })
-  @ApiResponse({ status: 200, description: 'Infomation Chatbots', type: User })
+  @ApiOperation({ summary: 'Get details of a specific chatbot' })
+  @ApiResponse({
+    status: 200,
+    description: 'Chatbot details retrieved successfully',
+    type: Chatbot,
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async findChatbotForUser(
     @Param('chatbotId') chatbotId: string,
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
-    const chatbots = await this.chatbotService.findChatbotForUser(
+    const chatbot = await this.chatbotService.findChatbotForUser(
       request.user.id,
       chatbotId,
     );
     return {
       success: true,
-      message: 'Get chatbot successfully',
-      chatbots,
+      message: 'Chatbot retrieved successfully',
+      chatbot,
     };
   }
 

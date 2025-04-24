@@ -73,23 +73,33 @@ export class PasswordResetService {
   }
 
   async resetPassword(resetPasswordDto: ResetPasswordDto) {
-    const { email, new_password } = resetPasswordDto;
-    const exsistEmail = await this.resetRepo.findOne({
-      where: {
-        email,
-      },
-    });
-    if (!exsistEmail) {
-      throw new NotFoundException('Email not found');
+    const { email, new_password, otp } = resetPasswordDto;
+
+    // Check email
+    const user = await this.userService.findOneByEmail(email);
+    if (!user) {
+      throw new NotFoundException('Email not found or user inactive');
     }
-    const password = hashPassword(new_password);
-    // TODO: update password for user
-    const response = await this.userService.updatePassword(email, password);
-    if (!response) {
+
+    // Check OTP
+    const otpRecord = await this.resetRepo.findOne({ where: { email, otp } });
+    if (!otpRecord) {
+      throw new BadRequestException('Invalid or expired OTP');
+    }
+
+    // Hash password
+    const hashedPassword = hashPassword(new_password);
+
+    // Update password
+    const updateResponse = await this.userService.updatePassword(
+      email,
+      hashedPassword,
+    );
+    if (!updateResponse) {
       throw new BadRequestException('Cannot update password for user');
     }
 
-    // Remove OTP used
+    // Xóa OTP đã sử dụng
     await this.resetRepo.delete({ email });
 
     return true;
