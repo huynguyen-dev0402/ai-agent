@@ -1,3 +1,4 @@
+import { Subscription } from 'src/modules/subscriptions/entities/subscription.entity';
 import {
   Controller,
   Get,
@@ -45,13 +46,14 @@ import { PromptInfoDto } from '../chatbots/dto/prompt.dto';
 import { KnowledgeDto } from '../chatbots/dto/knowledge.dto';
 import { CreateChatbotOnboardingDto } from '../chatbot-onboarding/dto/create-chatbot-onboarding.dto';
 import { UpdateChatbotOnboardingDto } from '../chatbot-onboarding/dto/update-chatbot-onboarding.dto';
-import { UpdateOneQuestionDto } from '../onboarding-suggested-questions/dto/update-one.dto';
 import { UserIdMatchGuard } from 'src/guards/user-id-match.guard';
 import { successResponse } from 'src/utils/response/response.util';
 import { Response } from 'express';
 import { Chatbot } from '../chatbots/entities/chatbot.entity';
 import { Resource } from '../resources/entities/resource.entity';
 import { Workspace } from '../workspaces/entities/workspace.entity';
+import { SubscriptionsService } from '../subscriptions/subscriptions.service';
+import { UserSubscriptionsService } from '../user-subscriptions/user-subscriptions.service';
 
 @Controller('users')
 @UseGuards(AuthGuard)
@@ -65,6 +67,8 @@ export class UsersController {
     private readonly resourceService: ResourcesService,
     private readonly documentService: DocumentsService,
     private readonly chatbotPromptService: ChatbotPromptService,
+    private readonly subscriptionService: SubscriptionsService,
+    private readonly userSubscriptionService: UserSubscriptionsService,
   ) {}
 
   @Get('/profile/api-token')
@@ -628,6 +632,31 @@ export class UsersController {
       success: true,
       message: 'Resources retrieved successfully',
       resources,
+    };
+  }
+
+  @Get('/profile/subscriptions')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get subscriptions' })
+  @ApiResponse({
+    status: 200,
+    description: 'Subscriptions retrieved successfully',
+    type: Subscription,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getListSubscriptions(
+    @Req() request: Request & { user: { [key: string]: string } },
+  ) {
+    const userSubscription = await this.userSubscriptionService.findOneForUser(
+      request.user.id,
+    );
+    if (!userSubscription) {
+      throw new NotFoundException('No active subscription found for this user');
+    }
+    return {
+      success: true,
+      message: 'Subscriptions retrieved successfully',
+      userSubscription,
     };
   }
 

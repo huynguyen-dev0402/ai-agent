@@ -3,6 +3,7 @@ import { ApiToken } from 'src/modules/api-tokens/entities/api-token.entity';
 import { ChatbotPrompt } from 'src/modules/chatbot-prompt/entities/chatbot-prompt.entity';
 import { Chatbot } from 'src/modules/chatbots/entities/chatbot.entity';
 import { Resource } from 'src/modules/resources/entities/resource.entity';
+import { UserSubscriptions } from 'src/modules/user-subscriptions/entities/user-subscriptions.entity';
 import { Workspace } from 'src/modules/workspaces/entities/workspace.entity';
 import {
   Entity,
@@ -20,9 +21,10 @@ export enum UserStatus {
   INACTIVE = 'inactive',
 }
 
-export enum UserType {
-  PERSONAL = 'personal',
-  BUSINESS = 'business',
+export enum UserRole {
+  ADMIN = 'admin',
+  SUPER_ADMIN = 'super_admin',
+  USER = 'user',
 }
 
 @Entity('users')
@@ -39,14 +41,8 @@ export class User {
   @Column({ type: 'varchar', nullable: true })
   fullname?: string;
 
-  @Column({ type: 'varchar', nullable: true })
-  business_name?: string;
-
   @Column({ type: 'varchar', unique: true, nullable: false })
   email: string;
-
-  @Column({ type: 'varchar', unique: true, nullable: true })
-  domain?: string;
 
   @Column({ type: 'text', nullable: true })
   address?: string;
@@ -61,8 +57,8 @@ export class User {
   @Column({ type: 'varchar', nullable: true })
   avatar_url?: string;
 
-  @Column({ type: 'enum', enum: UserType, nullable: false })
-  type: UserType;
+  @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
+  role: UserRole;
 
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.ACTIVE })
   status: UserStatus;
@@ -81,15 +77,11 @@ export class User {
   })
   updated_at: Date;
 
-  @ManyToOne(() => Workspace, (workspace) => workspace.users, {
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(() => Workspace, (workspace) => workspace.users)
   @JoinColumn({ name: 'workspace_id' })
   workspace: Workspace;
 
-  @ManyToOne(() => ApiToken, (api_token) => api_token.users, {
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(() => ApiToken, (api_token) => api_token.users)
   @JoinColumn({ name: 'token_id' })
   api_token: ApiToken;
 
@@ -101,4 +93,10 @@ export class User {
 
   @OneToMany(() => ChatbotPrompt, (prompt) => prompt.user)
   prompts: ChatbotPrompt[];
+
+  @OneToMany(
+    () => UserSubscriptions,
+    (user_subscriptions) => user_subscriptions.user,
+  )
+  user_subscriptions: UserSubscriptions[];
 }

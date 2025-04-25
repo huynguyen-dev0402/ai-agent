@@ -6,10 +6,11 @@ import { Resource } from './entities/resource.entity';
 import { UsersModule } from '../users/users.module';
 import { Document } from '../documents/entities/document.entity';
 import { ChatbotResource } from '../chatbots/entities/chatbot-resources.entity';
+import { User } from '../users/entities/user.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Resource, Document,ChatbotResource]),
+    TypeOrmModule.forFeature([Resource, Document,ChatbotResource, User]),
     forwardRef(() => UsersModule),
   ],
   controllers: [ResourcesController],

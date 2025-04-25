@@ -19,6 +19,9 @@ import { ChatbotResource } from '../chatbots/entities/chatbot-resources.entity';
 import { Resource } from '../resources/entities/resource.entity';
 import { ChatbotOnboarding } from '../chatbot-onboarding/entities/chatbot-onboarding.entity';
 import { OnboardingSuggestedQuestion } from '../onboarding-suggested-questions/entities/onboarding-suggested-question.entity';
+import { UserSubscriptions } from '../user-subscriptions/entities/user-subscriptions.entity';
+import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
+import { UserSubscriptionsModule } from '../user-subscriptions/user-subscriptions.module';
 
 @Module({
   imports: [
@@ -30,7 +33,8 @@ import { OnboardingSuggestedQuestion } from '../onboarding-suggested-questions/e
       ChatbotResource,
       Resource,
       ChatbotOnboarding,
-      OnboardingSuggestedQuestion
+      OnboardingSuggestedQuestion,
+      UserSubscriptions
     ]),
     AuthModule,
     ApiTokensModule,
@@ -39,6 +43,8 @@ import { OnboardingSuggestedQuestion } from '../onboarding-suggested-questions/e
     UploadModule,
     DocumentsModule,
     ChatbotPromptModule,
+    SubscriptionsModule,
+    UserSubscriptionsModule,
     forwardRef(() => ResourcesModule),
   ],
   controllers: [UsersController],

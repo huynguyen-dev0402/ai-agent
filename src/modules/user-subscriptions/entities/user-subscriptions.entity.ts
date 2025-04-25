@@ -1,0 +1,56 @@
+import { Feature } from 'src/modules/features/entities/feature.entity';
+import { Subscription } from 'src/modules/subscriptions/entities/subscription.entity';
+import { User } from 'src/modules/users/entities/user.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  CreateDateColumn,
+  Unique,
+  JoinColumn,
+  Column,
+} from 'typeorm';
+
+export enum SubscriptionStatus {
+  ACTIVE = 'active',
+  EXPIRED = 'expired',
+  CANCELED = 'canceled',
+}
+
+@Entity('user_subscriptions')
+@Unique(['user', 'subscription'])
+export class UserSubscriptions {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @ManyToOne(
+    () => Subscription,
+    (subscription) => subscription.user_subscriptions,
+  )
+  @JoinColumn({ name: 'subscription_id' })
+  subscription: Subscription;
+
+  @ManyToOne(() => User, (user) => user.user_subscriptions)
+  @JoinColumn({ name: 'user_id' })
+  user: User;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  start_date: Date;
+
+  @Column({ type: 'timestamp' })
+  end_date: Date; // Tính từ start_date + duration_months của gói
+
+  @Column({
+    type: 'enum',
+    enum: SubscriptionStatus,
+    default: SubscriptionStatus.ACTIVE,
+  })
+  status: SubscriptionStatus;
+
+  @CreateDateColumn({
+    type: 'timestamp',
+    nullable: true,
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  created_at: Date;
+}

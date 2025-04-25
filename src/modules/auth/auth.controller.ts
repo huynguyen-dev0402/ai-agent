@@ -21,7 +21,6 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { RegisterCustomerDto } from './dto/register-customer.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -84,29 +83,6 @@ export class AuthController {
     return {
       success: true,
       message: 'User registered successfully',
-    };
-  }
-
-  @Post('/register-customer')
-  @ApiOperation({
-    summary: 'Register new customer',
-    description: 'Đăng ký tài khoản khách hàng (customer)',
-  })
-  @ApiResponse({ status: 201, description: 'Customer registered successfully' })
-  @ApiResponse({
-    status: 400,
-    description: 'Email already exists or invalid data',
-  })
-  async registerCustomer(
-    @Body(new ValidationPipe()) registerCustomerDto: RegisterCustomerDto,
-  ) {
-    const newUser = await this.usersService.create(registerCustomerDto);
-    if (!newUser) {
-      throw new BadRequestException('Cannot create account');
-    }
-    return {
-      success: true,
-      message: 'Customer registered successfully',
     };
   }
 

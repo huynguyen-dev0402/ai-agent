@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsOptional, Matches } from 'class-validator';
-import { UserType } from '../entities/user.entity';
 export class CreateUserDto {
   @ApiProperty({
     example: 'Nguyen Van A',
@@ -15,10 +14,6 @@ export class CreateUserDto {
   })
   @IsOptional()
   address?: string;
-
-  @ApiProperty({ example: 'personal', description: 'Type' })
-  @IsNotEmpty({ message: 'Must have type user' })
-  type: UserType;
 
   @ApiProperty({ example: 'user@example.com', description: 'Email' })
   @IsEmail({}, { message: 'Invalid email format' })
