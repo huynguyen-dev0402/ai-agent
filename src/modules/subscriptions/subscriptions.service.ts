@@ -1,5 +1,5 @@
 import { Subscription } from 'src/modules/subscriptions/entities/subscription.entity';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
 import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -11,8 +11,13 @@ export class SubscriptionsService {
     @InjectRepository(Subscription)
     private readonly subscriptionRepository: Repository<Subscription>,
   ) {}
-  create(createSubscriptionDto: CreateSubscriptionDto) {
-    return 'This action adds a new subscription';
+  async create(createSubscriptionDto: CreateSubscriptionDto) {
+    const subscription = this.subscriptionRepository.create(
+      createSubscriptionDto,
+    );
+
+    await this.subscriptionRepository.save(subscription);
+    return subscription;
   }
 
   async findAll() {

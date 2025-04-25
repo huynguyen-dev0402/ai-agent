@@ -1,15 +1,197 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  BadRequestException,
+  ValidationPipe,
+  HttpCode,
+} from '@nestjs/common';
 import { SubscriptionsService } from './subscriptions.service';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
 import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
+import { SuperAdminGuard } from '../author/guards/super-admin.guard';
+import { AuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ApiBody, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
+import { UserSubscriptionsService } from '../user-subscriptions/user-subscriptions.service';
+import { ActionSubscriptionDto } from './dto/action-subscription.dto';
+import { UserSubscriptions } from '../user-subscriptions/entities/user-subscriptions.entity';
+import { successResponse } from 'src/utils/response/response.util';
 
 @Controller('subscriptions')
+@UseGuards(AuthGuard)
 export class SubscriptionsController {
-  constructor(private readonly subscriptionsService: SubscriptionsService) {}
+  constructor(
+    private readonly subscriptionsService: SubscriptionsService,
+    private readonly userSubscriptionService: UserSubscriptionsService,
+  ) {}
 
+  @UseGuards(SuperAdminGuard)
   @Post()
-  create(@Body() createSubscriptionDto: CreateSubscriptionDto) {
+  async createSubscription(
+    @Body() createSubscriptionDto: CreateSubscriptionDto,
+  ) {
     return this.subscriptionsService.create(createSubscriptionDto);
+  }
+
+  @Post('subscribe')
+  @HttpCode(201)
+  @ApiOperation({ summary: 'Assign a subscription package to a user' })
+  @ApiBody({ type: ActionSubscriptionDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Subscription has been successfully assigned to the user.',
+    type: UserSubscriptions,
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Invalid request (e.g., user already has an active subscription, invalid userId or subscriptionId).',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User or subscription not found.',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'User is not authorized to perform this action (e.g., user is inactive).',
+  })
+  async subscribeSubscription(
+    @Body(new ValidationPipe()) subscribeDto: ActionSubscriptionDto,
+  ) {
+    if (!subscribeDto.subscriptionId) {
+      throw new BadRequestException('subscriptionId cannot be empty.');
+    }
+    const response = await this.userSubscriptionService.subscribe(
+      subscribeDto.userId,
+      subscribeDto.subscriptionId,
+    );
+
+    if (!response) {
+      throw new BadRequestException('Cannot subscribe subscription');
+    }
+
+    return successResponse('Subscription assigned successfully.');
+  }
+
+  @Post('upgrade')
+  @HttpCode(201)
+  @ApiOperation({
+    summary: 'Upgrade the current subscription package of a user',
+  })
+  @ApiBody({ type: ActionSubscriptionDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Subscription has been successfully upgraded.',
+    type: UserSubscriptions,
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Invalid request (e.g., no active subscription to upgrade, same subscription selected).',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User or new subscription not found.',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'User is not authorized to perform this action (e.g., user is inactive).',
+  })
+  async upgradeSubscription(
+    @Body(new ValidationPipe()) upgradeDto: ActionSubscriptionDto,
+  ) {
+    if (!upgradeDto.subscriptionId) {
+      throw new BadRequestException('subscriptionId cannot be empty.');
+    }
+    const response = await this.userSubscriptionService.upgradeSubscription(
+      upgradeDto.userId,
+      upgradeDto.subscriptionId!,
+    );
+
+    if (!response) {
+      throw new BadRequestException('Cannot upgrade subscription');
+    }
+
+    return successResponse('Subscription upgraded successfully.');
+  }
+
+  @Post('renew')
+  @HttpCode(201)
+  @ApiOperation({ summary: 'Renew an expired subscription package for a user' })
+  @ApiBody({ type: ActionSubscriptionDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Subscription has been successfully renewed.',
+    type: UserSubscriptions,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid request (e.g., no expired subscription to renew).',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User or subscription not found.',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'User is not authorized to perform this action (e.g., user is inactive).',
+  })
+  async renewSubscription(
+    @Body(new ValidationPipe()) renewDto: ActionSubscriptionDto,
+  ) {
+    const response = await this.userSubscriptionService.renewSubscription(
+      renewDto.userId,
+    );
+
+    if (!response) {
+      throw new BadRequestException('Cannot renew subscription');
+    }
+
+    return successResponse('Subscription renewed successfully.');
+  }
+
+  @Post('cancel')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Cancel the current active subscription of a user' })
+  @ApiBody({ type: ActionSubscriptionDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Subscription has been successfully canceled.',
+    type: UserSubscriptions,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid request (e.g., no active subscription to cancel).',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found.',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'User is not authorized to perform this action (e.g., user is inactive).',
+  })
+  async cancelSubscription(
+    @Body(new ValidationPipe()) cancelDto: ActionSubscriptionDto,
+  ) {
+    const response = await this.userSubscriptionService.cancelSubscription(
+      cancelDto.userId,
+    );
+
+    if (!response) {
+      throw new BadRequestException('Cannot cancel subscription');
+    }
+
+    return successResponse('Subscription canceled successfully.');
   }
 
   @Get()
@@ -23,7 +205,10 @@ export class SubscriptionsController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateSubscriptionDto: UpdateSubscriptionDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateSubscriptionDto: UpdateSubscriptionDto,
+  ) {
     return this.subscriptionsService.update(+id, updateSubscriptionDto);
   }
 

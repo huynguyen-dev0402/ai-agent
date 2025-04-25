@@ -34,7 +34,7 @@ import { UserSubscriptionsModule } from '../user-subscriptions/user-subscription
       Resource,
       ChatbotOnboarding,
       OnboardingSuggestedQuestion,
-      UserSubscriptions
+      UserSubscriptions,
     ]),
     AuthModule,
     ApiTokensModule,
@@ -44,7 +44,7 @@ import { UserSubscriptionsModule } from '../user-subscriptions/user-subscription
     DocumentsModule,
     ChatbotPromptModule,
     SubscriptionsModule,
-    UserSubscriptionsModule,
+    forwardRef(() => UserSubscriptionsModule),
     forwardRef(() => ResourcesModule),
   ],
   controllers: [UsersController],

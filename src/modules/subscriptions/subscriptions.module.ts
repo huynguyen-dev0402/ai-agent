@@ -1,10 +1,14 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { SubscriptionsService } from './subscriptions.service';
 import { SubscriptionsController } from './subscriptions.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Subscription } from './entities/subscription.entity';
 import { UserSubscriptions } from '../user-subscriptions/entities/user-subscriptions.entity';
 import { SubscriptionFeatures } from '../subscription-features/entities/subscription-features.entity';
+import { User } from '../users/entities/user.entity';
+import { SuperAdminGuard } from '../author/guards/super-admin.guard';
+import { AuthModule } from '../auth/auth.module';
+import { UserSubscriptionsModule } from '../user-subscriptions/user-subscriptions.module';
 
 @Module({
   imports: [
@@ -12,10 +16,13 @@ import { SubscriptionFeatures } from '../subscription-features/entities/subscrip
       Subscription,
       UserSubscriptions,
       SubscriptionFeatures,
+      User,
     ]),
+    AuthModule,
+    UserSubscriptionsModule,
   ],
   controllers: [SubscriptionsController],
-  providers: [SubscriptionsService],
+  providers: [SubscriptionsService, SuperAdminGuard],
   exports: [SubscriptionsService],
 })
 export class SubscriptionsModule {}

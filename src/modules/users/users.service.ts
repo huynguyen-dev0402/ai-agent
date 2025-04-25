@@ -135,7 +135,7 @@ export class UsersService {
     const user = await this.userRepository.findOne({
       where: {
         id,
-        status: UserStatus.ACTIVE,
+        //status: UserStatus.ACTIVE,
       },
     });
     return plainToInstance(User, user);
