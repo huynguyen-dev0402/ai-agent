@@ -15,6 +15,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Res,
+  Query,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -24,6 +25,7 @@ import {
   ApiBearerAuth,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -46,14 +48,20 @@ import { PromptInfoDto } from '../chatbots/dto/prompt.dto';
 import { KnowledgeDto } from '../chatbots/dto/knowledge.dto';
 import { CreateChatbotOnboardingDto } from '../chatbot-onboarding/dto/create-chatbot-onboarding.dto';
 import { UpdateChatbotOnboardingDto } from '../chatbot-onboarding/dto/update-chatbot-onboarding.dto';
-import { UserIdMatchGuard } from 'src/guards/user-id-match.guard';
-import { successResponse } from 'src/utils/response/response.util';
+import { UserIdMatchGuard } from 'src/common/guards/user-id-match.guard';
+import { successResponse } from 'src/common/utils/response/response.util';
 import { Response } from 'express';
 import { Chatbot } from '../chatbots/entities/chatbot.entity';
 import { Resource } from '../resources/entities/resource.entity';
 import { Workspace } from '../workspaces/entities/workspace.entity';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { UserSubscriptionsService } from '../user-subscriptions/user-subscriptions.service';
+import { CheckQuota } from 'src/common/decorators/check-quota.decorator';
+import {
+  ResourceType,
+  UsageAction,
+} from '../usage-logs/entities/usage-log.entity';
+import { CheckQuotaInterceptor } from 'src/common/interceptors/usage-logs.interceptor';
 
 @Controller('users')
 @UseGuards(AuthGuard)
@@ -94,6 +102,12 @@ export class UsersController {
 
   @Post('/:id/chatbots')
   @UseGuards(UserIdMatchGuard)
+  @UseInterceptors(CheckQuotaInterceptor) // Áp dụng interceptor để ghi log usage
+  @CheckQuota({
+    resourceType: ResourceType.AGENT,
+    action: UsageAction.CREATE,
+    quantity: 1, // Số lượng sử dụng, mặc định là 1
+  })
   @ApiOperation({ summary: 'Create a chatbot' })
   @ApiParam({ name: 'userId', required: true, description: 'ID of the user' })
   @ApiResponse({ status: 201, description: 'Chatbot created successfully.' })
@@ -479,6 +493,12 @@ export class UsersController {
 
   @Post('/:userId/resources/:resourceId/documents/files')
   @UseGuards(UserIdMatchGuard)
+  @UseInterceptors(CheckQuotaInterceptor) // Áp dụng interceptor để ghi log usage
+  @CheckQuota({
+    resourceType: ResourceType.KNOWLEDGE,
+    action: UsageAction.CREATE,
+    quantity: 1, // Số lượng sử dụng, mặc định là 1
+  })
   @ApiOperation({ summary: 'Upload file to resource' })
   @ApiParam({ name: 'userId', required: true, description: 'ID of the user' })
   @ApiParam({
@@ -635,7 +655,7 @@ export class UsersController {
     };
   }
 
-  @Get('/profile/subscriptions')
+  @Get('/profile/subscription')
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Get subscriptions' })
   @ApiResponse({
@@ -644,7 +664,7 @@ export class UsersController {
     type: Subscription,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getListSubscriptions(
+  async getSubscriptions(
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
     const userSubscription = await this.userSubscriptionService.findOneForUser(
@@ -657,6 +677,54 @@ export class UsersController {
       success: true,
       message: 'Subscriptions retrieved successfully',
       userSubscription,
+    };
+  }
+
+  @Get('/profile/subscription/limits')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get subscriptions limits' })
+  @ApiResponse({
+    status: 200,
+    description: 'Subscriptions retrieved successfully',
+    type: Subscription,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiQuery({
+    name: 'startDate',
+    required: true,
+    type: String,
+    description:
+      'The start date for filtering subscriptions, in the format YYYY-MM-DD',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: true,
+    type: String,
+    description:
+      'The end date for filtering subscriptions, in the format YYYY-MM-DD',
+  })
+  async getSubscriptionsLimits(
+    @Req() request: Request & { user: { [key: string]: string } },
+    @Query('startDate') startDateStr: string,
+    @Query('endDate') endDateStr: string,
+  ) {
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+    // Normalize startDate: 00:00:00.000
+    startDate.setHours(0, 0, 0, 0);
+
+    // Normalize endDate: 23:59:59.999
+    endDate.setHours(23, 59, 59, 999);
+    const remainingLimits = await this.subscriptionService.getRemainingLimits(
+      request.user.id,
+      startDate,
+      endDate,
+    );
+
+    return {
+      success: true,
+      message: 'Subscriptions retrieved successfully',
+      remainingLimits,
     };
   }
 

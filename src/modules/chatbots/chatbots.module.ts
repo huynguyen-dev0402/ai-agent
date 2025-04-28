@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ChatbotsService } from './chatbots.service';
 import { ChatbotsController } from './chatbots.controller';
 import { Chatbot } from './entities/chatbot.entity';
@@ -13,6 +13,11 @@ import { ChatbotOnboarding } from '../chatbot-onboarding/entities/chatbot-onboar
 import { OnboardingSuggestedQuestion } from '../onboarding-suggested-questions/entities/onboarding-suggested-question.entity';
 import { User } from '../users/entities/user.entity';
 import { ChatbotModel } from '../chatbot-models/entities/chatbot-model.entity';
+import { UserSubscriptionsModule } from '../user-subscriptions/user-subscriptions.module';
+import { UsageLogsModule } from '../usage-logs/usage-logs.module';
+import { Reflector } from '@nestjs/core';
+import { CheckQuotaInterceptor } from 'src/common/interceptors/usage-logs.interceptor';
+import { QuotaService } from '../quota/quota.service';
 
 @Module({
   imports: [
@@ -23,15 +28,17 @@ import { ChatbotModel } from '../chatbot-models/entities/chatbot-model.entity';
       ChatbotOnboarding,
       OnboardingSuggestedQuestion,
       User,
-      ChatbotModel
+      ChatbotModel,
     ]),
     AuthModule,
     WorkspacesModule,
     UsersModule,
     ChatbotModelsModule,
+    UserSubscriptionsModule,
+    UsageLogsModule,
   ],
   controllers: [ChatbotsController],
-  providers: [ChatbotsService],
+  providers: [ChatbotsService, CheckQuotaInterceptor, Reflector, QuotaService],
   exports: [ChatbotsService],
 })
 export class ChatbotsModule {}

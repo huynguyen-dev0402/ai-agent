@@ -3,6 +3,7 @@ import { ApiToken } from 'src/modules/api-tokens/entities/api-token.entity';
 import { ChatbotPrompt } from 'src/modules/chatbot-prompt/entities/chatbot-prompt.entity';
 import { Chatbot } from 'src/modules/chatbots/entities/chatbot.entity';
 import { Resource } from 'src/modules/resources/entities/resource.entity';
+import { UsageLog } from 'src/modules/usage-logs/entities/usage-log.entity';
 import { UserSubscriptions } from 'src/modules/user-subscriptions/entities/user-subscriptions.entity';
 import { Workspace } from 'src/modules/workspaces/entities/workspace.entity';
 import {
@@ -99,4 +100,7 @@ export class User {
     (user_subscriptions) => user_subscriptions.user,
   )
   user_subscriptions: UserSubscriptions[];
+
+  @OneToMany(() => UsageLog, (usage_logs) => usage_logs.user)
+  usage_logs: UsageLog[];
 }

@@ -311,16 +311,47 @@ export class UserSubscriptionsService {
     return true;
   }
 
-  async findOneForUser(userId: string): Promise<UserSubscriptions | null> {
-    const subscription = await this.userSubRepository.findOne({
+  async findOneForUser(
+    userId: string,
+    options: {
+      select?: {
+        id?: boolean;
+        status?: boolean;
+        subscription?: {
+          message_limit?: boolean;
+          knowledge_limit?: boolean;
+          agent_limit?: boolean;
+          member_limit?: boolean;
+        };
+      };
+    } = {},
+  ): Promise<UserSubscriptions | null> {
+    // Mặc định select các trường cần thiết nếu không truyền options
+    const defaultSelect = {
+      id: true,
+      status: true,
+      subscription: {
+        message_limit: true,
+        knowledge_limit: true,
+        agent_limit: true,
+        member_limit: true,
+      },
+      ...options.select,
+    };
+
+    // Truy vấn với select tối ưu
+    let subscription = await this.userSubRepository.findOne({
       where: { user: { id: userId }, status: SubscriptionStatus.ACTIVE },
       relations: { subscription: true },
+      select: defaultSelect,
     });
 
+    // Nếu không tìm thấy subscription ACTIVE, tìm subscription EXPIRED
     if (!subscription) {
-      return this.userSubRepository.findOne({
+      subscription = await this.userSubRepository.findOne({
         where: { user: { id: userId }, status: SubscriptionStatus.EXPIRED },
         relations: { subscription: true },
+        select: defaultSelect,
       });
     }
 

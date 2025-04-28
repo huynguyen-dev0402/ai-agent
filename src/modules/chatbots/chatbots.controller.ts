@@ -1,59 +1,66 @@
 import {
   Controller,
   Post,
-  Patch,
   Body,
   Param,
   UseGuards,
   Req,
-  ValidationPipe,
-  BadRequestException,
-  Query,
   Res,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ChatbotsService } from '../chatbots/chatbots.service';
-import { CreateChatbotDto } from '../chatbots/dto/create-chatbot.dto';
-import { UpdateChatbotDto } from '../chatbots/dto/update-chatbot.dto';
 import { AuthGuard } from '../auth/guards/jwt-auth.guard';
-import {
-  ApiTags,
-  ApiBearerAuth,
-  ApiOperation,
-  ApiResponse,
-} from '@nestjs/swagger';
-import { UserIdMatchGuard } from 'src/guards/user-id-match.guard';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { UserIdMatchGuard } from 'src/common/guards/user-id-match.guard';
 import { ChatWithChatbotDto } from './dto/chat-with-chatbot.dto';
 import { Response } from 'express';
+import { CheckQuota } from 'src/common/decorators/check-quota.decorator';
+import {
+  ResourceType,
+  UsageAction,
+} from '../usage-logs/entities/usage-log.entity';
+import { CheckQuotaInterceptor } from 'src/common/interceptors/usage-logs.interceptor';
 
 @Controller('users/:userId/chatbots')
-//@UseGuards(AuthGuard, UserIdMatchGuard)
+@UseGuards(AuthGuard, UserIdMatchGuard)
 @ApiTags('Chatbots')
 @ApiBearerAuth('access-token')
 export class ChatbotsController {
   constructor(private readonly chatbotsService: ChatbotsService) {}
-  // @Post('/:chatbotId/chat')
-  //   async chatWithBot(
-  //     @Param('chatbotId') chatbotId: string,
-  //     @Body() chatWithChatbotDto: ChatWithChatbotDto,
-  //   ) {
-  //     return await this.chatbotsService.chatWithBot(
-  //       request.user.external_user_id,
-  //       chatbotId,
-  //       chatWithChatbotDto,
-  //     );
-  //   }
-  @Post('/:chatbotId/iframe/chat')
+
+  @Post('/:chatbotId/chat')
+  @UseInterceptors(CheckQuotaInterceptor) // Áp dụng interceptor để ghi log usage
+  @CheckQuota({
+    resourceType: ResourceType.MESSAGE,
+    action: UsageAction.SEND,
+    quantity: 1, // Số lượng sử dụng, mặc định là 1
+  })
   async chatWithBot(
     @Param('chatbotId') chatbotId: string,
-    @Param('userId') userId: string,
-    @Body() body: any,
+    @Req() request: Request & { user: { [key: string]: string } },
+    @Body() chatWithChatbotDto: ChatWithChatbotDto,
     @Res({ passthrough: false }) response: Response,
   ) {
-    return await this.chatbotsService.chatWithBotStreamIframe(
-      userId,
+    return await this.chatbotsService.chatWithBotStream(
+      request.user.external_user_id,
       chatbotId,
-      body.message,
+      chatWithChatbotDto,
       response,
     );
   }
+
+  // @Post('/:chatbotId/iframe/chat')
+  // async chatWithBotIframe(
+  //   @Param('chatbotId') chatbotId: string,
+  //   @Param('userId') userId: string,
+  //   @Body() body: any,
+  //   @Res({ passthrough: false }) response: Response,
+  // ) {
+  //   return await this.chatbotsService.chatWithBotStreamIframe(
+  //     userId,
+  //     chatbotId,
+  //     body.message,
+  //     response,
+  //   );
+  // }
 }

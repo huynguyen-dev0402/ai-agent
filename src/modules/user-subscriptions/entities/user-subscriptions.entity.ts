@@ -1,5 +1,6 @@
 import { Feature } from 'src/modules/features/entities/feature.entity';
 import { Subscription } from 'src/modules/subscriptions/entities/subscription.entity';
+import { UsageLog } from 'src/modules/usage-logs/entities/usage-log.entity';
 import { User } from 'src/modules/users/entities/user.entity';
 import {
   Entity,
@@ -9,6 +10,7 @@ import {
   Unique,
   JoinColumn,
   Column,
+  OneToMany,
 } from 'typeorm';
 
 export enum SubscriptionStatus {
@@ -33,6 +35,9 @@ export class UserSubscriptions {
   @ManyToOne(() => User, (user) => user.user_subscriptions)
   @JoinColumn({ name: 'user_id' })
   user: User;
+
+  @OneToMany(() => UsageLog, (usage_logs) => usage_logs.user)
+  usage_logs: UsageLog[];
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   start_date: Date;

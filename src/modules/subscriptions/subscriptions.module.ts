@@ -9,7 +9,7 @@ import { User } from '../users/entities/user.entity';
 import { SuperAdminGuard } from '../author/guards/super-admin.guard';
 import { AuthModule } from '../auth/auth.module';
 import { UserSubscriptionsModule } from '../user-subscriptions/user-subscriptions.module';
-
+import { UsageLogsModule } from '../usage-logs/usage-logs.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -20,6 +20,7 @@ import { UserSubscriptionsModule } from '../user-subscriptions/user-subscription
     ]),
     AuthModule,
     UserSubscriptionsModule,
+    UsageLogsModule,
   ],
   controllers: [SubscriptionsController],
   providers: [SubscriptionsService, SuperAdminGuard],

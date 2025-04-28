@@ -23,6 +23,9 @@ import { SubscriptionsModule } from './modules/subscriptions/subscriptions.modul
 import { FeaturesModule } from './modules/features/features.module';
 import { SubscriptionFeaturesModule } from './modules/subscription-features/subscription-features.module';
 import { UserSubscriptionsModule } from './modules/user-subscriptions/user-subscriptions.module';
+import { UsageLogsModule } from './modules/usage-logs/usage-logs.module';
+import { AuthGuard } from './modules/auth/guards/jwt-auth.guard';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -60,8 +63,15 @@ import { UserSubscriptionsModule } from './modules/user-subscriptions/user-subsc
     FeaturesModule,
     SubscriptionFeaturesModule,
     UserSubscriptionsModule,
+    UsageLogsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
+  ],
 })
 export class AppModule {}

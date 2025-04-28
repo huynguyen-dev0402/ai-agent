@@ -25,6 +25,8 @@ import { CreateChatbotOnboardingDto } from '../chatbot-onboarding/dto/create-cha
 import { UpdateChatbotOnboardingDto } from '../chatbot-onboarding/dto/update-chatbot-onboarding.dto';
 import { Response } from 'express';
 import { User } from '../users/entities/user.entity';
+import { UsageLogsService } from '../usage-logs/usage-logs.service';
+import { UsageStatus } from '../usage-logs/entities/usage-log.entity';
 
 @Injectable()
 export class ChatbotsService {
@@ -34,6 +36,7 @@ export class ChatbotsService {
     private readonly userService: UsersService,
     private readonly chatbotModelsService: ChatbotModelsService,
     private readonly workspaceService: WorkspacesService,
+    private readonly usagelogService: UsageLogsService,
     @InjectRepository(ChatbotResource)
     private chatbotResourceRepository: Repository<ChatbotResource>,
     @InjectRepository(Resource)
@@ -277,23 +280,22 @@ export class ChatbotsService {
     userId: string,
     createChatbotDto: CreateChatbotDto,
   ) {
-    const model = await this.chatbotModelsService.findOne('1722479058');
+    const [model] = await Promise.all([
+      this.chatbotModelsService.findOne('1722479058'),
+      this.userService.findOne(userId),
+    ]);
 
     if (!model) {
       throw new NotFoundException('Model not found');
     }
-    const user = await this.userService.findOne(userId);
-    const chatbot = {
-      ...createChatbotDto,
-      user_id: userId,
-      model_id: '1722479058',
-      model,
-      user,
-    };
-    const newChatbot = this.chatbotRepository.create(chatbot);
-    await this.chatbotRepository.save(newChatbot);
 
-    return newChatbot;
+    const chatbot = this.chatbotRepository.create({
+      ...createChatbotDto,
+      user: { id: userId },
+      model: { id: model.id },
+    });
+
+    return this.chatbotRepository.save(chatbot);
   }
 
   async publishChatbotByUser(

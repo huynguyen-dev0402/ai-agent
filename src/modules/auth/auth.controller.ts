@@ -21,6 +21,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { Public } from 'src/common/decorators/public-route.decorator';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -31,6 +32,7 @@ export class AuthController {
   ) {}
 
   @Post('/refresh-token')
+  @Public()
   @ApiOperation({
     summary: 'Refresh access token',
     description: 'Cung cấp refresh token để lấy access token mới',
@@ -46,6 +48,7 @@ export class AuthController {
   }
 
   @Delete('/revoke-refresh-token')
+  @Public()
   @ApiOperation({
     summary: 'Revoke refresh token',
     description: 'Thu hồi refresh token hiện tại',
@@ -64,6 +67,7 @@ export class AuthController {
   }
 
   @Post('/register')
+  @Public()
   @ApiOperation({
     summary: 'Register new user',
     description: 'Đăng ký người dùng thông thường (user)',
@@ -87,6 +91,7 @@ export class AuthController {
   }
 
   @Post('/login')
+  @Public()
   @ApiOperation({
     summary: 'Login user',
     description: 'Đăng nhập bằng email và mật khẩu',
@@ -108,7 +113,6 @@ export class AuthController {
     };
   }
 
-  @UseGuards(AuthGuard)
   @Delete('/logout')
   @ApiBearerAuth('access-token')
   @ApiOperation({

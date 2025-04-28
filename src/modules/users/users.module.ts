@@ -1,4 +1,7 @@
-import { forwardRef, Module } from '@nestjs/common';
+import {
+  forwardRef,
+  Module,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -22,6 +25,11 @@ import { OnboardingSuggestedQuestion } from '../onboarding-suggested-questions/e
 import { UserSubscriptions } from '../user-subscriptions/entities/user-subscriptions.entity';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 import { UserSubscriptionsModule } from '../user-subscriptions/user-subscriptions.module';
+import { UsageLog } from '../usage-logs/entities/usage-log.entity';
+import { UsageLogsModule } from '../usage-logs/usage-logs.module';
+import { Reflector } from '@nestjs/core';
+import { CheckQuotaInterceptor } from 'src/common/interceptors/usage-logs.interceptor';
+import { QuotaService } from '../quota/quota.service';
 
 @Module({
   imports: [
@@ -35,6 +43,7 @@ import { UserSubscriptionsModule } from '../user-subscriptions/user-subscription
       ChatbotOnboarding,
       OnboardingSuggestedQuestion,
       UserSubscriptions,
+      UsageLog,
     ]),
     AuthModule,
     ApiTokensModule,
@@ -44,11 +53,18 @@ import { UserSubscriptionsModule } from '../user-subscriptions/user-subscription
     DocumentsModule,
     ChatbotPromptModule,
     SubscriptionsModule,
+    UsageLogsModule,
     forwardRef(() => UserSubscriptionsModule),
     forwardRef(() => ResourcesModule),
   ],
   controllers: [UsersController],
-  providers: [UsersService, ChatbotsService],
+  providers: [
+    UsersService,
+    ChatbotsService,
+    CheckQuotaInterceptor,
+    Reflector,
+    QuotaService,
+  ],
   exports: [UsersService],
 })
 export class UsersModule {}

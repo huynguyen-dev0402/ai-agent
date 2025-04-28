@@ -20,7 +20,7 @@ import { ApiBody, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { UserSubscriptionsService } from '../user-subscriptions/user-subscriptions.service';
 import { ActionSubscriptionDto } from './dto/action-subscription.dto';
 import { UserSubscriptions } from '../user-subscriptions/entities/user-subscriptions.entity';
-import { successResponse } from 'src/utils/response/response.util';
+import { successResponse } from 'src/common/utils/response/response.util';
 
 @Controller('subscriptions')
 @UseGuards(AuthGuard)
@@ -201,7 +201,7 @@ export class SubscriptionsController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.subscriptionsService.findOne(+id);
+    return this.subscriptionsService.findOne(id);
   }
 
   @Patch(':id')
