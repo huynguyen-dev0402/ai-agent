@@ -13,6 +13,13 @@ export class ChatWithChatbotDto {
     description: 'The message to be sent to the chatbot.',
     type: String,
   })
+  @IsNotEmpty({ message: 'Must have conversation_id' })
+  conversation_id: string;
+
+  @ApiProperty({
+    description: 'The message to be sent to the chatbot.',
+    type: String,
+  })
   @IsNotEmpty({ message: 'Must have message' })
   message: string;
 }

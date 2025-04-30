@@ -26,6 +26,9 @@ import { UserSubscriptionsModule } from './modules/user-subscriptions/user-subsc
 import { UsageLogsModule } from './modules/usage-logs/usage-logs.module';
 import { AuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { APP_GUARD } from '@nestjs/core';
+import { ConversationsModule } from './modules/conversations/conversations.module';
+import { MessagesModule } from './modules/messages/messages.module';
+import { EndUsersModule } from './modules/end-users/end-users.module';
 
 @Module({
   imports: [
@@ -64,6 +67,9 @@ import { APP_GUARD } from '@nestjs/core';
     SubscriptionFeaturesModule,
     UserSubscriptionsModule,
     UsageLogsModule,
+    ConversationsModule,
+    MessagesModule,
+    EndUsersModule,
   ],
   controllers: [AppController],
   providers: [

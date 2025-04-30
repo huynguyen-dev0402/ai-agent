@@ -1,6 +1,8 @@
 import { KnowledgeDto } from './dto/knowledge.dto';
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -27,6 +29,10 @@ import { Response } from 'express';
 import { User } from '../users/entities/user.entity';
 import { UsageLogsService } from '../usage-logs/usage-logs.service';
 import { UsageStatus } from '../usage-logs/entities/usage-log.entity';
+import { MessagesService } from '../messages/messages.service';
+import { SenderType } from '../messages/entities/message.entity';
+import { ConversationsService } from '../conversations/conversations.service';
+import { Conversation } from '../conversations/entities/conversation.entity';
 
 @Injectable()
 export class ChatbotsService {
@@ -36,7 +42,7 @@ export class ChatbotsService {
     private readonly userService: UsersService,
     private readonly chatbotModelsService: ChatbotModelsService,
     private readonly workspaceService: WorkspacesService,
-    private readonly usagelogService: UsageLogsService,
+    private readonly messageService: MessagesService,
     @InjectRepository(ChatbotResource)
     private chatbotResourceRepository: Repository<ChatbotResource>,
     @InjectRepository(Resource)
@@ -47,6 +53,8 @@ export class ChatbotsService {
     private chatbotOnboardingRepository: Repository<ChatbotOnboarding>,
     @InjectRepository(OnboardingSuggestedQuestion)
     private suggestRepository: Repository<OnboardingSuggestedQuestion>,
+    @InjectRepository(Conversation)
+    private conversationRepository: Repository<Conversation>,
     private dataSource: DataSource,
   ) {}
 
@@ -111,27 +119,47 @@ export class ChatbotsService {
       throw new NotFoundException('Chatbot not found');
     }
 
+    const conversation = await this.conversationRepository.findOne({
+      where: {
+        id: chatWithChatbotDto.conversation_id,
+      },
+    });
+
+    if (!conversation) {
+      throw new NotFoundException('Conversation not found');
+    }
+
+    await this.messageService.saveMessageUser({
+      conversation_id: conversation.id,
+      sender_type: SenderType.USER,
+      message_content: chatWithChatbotDto.message,
+      send_at: new Date(),
+    });
+
     try {
-      const response = await fetch('https://api.coze.com/v3/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${chatWithChatbotDto.api_token}`,
+      const response = await fetch(
+        `https://api.coze.com/v3/chat?conversation_id=${conversation.external_conversation_id}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${chatWithChatbotDto.api_token}`,
+          },
+          body: JSON.stringify({
+            bot_id: chatbot.external_bot_id,
+            user_id: externalUserId,
+            stream: true,
+            auto_save_history: true,
+            additional_messages: [
+              {
+                role: 'user',
+                content: chatWithChatbotDto.message,
+                content_type: 'text',
+              },
+            ],
+          }),
         },
-        body: JSON.stringify({
-          bot_id: chatbot.external_bot_id,
-          user_id: externalUserId,
-          stream: true,
-          auto_save_history: true,
-          additional_messages: [
-            {
-              role: 'user',
-              content: chatWithChatbotDto.message,
-              content_type: 'text',
-            },
-          ],
-        }),
-      });
+      );
 
       if (!response.ok || !response.body) {
         throw new InternalServerErrorException(
@@ -148,15 +176,47 @@ export class ChatbotsService {
       const decoder = new TextDecoder();
 
       const pump = async () => {
+        let fullMessage = ''; // Dùng để tích luỹ nội dung cuối cùng
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
           if (value) {
             const chunk = decoder.decode(value);
             res.write(chunk);
+            // Lấy data từ chunk nếu là event message.delta hoặc message.completed
+            const matches = chunk.match(/data:(.*)/g);
+            if (matches) {
+              matches.forEach((line) => {
+                try {
+                  const dataStr = line.replace(/^data:\s*/, '');
+                  const parsed = JSON.parse(dataStr);
+                  if (
+                    parsed?.event === 'conversation.message.delta' ||
+                    parsed?.event === 'conversation.message.completed'
+                  ) {
+                    // Tích lũy content
+                    if (
+                      parsed.content_type === 'text' &&
+                      typeof parsed.content === 'string'
+                    ) {
+                      fullMessage += parsed.content;
+                    }
+                  }
+                } catch (err) {
+                  // Bỏ qua lỗi parse JSON không hợp lệ
+                }
+              });
+            }
           }
         }
         res.end();
+
+        await this.messageService.saveMessageUser({
+          conversation_id: conversation.id,
+          sender_type: SenderType.CHATBOT,
+          message_content: fullMessage,
+          send_at: new Date(),
+        });
       };
 
       pump().catch((err) => {
@@ -336,7 +396,7 @@ export class ChatbotsService {
   }
 
   async findOne(id: string) {
-    const chatbot = await this.chatbotRepository.find({
+    const chatbot = await this.chatbotRepository.findOne({
       where: {
         id,
       },

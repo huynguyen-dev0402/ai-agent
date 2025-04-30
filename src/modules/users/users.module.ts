@@ -1,7 +1,4 @@
-import {
-  forwardRef,
-  Module,
-} from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -30,6 +27,9 @@ import { UsageLogsModule } from '../usage-logs/usage-logs.module';
 import { Reflector } from '@nestjs/core';
 import { CheckQuotaInterceptor } from 'src/common/interceptors/usage-logs.interceptor';
 import { QuotaService } from '../quota/quota.service';
+import { MessagesModule } from '../messages/messages.module';
+import { ConversationsModule } from '../conversations/conversations.module';
+import { Conversation } from '../conversations/entities/conversation.entity';
 
 @Module({
   imports: [
@@ -44,6 +44,7 @@ import { QuotaService } from '../quota/quota.service';
       OnboardingSuggestedQuestion,
       UserSubscriptions,
       UsageLog,
+      Conversation
     ]),
     AuthModule,
     ApiTokensModule,
@@ -54,6 +55,7 @@ import { QuotaService } from '../quota/quota.service';
     ChatbotPromptModule,
     SubscriptionsModule,
     UsageLogsModule,
+    MessagesModule,
     forwardRef(() => UserSubscriptionsModule),
     forwardRef(() => ResourcesModule),
   ],

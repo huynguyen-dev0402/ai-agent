@@ -14,6 +14,7 @@ import {
   OneToOne,
 } from 'typeorm';
 import { ChatbotResource } from './chatbot-resources.entity';
+import { Conversation } from 'src/modules/conversations/entities/conversation.entity';
 
 export enum ChatbotStatus {
   DRAFT = 'draft',
@@ -84,4 +85,7 @@ export class Chatbot {
     (chatbot_resources) => chatbot_resources.chatbot,
   )
   chatbot_resources: ChatbotResource[];
+
+  @OneToMany(() => Conversation, (conversations) => conversations.chatbot)
+  conversations: Conversation[];
 }
