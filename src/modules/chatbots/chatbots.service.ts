@@ -243,6 +243,7 @@ export class ChatbotsService {
         },
         select: {
           id: true,
+          external_user_id:true,
           api_token: {
             id: true,
             token: true,
@@ -302,6 +303,8 @@ export class ChatbotsService {
           }),
         },
       );
+      // const text = await response.text();
+      // console.log(text);
 
       if (!response.ok || !response.body) {
         throw new InternalServerErrorException(

@@ -32,24 +32,23 @@ export class CheckQuotaInterceptor implements NestInterceptor {
   ): Promise<Observable<any>> {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
-
     // 1. Lấy userId từ các nguồn khác nhau
     let userId: string;
 
     if (user?.id) {
       userId = user.id;
     }
-    // Nếu không, lấy từ body 
-    else if (request.body?.userId) {
-      userId = request.body.userId;
+    // Nếu không, lấy từ body
+    else if (request.body?.user_id) {
+      userId = request.body.user_id;
     }
     // Nếu không, lấy từ params
-    else if (request.params?.userId) {
-      userId = request.params.userId;
+    else if (request.params?.user_id) {
+      userId = request.params.user_id;
     }
     // Nếu không, lấy từ query
-    else if (request.query?.userId) {
-      userId = request.query.userId;
+    else if (request.query?.user_id) {
+      userId = request.query.user_id;
     }
     // Nếu không tìm thấy userId từ bất kỳ nguồn nào
     else {
@@ -59,7 +58,7 @@ export class CheckQuotaInterceptor implements NestInterceptor {
     }
 
     // Super admin không cần kiểm tra quota
-    if (user.role === 'super_admin') {
+    if (user?.role === 'super_admin') {
       return next.handle();
     }
 
@@ -78,7 +77,7 @@ export class CheckQuotaInterceptor implements NestInterceptor {
 
     // 3. Kiểm tra quota và ghi log (đồng bộ, trả về usageLogId)
     const usageLogId = await this.quotaService.checkQuotaAndLog(
-      user.id,
+      userId,
       resourceType,
       action,
       source,
