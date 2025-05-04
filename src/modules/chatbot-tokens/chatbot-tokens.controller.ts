@@ -1,5 +1,5 @@
 import { Body, Controller, Post, Req } from '@nestjs/common';
-import { ChatbotTokensService } from './chatbot-tokens.service';
+import { ChatbotTokensService } from '@modules/chatbot-tokens/chatbot-tokens.service';
 import { ApiBearerAuth, ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
 
 @Controller('chatbot-tokens')

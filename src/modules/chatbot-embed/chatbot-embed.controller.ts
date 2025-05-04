@@ -28,6 +28,7 @@ import {
   ApiQuery,
   ApiBody,
 } from '@nestjs/swagger';
+import { InitChatbotQueryDto } from './dto/init-chatbot-query.dto';
 
 @ApiTags('Chatbot Embed')
 @Controller('chatbot-embed')
@@ -57,29 +58,14 @@ export class ChatbotEmbedController {
     },
   })
   @ApiResponse({ status: 403, description: 'Missing or invalid parameters' })
-  async initChatbot(
-    @Query('chatbotId') chatbotId: string,
-    @Query('userId') userId: string,
-    @Query('token') token: string,
-  ) {
-    if (!chatbotId || !userId || !token) {
-      throw new ForbiddenException('Missing required parameters');
-    }
-
-    await this.chatbotEmbedService.validateChatbotEmbed(
-      chatbotId,
-      userId,
-      token,
-    );
+  async initChatbot(@Query() query: InitChatbotQueryDto) {
+    const response = await this.chatbotEmbedService.validateChatbotEmbed(query);
 
     // Trả về dữ liệu cần thiết để render chatbot trong iframe
     return {
       status: 'success',
-      data: {
-        chatbotId,
-        userId,
-        // Thêm các thông tin khác nếu cần (ví dụ: chatbot_name, icon_url, prompt_info)
-      },
+      data: response,
+      // Thêm các thông tin khác nếu cần (ví dụ: chatbot_name, icon_url, prompt_info)
     };
   }
 

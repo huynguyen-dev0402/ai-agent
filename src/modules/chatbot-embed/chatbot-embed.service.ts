@@ -12,6 +12,7 @@ import { ChatbotEmbedLog } from '@modules/chatbot-embed/entities/chatbot-embed-l
 import { ConversationsService } from '@modules/conversations/conversations.service';
 import { StartConversationDto } from '@modules/chatbot-embed/dto/start-conversation.dto';
 import { ChatbotTokensService } from '@modules/chatbot-tokens/chatbot-tokens.service';
+import { InitChatbotQueryDto } from './dto/init-chatbot-query.dto';
 
 @Injectable()
 export class ChatbotEmbedService {
@@ -27,10 +28,9 @@ export class ChatbotEmbedService {
   ) {}
 
   async validateChatbotEmbed(
-    chatbotId: string,
-    userId: string,
-    token: string,
+    query:InitChatbotQueryDto
   ): Promise<{ chatbotId: string; userId: string }> {
+    const { userId, chatbotId, token } = query;
     // Bước 1: Xác thực token
     const payload = await this.chatbotTokenService.verifyChatbotToken(token);
     if (payload.userId !== userId || payload.chatbotId !== chatbotId) {

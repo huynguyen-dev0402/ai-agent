@@ -1,5 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { ChatbotToken } from './entities/chatbot-token.entity';
+import { ChatbotToken } from '@modules/chatbot-tokens/entities/chatbot-token.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
