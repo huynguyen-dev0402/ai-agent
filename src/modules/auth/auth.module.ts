@@ -10,6 +10,7 @@ import { UsersService } from '@modules/users/users.service';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { Workspace } from '@modules/workspaces/entities/workspace.entity';
 import { ApiToken } from '@modules/api-tokens/entities/api-token.entity';
+import { ChatbotToken } from '@modules/chatbot-tokens/entities/chatbot-token.entity';
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import { ApiToken } from '@modules/api-tokens/entities/api-token.entity';
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: process.env.JWT_EXPIRED },
     }),
-    TypeOrmModule.forFeature([User, Workspace, ApiToken]),
+    TypeOrmModule.forFeature([User, Workspace, ApiToken, ChatbotToken]),
     RedisModule.forRootAsync({
       useFactory: () => ({
         type: 'single',

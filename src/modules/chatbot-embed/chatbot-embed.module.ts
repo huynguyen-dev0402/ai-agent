@@ -15,6 +15,8 @@ import { QuotaService } from '@modules/quota/quota.service';
 import { Reflector } from '@nestjs/core';
 import { UserSubscriptionsModule } from '@modules/user-subscriptions/user-subscriptions.module';
 import { UsageLogsModule } from '@modules/usage-logs/usage-logs.module';
+import { JwtModule } from '@nestjs/jwt';
+import { ChatbotTokensModule } from '@modules/chatbot-tokens/chatbot-tokens.module';
 
 @Module({
   imports: [
@@ -30,8 +32,14 @@ import { UsageLogsModule } from '@modules/usage-logs/usage-logs.module';
     AuthModule,
     UserSubscriptionsModule,
     UsageLogsModule,
+    ChatbotTokensModule,
   ],
   controllers: [ChatbotEmbedController],
-  providers: [ChatbotEmbedService, CheckQuotaInterceptor, Reflector, QuotaService],
+  providers: [
+    ChatbotEmbedService,
+    CheckQuotaInterceptor,
+    Reflector,
+    QuotaService,
+  ],
 })
 export class ChatbotEmbedModule {}

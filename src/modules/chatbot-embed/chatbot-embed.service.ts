@@ -11,6 +11,7 @@ import { Repository } from 'typeorm';
 import { ChatbotEmbedLog } from '@modules/chatbot-embed/entities/chatbot-embed-log.entity';
 import { ConversationsService } from '@modules/conversations/conversations.service';
 import { StartConversationDto } from '@modules/chatbot-embed/dto/start-conversation.dto';
+import { ChatbotTokensService } from '@modules/chatbot-tokens/chatbot-tokens.service';
 
 @Injectable()
 export class ChatbotEmbedService {
@@ -21,7 +22,7 @@ export class ChatbotEmbedService {
     private readonly chatbotEmbedLogRepository: Repository<ChatbotEmbedLog>,
     @InjectRepository(EndUser)
     private readonly endUserRepository: Repository<EndUser>,
-    private readonly authService: AuthService,
+    private readonly chatbotTokenService: ChatbotTokensService,
     private readonly conversationService: ConversationsService,
   ) {}
 
@@ -31,7 +32,7 @@ export class ChatbotEmbedService {
     token: string,
   ): Promise<{ chatbotId: string; userId: string }> {
     // Bước 1: Xác thực token
-    const payload = await this.authService.verifyChatbotToken(token);
+    const payload = await this.chatbotTokenService.verifyChatbotToken(token);
     if (payload.userId !== userId || payload.chatbotId !== chatbotId) {
       await this.logEmbedAttempt(chatbotId, userId, false, 'Invalid token');
       throw new UnauthorizedException('Invalid token');

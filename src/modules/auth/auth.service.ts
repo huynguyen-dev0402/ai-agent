@@ -158,24 +158,4 @@ export class AuthService {
       );
     }
   }
-
-  async generateChatbotToken(
-    userId: string,
-    chatbotId: string,
-  ): Promise<string> {
-    const payload = { userId, chatbotId };
-    return this.jwtService.sign(payload, {
-      expiresIn: '30d', // Token hết hạn sau 30 ngày
-    });
-  }
-
-  async verifyChatbotToken(
-    token: string,
-  ): Promise<{ userId: string; chatbotId: string }> {
-    try {
-      return this.jwtService.verify(token);
-    } catch (error) {
-      throw new UnauthorizedException('Invalid or expired token');
-    }
-  }
 }
