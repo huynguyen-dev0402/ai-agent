@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Conversation } from '@modules/conversations/entities/conversation.entity';
 import { Repository } from 'typeorm';
 import { ChatbotsService } from '@modules/chatbots/chatbots.service';
+import { User, UserStatus } from '@modules/users/entities/user.entity';
 
 @Injectable()
 export class ConversationsService {
@@ -11,6 +12,8 @@ export class ConversationsService {
     @InjectRepository(Conversation)
     private readonly conversationRepository: Repository<Conversation>,
     private readonly chatbotService: ChatbotsService,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
   async findOne(id: string) {
     return this.conversationRepository.findOne({
@@ -20,9 +23,23 @@ export class ConversationsService {
     });
   }
   async createConversation(createDto: CreateConversationDto): Promise<any> {
-    const chatbot = await this.chatbotService.findOne(createDto.chatbot_id);
-    if (!chatbot) {
-      throw new NotFoundException('Chatbot not found');
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.api_token', 'api_token')
+      .leftJoinAndSelect('user.chatbots', 'chatbot')
+      .where('user.id = :userId', { userId: createDto.user_id })
+      .andWhere('user.status = :status', { status: UserStatus.ACTIVE })
+      .andWhere('chatbot.id = :chatbotId', { chatbotId: createDto.chatbot_id })
+      .select([
+        'user.id',
+        'api_token.id',
+        'api_token.token',
+        'chatbot.id',
+        'chatbot.external_bot_id',
+      ])
+      .getOne();
+    if (!user) {
+      throw new NotFoundException('User or Chatbot not found');
     }
     try {
       const response = await fetch(
@@ -31,10 +48,10 @@ export class ConversationsService {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${createDto.api_token}`,
+            Authorization: `Bearer ${user.api_token.token}`,
           },
           body: JSON.stringify({
-            bot_id: chatbot.external_bot_id,
+            bot_id: user.chatbots[0].external_bot_id,
           }),
         },
       );
@@ -50,7 +67,7 @@ export class ConversationsService {
         throw new Error(`Coze API error: ${response.status} ${errorBody}`);
       }
       const newConversation = this.conversationRepository.create({
-        chatbot: { id: chatbot.id },
+        chatbot: { id: user.chatbots[0].id },
         end_user: { id: createDto.end_user_id },
         external_conversation_id: data.data.id,
       });

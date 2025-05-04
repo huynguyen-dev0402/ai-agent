@@ -2,11 +2,10 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsOptional } from 'class-validator';
 export class CreateConversationDto {
   @ApiProperty({
-    description: 'API token used for authorization.',
-    example: 'your-api-token-here',
+    example: 'your-user-id-here',
   })
-  @IsNotEmpty({ message: 'Api token required' })
-  api_token: string;
+  @IsNotEmpty({ message: 'Id user required' })
+  user_id: string;
 
   @ApiProperty({
     example: 'your-chatbot-id-here',

@@ -7,12 +7,13 @@ import { MessagesModule } from '@modules/messages/messages.module';
 import { Message } from '@modules/messages/entities/message.entity';
 import { ChatbotsModule } from '@modules/chatbots/chatbots.module';
 import { EndUser } from '@modules/end-users/entities/end-user.entity';
+import { User } from '@modules/users/entities/user.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Conversation, Message, EndUser]),
+    TypeOrmModule.forFeature([Conversation, Message, EndUser, User]),
     MessagesModule,
-    ChatbotsModule,
+    ChatbotsModule
   ],
   controllers: [ConversationsController],
   providers: [ConversationsService],

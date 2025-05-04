@@ -232,38 +232,40 @@ export class ChatbotsService {
     chatEmbedChatbot: ChatWithChatbotEmbedDto,
     res: Response,
   ) {
-    const user = await this.userRepository.findOne({
-      where: {
-        id: chatEmbedChatbot.user_id,
-        status: UserStatus.ACTIVE,
-      },
-      relations: {
-        api_token: true,
-      },
-      select: {
-        id: true,
-        api_token: {
-          id: true,
-          token: true,
+    const [user, chatbot, conversation] = await Promise.all([
+      await this.userRepository.findOne({
+        where: {
+          id: chatEmbedChatbot.user_id,
+          status: UserStatus.ACTIVE,
         },
-      },
-    });
+        relations: {
+          api_token: true,
+        },
+        select: {
+          id: true,
+          api_token: {
+            id: true,
+            token: true,
+          },
+        },
+      }),
+      await this.chatbotRepository.findOne({
+        where: { id: chatEmbedChatbot.chatbot_id },
+      }),
+      await this.conversationRepository.findOne({
+        where: {
+          id: chatEmbedChatbot.conversation_id,
+        },
+      }),
+    ]);
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    const chatbot = await this.chatbotRepository.findOne({
-      where: { id: chatEmbedChatbot.chatbot_id },
-    });
 
     if (!chatbot) {
       throw new NotFoundException('Chatbot not found');
     }
-
-    const conversation = await this.conversationRepository.findOne({
-      where: {
-        id: chatEmbedChatbot.conversation_id,
-      },
-    });
 
     if (!conversation) {
       throw new NotFoundException('Conversation not found');
