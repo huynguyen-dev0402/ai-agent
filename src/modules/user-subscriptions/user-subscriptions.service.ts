@@ -318,6 +318,8 @@ export class UserSubscriptionsService {
         id?: boolean;
         status?: boolean;
         subscription?: {
+          name?: boolean;
+          duration_months?: boolean;
           message_limit?: boolean;
           knowledge_limit?: boolean;
           agent_limit?: boolean;
@@ -331,10 +333,12 @@ export class UserSubscriptionsService {
       id: true,
       status: true,
       subscription: {
+        name: true,
         message_limit: true,
         knowledge_limit: true,
         agent_limit: true,
         member_limit: true,
+        duration_months: true,
       },
       ...options.select,
     };
