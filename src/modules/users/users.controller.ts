@@ -60,6 +60,7 @@ import {
 } from '@modules/usage-logs/entities/usage-log.entity';
 import { CheckQuotaInterceptor } from '@common/interceptors/usage-logs.interceptor';
 import { QUANTITY_REDUCE } from '@common/constants/quantity.constant';
+import { ChatbotTokensService } from '@modules/chatbot-tokens/chatbot-tokens.service';
 
 @Controller('users')
 @UseGuards(AuthGuard)
@@ -75,6 +76,7 @@ export class UsersController {
     private readonly chatbotPromptService: ChatbotPromptService,
     private readonly subscriptionService: SubscriptionsService,
     private readonly userSubscriptionService: UserSubscriptionsService,
+    private readonly chatbotTokenService: ChatbotTokensService,
   ) {}
 
   @Get('/profile/api-token')
@@ -675,6 +677,57 @@ export class UsersController {
       success: true,
       message: 'Subscriptions retrieved successfully',
       userSubscription,
+    };
+  }
+
+  @Get('/profile/chatbot-token')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get chatbot tokens for the authenticated user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Chatbot tokens retrieved successfully',
+    schema: {
+      example: {
+        success: true,
+        message: 'Subscriptions retrieved successfully',
+        chatbotTokens: [
+          {
+            id: 'e41d3b2f-5e2a-4b9d-a786-18f0a9f6f1b9',
+            token: 'abc123xyz456',
+            expires_at: '2025-12-31T23:59:59.000Z',
+            created_at: '2025-01-01T10:00:00.000Z',
+            updated_at: '2025-04-01T12:00:00.000Z',
+            user: {
+              id: 'user-id-example',
+              // other user fields if included
+            },
+            chatbot: {
+              id: 'chatbot-id-example',
+              // other chatbot fields if included
+            },
+          },
+        ],
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({
+    status: 404,
+    description: 'No active subscription found for this user',
+  })
+  async getChatbotToken(
+    @Req() request: Request & { user: { [key: string]: string } },
+  ) {
+    const chatbotTokens = await this.chatbotTokenService.getTokenForUser(
+      request.user.id,
+    );
+    if (!chatbotTokens.length) {
+      throw new NotFoundException('No active subscription found for this user');
+    }
+    return {
+      success: true,
+      message: 'Subscriptions retrieved successfully',
+      chatbotTokens,
     };
   }
 

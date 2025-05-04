@@ -33,9 +33,29 @@ export class CheckQuotaInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
 
-    // 1. Kiểm tra user
-    if (!user?.id) {
-      throw new BadRequestException('User ID not found in request');
+    // 1. Lấy userId từ các nguồn khác nhau
+    let userId: string;
+
+    if (user?.id) {
+      userId = user.id;
+    }
+    // Nếu không, lấy từ body 
+    else if (request.body?.userId) {
+      userId = request.body.userId;
+    }
+    // Nếu không, lấy từ params
+    else if (request.params?.userId) {
+      userId = request.params.userId;
+    }
+    // Nếu không, lấy từ query
+    else if (request.query?.userId) {
+      userId = request.query.userId;
+    }
+    // Nếu không tìm thấy userId từ bất kỳ nguồn nào
+    else {
+      throw new BadRequestException(
+        'User ID not found in request, params, query, or body',
+      );
     }
 
     // Super admin không cần kiểm tra quota

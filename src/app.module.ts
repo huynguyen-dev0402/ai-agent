@@ -29,6 +29,8 @@ import { APP_GUARD } from '@nestjs/core';
 import { ConversationsModule } from '@modules/conversations/conversations.module';
 import { MessagesModule } from '@modules/messages/messages.module';
 import { EndUsersModule } from '@modules/end-users/end-users.module';
+import { ChatbotTokensModule } from './modules/chatbot-tokens/chatbot-tokens.module';
+import { ChatbotEmbedModule } from './modules/chatbot-embed/chatbot-embed.module';
 
 @Module({
   imports: [
@@ -70,6 +72,8 @@ import { EndUsersModule } from '@modules/end-users/end-users.module';
     ConversationsModule,
     MessagesModule,
     EndUsersModule,
+    ChatbotTokensModule,
+    ChatbotEmbedModule,
   ],
   controllers: [AppController],
   providers: [

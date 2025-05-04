@@ -8,7 +8,10 @@ import {
 import { CreateChatbotDto } from '@modules/chatbots/dto/create-chatbot.dto';
 import { UpdateChatbotDto } from '@modules/chatbots/dto/update-chatbot.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Chatbot, ChatbotStatus } from '@modules/chatbots/entities/chatbot.entity';
+import {
+  Chatbot,
+  ChatbotStatus,
+} from '@modules/chatbots/entities/chatbot.entity';
 import { DataSource, In, Repository } from 'typeorm';
 import { UsersService } from '@modules/users/users.service';
 import { PublishChatbotDto } from '@modules/chatbots/dto/publish-chatbot.dto';
@@ -24,10 +27,11 @@ import { OnboardingSuggestedQuestion } from '@modules/onboarding-suggested-quest
 import { CreateChatbotOnboardingDto } from '@modules/chatbot-onboarding/dto/create-chatbot-onboarding.dto';
 import { UpdateChatbotOnboardingDto } from '@modules/chatbot-onboarding/dto/update-chatbot-onboarding.dto';
 import { Response } from 'express';
-import { User } from '@modules/users/entities/user.entity';
+import { User, UserStatus } from '@modules/users/entities/user.entity';
 import { MessagesService } from '@modules/messages/messages.service';
 import { SenderType } from '@modules/messages/entities/message.entity';
 import { Conversation } from '@modules/conversations/entities/conversation.entity';
+import { ChatWithChatbotEmbedDto } from '@modules/chatbot-embed/dto/chat-chatbot-embed.dto';
 
 @Injectable()
 export class ChatbotsService {
@@ -224,61 +228,84 @@ export class ChatbotsService {
     }
   }
 
-  async chatWithBotStreamIframe(
-    userId: string,
-    chatbotId: string,
-    message: string,
+  async chatWithBotEmbedStream(
+    chatEmbedChatbot: ChatWithChatbotEmbedDto,
     res: Response,
   ) {
-    const chatbot = await this.chatbotRepository.findOne({
-      where: { id: chatbotId },
-    });
-
     const user = await this.userRepository.findOne({
-      where: { id: userId },
-      relations: ['api_token'],
+      where: {
+        id: chatEmbedChatbot.user_id,
+        status: UserStatus.ACTIVE,
+      },
+      relations: {
+        api_token: true,
+      },
+      select: {
+        id: true,
+        api_token: {
+          id: true,
+          token: true,
+        },
+      },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    const chatbot = await this.chatbotRepository.findOne({
+      where: { id: chatEmbedChatbot.chatbot_id },
     });
 
     if (!chatbot) {
       throw new NotFoundException('Chatbot not found');
     }
 
-    if (!user?.external_user_id) {
-      throw new NotFoundException('User not found');
+    const conversation = await this.conversationRepository.findOne({
+      where: {
+        id: chatEmbedChatbot.conversation_id,
+      },
+    });
+
+    if (!conversation) {
+      throw new NotFoundException('Conversation not found');
     }
 
-    if (!user?.api_token.token) {
-      throw new NotFoundException('User not found');
-    }
+    await this.messageService.saveMessageUser({
+      conversation_id: conversation.id,
+      sender_type: SenderType.USER,
+      message_content: chatEmbedChatbot.message,
+      send_at: new Date(),
+    });
 
     try {
-      const response = await fetch('https://api.coze.com/v3/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${user.api_token.token}`,
+      const response = await fetch(
+        `https://api.coze.com/v3/chat?conversation_id=${conversation.external_conversation_id}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${user.api_token.token}`,
+          },
+          body: JSON.stringify({
+            bot_id: chatbot.external_bot_id,
+            user_id: user.external_user_id,
+            stream: true,
+            auto_save_history: true,
+            additional_messages: [
+              {
+                role: 'user',
+                content: chatEmbedChatbot.message,
+                content_type: 'text',
+              },
+            ],
+          }),
         },
-        body: JSON.stringify({
-          bot_id: chatbot.external_bot_id,
-          user_id: user.external_user_id,
-          stream: true,
-          auto_save_history: true,
-          additional_messages: [
-            {
-              role: 'user',
-              content: message,
-              content_type: 'text',
-            },
-          ],
-        }),
-      });
+      );
 
       if (!response.ok || !response.body) {
         throw new InternalServerErrorException(
           `Coze API request failed with status ${response.status}`,
         );
       }
-      //console.log(response);
 
       // Set headers to keep stream format
       res.setHeader('Content-Type', 'text/event-stream');
@@ -289,18 +316,48 @@ export class ChatbotsService {
       const decoder = new TextDecoder();
 
       const pump = async () => {
+        let fullMessage = ''; // Dùng để tích luỹ nội dung cuối cùng
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
           if (value) {
             const chunk = decoder.decode(value);
             res.write(chunk);
+            // Lấy data từ chunk nếu là event message.delta hoặc message.completed
+            const matches = chunk.match(/data:(.*)/g);
+            if (matches) {
+              matches.forEach((line) => {
+                try {
+                  const dataStr = line.replace(/^data:\s*/, '');
+                  const parsed = JSON.parse(dataStr);
+                  if (
+                    parsed?.event === 'conversation.message.delta' ||
+                    parsed?.event === 'conversation.message.completed'
+                  ) {
+                    // Tích lũy content
+                    if (
+                      parsed.content_type === 'text' &&
+                      typeof parsed.content === 'string'
+                    ) {
+                      fullMessage += parsed.content;
+                    }
+                  }
+                } catch (err) {
+                  // Bỏ qua lỗi parse JSON không hợp lệ
+                }
+              });
+            }
           }
         }
         res.end();
-      };
 
-      //console.log(pump);
+        await this.messageService.saveMessageUser({
+          conversation_id: conversation.id,
+          sender_type: SenderType.CHATBOT,
+          message_content: fullMessage,
+          send_at: new Date(),
+        });
+      };
 
       pump().catch((err) => {
         console.error('Streaming error:', err);

@@ -16,6 +16,8 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
+import { ChatbotToken } from '@modules/chatbot-tokens/entities/chatbot-token.entity';
+import { ChatbotEmbedLog } from '@modules/chatbot-embed/entities/chatbot-embed-log.entity';
 
 export enum UserStatus {
   ACTIVE = 'active',
@@ -103,4 +105,10 @@ export class User {
 
   @OneToMany(() => UsageLog, (usage_logs) => usage_logs.user)
   usage_logs: UsageLog[];
+
+  @OneToMany(() => ChatbotToken, (chatbot_tokens) => chatbot_tokens.user)
+  chatbot_tokens: ChatbotToken[];
+
+  @OneToMany(() => ChatbotEmbedLog, (embed_logs) => embed_logs.user)
+  embed_logs: ChatbotEmbedLog[];
 }

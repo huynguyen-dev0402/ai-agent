@@ -14,6 +14,8 @@ import {
 } from 'typeorm';
 import { ChatbotResource } from '@modules/chatbots/entities/chatbot-resources.entity';
 import { Conversation } from '@modules/conversations/entities/conversation.entity';
+import { ChatbotToken } from '@modules/chatbot-tokens/entities/chatbot-token.entity';
+import { ChatbotEmbedLog } from '@modules/chatbot-embed/entities/chatbot-embed-log.entity';
 
 export enum ChatbotStatus {
   DRAFT = 'draft',
@@ -87,4 +89,10 @@ export class Chatbot {
 
   @OneToMany(() => Conversation, (conversations) => conversations.chatbot)
   conversations: Conversation[];
+
+  @OneToMany(() => ChatbotToken, (chatbot_tokens) => chatbot_tokens.chatbot)
+  chatbot_tokens: ChatbotToken[];
+
+  @OneToMany(() => ChatbotEmbedLog, (embed_logs) => embed_logs.chatbot)
+  embed_logs: ChatbotEmbedLog[];
 }

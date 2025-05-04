@@ -28,8 +28,8 @@ import { Reflector } from '@nestjs/core';
 import { CheckQuotaInterceptor } from '@common/interceptors/usage-logs.interceptor';
 import { QuotaService } from '@modules/quota/quota.service';
 import { MessagesModule } from '@modules/messages/messages.module';
-import { ConversationsModule } from '@modules/conversations/conversations.module';
 import { Conversation } from '@modules/conversations/entities/conversation.entity';
+import { ChatbotTokensModule } from '@modules/chatbot-tokens/chatbot-tokens.module';
 
 @Module({
   imports: [
@@ -56,6 +56,7 @@ import { Conversation } from '@modules/conversations/entities/conversation.entit
     SubscriptionsModule,
     UsageLogsModule,
     MessagesModule,
+    ChatbotTokensModule,
     forwardRef(() => UserSubscriptionsModule),
     forwardRef(() => ResourcesModule),
   ],

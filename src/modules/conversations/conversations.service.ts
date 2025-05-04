@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateConversationDto } from '@modules/conversations/dto/create-conversation.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Conversation } from '@modules/conversations/entities/conversation.entity';
@@ -54,6 +51,7 @@ export class ConversationsService {
       }
       const newConversation = this.conversationRepository.create({
         chatbot: { id: chatbot.id },
+        end_user: { id: createDto.end_user_id },
         external_conversation_id: data.data.id,
       });
       return this.conversationRepository.save(newConversation);
