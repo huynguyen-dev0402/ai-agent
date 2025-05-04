@@ -21,7 +21,15 @@ import { Public } from '@common/decorators/public-route.decorator';
 import { ChatWithChatbotEmbedDto } from '@modules/chatbot-embed/dto/chat-chatbot-embed.dto';
 import { Response } from 'express';
 import { QUANTITY_REDUCE } from '@common/constants/quantity.constant';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiQuery,
+  ApiBody,
+} from '@nestjs/swagger';
 
+@ApiTags('Chatbot Embed')
 @Controller('chatbot-embed')
 export class ChatbotEmbedController {
   constructor(
@@ -31,6 +39,24 @@ export class ChatbotEmbedController {
 
   @Get('init')
   @Public()
+  @ApiOperation({ summary: 'Initialize chatbot embed session from iframe' })
+  @ApiQuery({ name: 'chatbotId', required: true, type: String })
+  @ApiQuery({ name: 'userId', required: true, type: String })
+  @ApiQuery({ name: 'token', required: true, type: String })
+  @ApiResponse({
+    status: 200,
+    description: 'Chatbot initialized successfully',
+    schema: {
+      example: {
+        status: 'success',
+        data: {
+          chatbotId: 'chatbot-id',
+          userId: 'user-id',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 403, description: 'Missing or invalid parameters' })
   async initChatbot(
     @Query('chatbotId') chatbotId: string,
     @Query('userId') userId: string,
@@ -40,7 +66,6 @@ export class ChatbotEmbedController {
       throw new ForbiddenException('Missing required parameters');
     }
 
-    // Xác thực và kiểm tra domain
     await this.chatbotEmbedService.validateChatbotEmbed(
       chatbotId,
       userId,
@@ -60,6 +85,22 @@ export class ChatbotEmbedController {
 
   @Post('start-conversation')
   @Public()
+  @ApiOperation({ summary: 'Start a conversation with the embedded chatbot' })
+  @ApiBody({ type: StartConversationDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Conversation started successfully',
+    schema: {
+      example: {
+        status: 'success',
+        data: {
+          conversationId: 'uuid',
+          endUserId: 'end-user-id',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 403, description: 'Missing required fields' })
   async startConversation(@Body() startConversationDto: StartConversationDto) {
     const { external_id, platform, chatbot_id } = startConversationDto;
     if (!chatbot_id || !external_id || !platform) {
@@ -82,11 +123,23 @@ export class ChatbotEmbedController {
 
   @Post('send')
   @Public()
-  @UseInterceptors(CheckQuotaInterceptor) // Áp dụng interceptor để ghi log usage
+  @UseInterceptors(CheckQuotaInterceptor)
   @CheckQuota({
     resourceType: ResourceType.MESSAGE,
     action: UsageAction.SEND,
-    quantity: QUANTITY_REDUCE, // Số lượng sử dụng, mặc định là 1
+    quantity: QUANTITY_REDUCE,
+  })
+  @ApiOperation({
+    summary: 'Send message to embedded chatbot (with streaming)',
+  })
+  @ApiBody({ type: ChatWithChatbotEmbedDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns a streaming response from chatbot',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Quota exceeded or invalid request',
   })
   async chatWithBot(
     @Body() chatEmbedChatbot: ChatWithChatbotEmbedDto,
