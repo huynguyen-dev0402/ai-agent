@@ -3,16 +3,16 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateUserDto } from '@modules/users/dto/create-user.dto';
+import { UpdateUserDto } from '@modules/users/dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User, UserStatus } from './entities/user.entity';
+import { User, UserStatus } from '@modules/users/entities/user.entity';
 import { In, Repository } from 'typeorm';
-import { hashPassword } from 'src/common/utils/hash-password/hashing.util';
-import { generateUniqueString } from 'src/common/utils/generate-random/generate-username.util';
+import { hashPassword } from '@common/utils/hash-password/hashing.util';
+import { generateUniqueString } from '@common/utils/generate-random/generate-username.util';
 import { plainToInstance } from 'class-transformer';
-import { Workspace } from '../workspaces/entities/workspace.entity';
-import { ApiToken, TokenStatus } from '../api-tokens/entities/api-token.entity';
+import { Workspace } from '@modules/workspaces/entities/workspace.entity';
+import { ApiToken, TokenStatus } from '@modules/api-tokens/entities/api-token.entity';
 
 @Injectable()
 export class UsersService {

@@ -1,4 +1,4 @@
-import { Subscription } from 'src/modules/subscriptions/entities/subscription.entity';
+import { Subscription } from '@modules/subscriptions/entities/subscription.entity';
 import {
   Controller,
   Get,
@@ -14,13 +14,12 @@ import {
   Req,
   UseInterceptors,
   UploadedFile,
-  Res,
   Query,
 } from '@nestjs/common';
-import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { AuthGuard } from '../auth/guards/jwt-auth.guard';
+import { UsersService } from '@modules/users/users.service';
+import { CreateUserDto } from '@modules/users/dto/create-user.dto';
+import { UpdateUserDto } from '@modules/users/dto/update-user.dto';
+import { AuthGuard } from '@modules/auth/guards/jwt-auth.guard';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -30,38 +29,37 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { User } from './entities/user.entity';
-import { WorkspacesService } from '../workspaces/workspaces.service';
-import { CreateChatbotDto } from '../chatbots/dto/create-chatbot.dto';
-import { ChatbotsService } from '../chatbots/chatbots.service';
-import { UpdateChatbotDto } from '../chatbots/dto/update-chatbot.dto';
-import { PublishChatbotDto } from '../chatbots/dto/publish-chatbot.dto';
-import { ChatWithChatbotDto } from '../chatbots/dto/chat-with-chatbot.dto';
-import { ResourcesService } from '../resources/resources.service';
-import { CreateResourceDto } from '../resources/dto/create-resource.dto';
+import { WorkspacesService } from '@modules/workspaces/workspaces.service';
+import { CreateChatbotDto } from '@modules/chatbots/dto/create-chatbot.dto';
+import { ChatbotsService } from '@modules/chatbots/chatbots.service';
+import { UpdateChatbotDto } from '@modules/chatbots/dto/update-chatbot.dto';
+import { PublishChatbotDto } from '@modules/chatbots/dto/publish-chatbot.dto';
+import { ResourcesService } from '@modules/resources/resources.service';
+import { CreateResourceDto } from '@modules/resources/dto/create-resource.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { extname } from 'path';
-import { UploadMultiDto } from '../documents/dto/upload-multi.dto';
-import { DocumentsService } from '../documents/documents.service';
-import { GetDocumentDto } from '../documents/dto/get-document.dto';
-import { ChatbotPromptService } from '../chatbot-prompt/chatbot-prompt.service';
-import { PromptInfoDto } from '../chatbots/dto/prompt.dto';
-import { KnowledgeDto } from '../chatbots/dto/knowledge.dto';
-import { CreateChatbotOnboardingDto } from '../chatbot-onboarding/dto/create-chatbot-onboarding.dto';
-import { UpdateChatbotOnboardingDto } from '../chatbot-onboarding/dto/update-chatbot-onboarding.dto';
-import { UserIdMatchGuard } from 'src/common/guards/user-id-match.guard';
-import { successResponse } from 'src/common/utils/response/response.util';
-import { Response } from 'express';
-import { Chatbot } from '../chatbots/entities/chatbot.entity';
-import { Resource } from '../resources/entities/resource.entity';
-import { Workspace } from '../workspaces/entities/workspace.entity';
-import { SubscriptionsService } from '../subscriptions/subscriptions.service';
-import { UserSubscriptionsService } from '../user-subscriptions/user-subscriptions.service';
-import { CheckQuota } from 'src/common/decorators/check-quota.decorator';
+import { UploadMultiDto } from '@modules/documents/dto/upload-multi.dto';
+import { DocumentsService } from '@modules/documents/documents.service';
+import { GetDocumentDto } from '@modules/documents/dto/get-document.dto';
+import { ChatbotPromptService } from '@modules/chatbot-prompt/chatbot-prompt.service';
+import { PromptInfoDto } from '@modules/chatbots/dto/prompt.dto';
+import { KnowledgeDto } from '@modules/chatbots/dto/knowledge.dto';
+import { CreateChatbotOnboardingDto } from '@modules/chatbot-onboarding/dto/create-chatbot-onboarding.dto';
+import { UpdateChatbotOnboardingDto } from '@modules/chatbot-onboarding/dto/update-chatbot-onboarding.dto';
+import { UserIdMatchGuard } from '@common/guards/user-id-match.guard';
+import { successResponse } from '@common/utils/response/response.util';
+import { Chatbot } from '@modules/chatbots/entities/chatbot.entity';
+import { Resource } from '@modules/resources/entities/resource.entity';
+import { Workspace } from '@modules/workspaces/entities/workspace.entity';
+import { SubscriptionsService } from '@modules/subscriptions/subscriptions.service';
+import { UserSubscriptionsService } from '@modules/user-subscriptions/user-subscriptions.service';
+import { CheckQuota } from '@common/decorators/check-quota.decorator';
 import {
   ResourceType,
   UsageAction,
-} from '../usage-logs/entities/usage-log.entity';
-import { CheckQuotaInterceptor } from 'src/common/interceptors/usage-logs.interceptor';
+} from '@modules/usage-logs/entities/usage-log.entity';
+import { CheckQuotaInterceptor } from '@common/interceptors/usage-logs.interceptor';
+import { QUANTITY_REDUCE } from '@common/constants/quantity.constant';
 
 @Controller('users')
 @UseGuards(AuthGuard)
@@ -106,7 +104,7 @@ export class UsersController {
   @CheckQuota({
     resourceType: ResourceType.AGENT,
     action: UsageAction.CREATE,
-    quantity: 1, // Số lượng sử dụng, mặc định là 1
+    quantity: QUANTITY_REDUCE, // Số lượng sử dụng, mặc định là 1
   })
   @ApiOperation({ summary: 'Create a chatbot' })
   @ApiParam({ name: 'userId', required: true, description: 'ID of the user' })
@@ -497,7 +495,7 @@ export class UsersController {
   @CheckQuota({
     resourceType: ResourceType.KNOWLEDGE,
     action: UsageAction.CREATE,
-    quantity: 1, // Số lượng sử dụng, mặc định là 1
+    quantity: QUANTITY_REDUCE, // Số lượng sử dụng, mặc định là 1
   })
   @ApiOperation({ summary: 'Upload file to resource' })
   @ApiParam({ name: 'userId', required: true, description: 'ID of the user' })

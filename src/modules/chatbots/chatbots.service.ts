@@ -1,38 +1,33 @@
-import { KnowledgeDto } from './dto/knowledge.dto';
+import { KnowledgeDto } from '@modules/chatbots/dto/knowledge.dto';
 import {
   BadRequestException,
-  forwardRef,
-  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateChatbotDto } from './dto/create-chatbot.dto';
-import { UpdateChatbotDto } from './dto/update-chatbot.dto';
+import { CreateChatbotDto } from '@modules/chatbots/dto/create-chatbot.dto';
+import { UpdateChatbotDto } from '@modules/chatbots/dto/update-chatbot.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Chatbot, ChatbotStatus } from './entities/chatbot.entity';
+import { Chatbot, ChatbotStatus } from '@modules/chatbots/entities/chatbot.entity';
 import { DataSource, In, Repository } from 'typeorm';
-import { UsersService } from '../users/users.service';
-import { PublishChatbotDto } from './dto/publish-chatbot.dto';
-import { ChatbotModelsService } from '../chatbot-models/chatbot-models.service';
-import { WorkspacesService } from '../workspaces/workspaces.service';
-import { ChatWithChatbotDto } from './dto/chat-with-chatbot.dto';
-import { GetConfigDto } from './dto/get-config.dto';
-import { ChatbotResource } from './entities/chatbot-resources.entity';
-import { Resource } from '../resources/entities/resource.entity';
-import { PromptInfoDto } from './dto/prompt.dto';
-import { ChatbotOnboarding } from '../chatbot-onboarding/entities/chatbot-onboarding.entity';
-import { OnboardingSuggestedQuestion } from '../onboarding-suggested-questions/entities/onboarding-suggested-question.entity';
-import { CreateChatbotOnboardingDto } from '../chatbot-onboarding/dto/create-chatbot-onboarding.dto';
-import { UpdateChatbotOnboardingDto } from '../chatbot-onboarding/dto/update-chatbot-onboarding.dto';
+import { UsersService } from '@modules/users/users.service';
+import { PublishChatbotDto } from '@modules/chatbots/dto/publish-chatbot.dto';
+import { ChatbotModelsService } from '@modules/chatbot-models/chatbot-models.service';
+import { WorkspacesService } from '@modules/workspaces/workspaces.service';
+import { ChatWithChatbotDto } from '@modules/chatbots/dto/chat-with-chatbot.dto';
+import { GetConfigDto } from '@modules/chatbots/dto/get-config.dto';
+import { ChatbotResource } from '@modules/chatbots/entities/chatbot-resources.entity';
+import { Resource } from '@modules/resources/entities/resource.entity';
+import { PromptInfoDto } from '@modules/chatbots/dto/prompt.dto';
+import { ChatbotOnboarding } from '@modules/chatbot-onboarding/entities/chatbot-onboarding.entity';
+import { OnboardingSuggestedQuestion } from '@modules/onboarding-suggested-questions/entities/onboarding-suggested-question.entity';
+import { CreateChatbotOnboardingDto } from '@modules/chatbot-onboarding/dto/create-chatbot-onboarding.dto';
+import { UpdateChatbotOnboardingDto } from '@modules/chatbot-onboarding/dto/update-chatbot-onboarding.dto';
 import { Response } from 'express';
-import { User } from '../users/entities/user.entity';
-import { UsageLogsService } from '../usage-logs/usage-logs.service';
-import { UsageStatus } from '../usage-logs/entities/usage-log.entity';
-import { MessagesService } from '../messages/messages.service';
-import { SenderType } from '../messages/entities/message.entity';
-import { ConversationsService } from '../conversations/conversations.service';
-import { Conversation } from '../conversations/entities/conversation.entity';
+import { User } from '@modules/users/entities/user.entity';
+import { MessagesService } from '@modules/messages/messages.service';
+import { SenderType } from '@modules/messages/entities/message.entity';
+import { Conversation } from '@modules/conversations/entities/conversation.entity';
 
 @Injectable()
 export class ChatbotsService {

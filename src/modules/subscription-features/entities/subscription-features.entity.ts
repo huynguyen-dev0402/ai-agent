@@ -1,5 +1,5 @@
-import { Feature } from 'src/modules/features/entities/feature.entity';
-import { Subscription } from 'src/modules/subscriptions/entities/subscription.entity';
+import { Feature } from '@modules/features/entities/feature.entity';
+import { Subscription } from '@modules/subscriptions/entities/subscription.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,

@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty } from 'class-validator';
-import { FormatType } from '../entities/document.entity';
 
 export class GetDocumentDto {
   @ApiProperty({

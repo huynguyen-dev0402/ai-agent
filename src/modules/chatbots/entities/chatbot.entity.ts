@@ -1,7 +1,6 @@
-import { ChatbotModel } from 'src/modules/chatbot-models/entities/chatbot-model.entity';
-import { ChatbotOnboarding } from 'src/modules/chatbot-onboarding/entities/chatbot-onboarding.entity';
-import { User } from 'src/modules/users/entities/user.entity';
-import { Workspace } from 'src/modules/workspaces/entities/workspace.entity';
+import { ChatbotModel } from '@modules/chatbot-models/entities/chatbot-model.entity';
+import { ChatbotOnboarding } from '@modules/chatbot-onboarding/entities/chatbot-onboarding.entity';
+import { User } from '@modules/users/entities/user.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -13,8 +12,8 @@ import {
   OneToMany,
   OneToOne,
 } from 'typeorm';
-import { ChatbotResource } from './chatbot-resources.entity';
-import { Conversation } from 'src/modules/conversations/entities/conversation.entity';
+import { ChatbotResource } from '@modules/chatbots/entities/chatbot-resources.entity';
+import { Conversation } from '@modules/conversations/entities/conversation.entity';
 
 export enum ChatbotStatus {
   DRAFT = 'draft',

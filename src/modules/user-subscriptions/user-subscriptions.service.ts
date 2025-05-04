@@ -9,10 +9,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import {
   UserSubscriptions,
   SubscriptionStatus,
-} from './entities/user-subscriptions.entity';
-import { Subscription } from '../subscriptions/entities/subscription.entity';
-import { UsersService } from '../users/users.service';
-import { UserStatus } from '../users/entities/user.entity';
+} from '@modules/user-subscriptions/entities/user-subscriptions.entity';
+import { Subscription } from '@modules/subscriptions/entities/subscription.entity';
+import { UsersService } from '@modules/users/users.service';
+import { UserStatus } from '@modules/users/entities/user.entity';
 
 @Injectable()
 export class UserSubscriptionsService {

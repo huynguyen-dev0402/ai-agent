@@ -1,7 +1,6 @@
-import { ChatbotPrompt } from 'src/modules/chatbot-prompt/entities/chatbot-prompt.entity';
-import { ChatbotResource } from 'src/modules/chatbots/entities/chatbot-resources.entity';
-import { Document } from 'src/modules/documents/entities/document.entity';
-import { User } from 'src/modules/users/entities/user.entity';
+import { ChatbotResource } from '@modules/chatbots/entities/chatbot-resources.entity';
+import { Document } from '@modules/documents/entities/document.entity';
+import { User } from '@modules/users/entities/user.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,

@@ -8,9 +8,9 @@ import {
   Delete,
   NotFoundException,
 } from '@nestjs/common';
-import { ChatbotModelsService } from './chatbot-models.service';
-import { CreateChatbotModelDto } from './dto/create-chatbot-model.dto';
-import { UpdateChatbotModelDto } from './dto/update-chatbot-model.dto';
+import { ChatbotModelsService } from '@modules/chatbot-models/chatbot-models.service';
+import { CreateChatbotModelDto } from '@modules/chatbot-models/dto/create-chatbot-model.dto';
+import { UpdateChatbotModelDto } from '@modules/chatbot-models/dto/update-chatbot-model.dto';
 
 @Controller('chatbot-models')
 export class ChatbotModelsController {

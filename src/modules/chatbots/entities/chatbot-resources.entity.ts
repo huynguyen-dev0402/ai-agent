@@ -6,8 +6,8 @@ import {
   Unique,
   JoinColumn,
 } from 'typeorm';
-import { Chatbot } from './chatbot.entity';
-import { Resource } from 'src/modules/resources/entities/resource.entity';
+import { Chatbot } from '@modules/chatbots/entities/chatbot.entity';
+import { Resource } from '@modules/resources/entities/resource.entity';
 
 @Entity('chatbot_resources')
 @Unique(['chatbot', 'resource'])

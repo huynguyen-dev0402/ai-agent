@@ -1,18 +1,18 @@
-import { Subscription } from 'src/modules/subscriptions/entities/subscription.entity';
+import { Subscription } from '@modules/subscriptions/entities/subscription.entity';
 import {
   BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateSubscriptionDto } from './dto/create-subscription.dto';
-import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
+import { CreateSubscriptionDto } from '@modules/subscriptions/dto/create-subscription.dto';
+import { UpdateSubscriptionDto } from '@modules/subscriptions/dto/update-subscription.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
   ResourceType,
   UsageAction,
-} from '../usage-logs/entities/usage-log.entity';
-import { UsageLogsService } from '../usage-logs/usage-logs.service';
+} from '@modules/usage-logs/entities/usage-log.entity';
+import { UsageLogsService } from '@modules/usage-logs/usage-logs.service';
 @Injectable()
 export class SubscriptionsService {
   constructor(

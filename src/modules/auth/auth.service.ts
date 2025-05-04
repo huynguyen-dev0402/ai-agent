@@ -1,15 +1,14 @@
 import {
   comparePassword,
-  hashPassword,
-} from 'src/common/utils/hash-password/hashing.util';
-import { UsersService } from './../users/users.service';
+} from '@common/utils/hash-password/hashing.util';
+import { UsersService } from '@modules/users/users.service';
 import {
   BadRequestException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { LoginDto } from './dto/login.dto';
+import { LoginDto } from '@modules/auth/dto/login.dto';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
 import * as md5 from 'md5';

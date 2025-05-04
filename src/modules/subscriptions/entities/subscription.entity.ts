@@ -1,5 +1,5 @@
-import { SubscriptionFeatures } from 'src/modules/subscription-features/entities/subscription-features.entity';
-import { UserSubscriptions } from 'src/modules/user-subscriptions/entities/user-subscriptions.entity';
+import { SubscriptionFeatures } from '@modules/subscription-features/entities/subscription-features.entity';
+import { UserSubscriptions } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,

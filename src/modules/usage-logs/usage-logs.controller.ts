@@ -6,89 +6,77 @@ import {
   BadRequestException,
   UseGuards,
 } from '@nestjs/common';
-import { UsageLogsService } from './usage-logs.service';
-import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
-import {
-  UsageLog,
-  ResourceType,
-  UsageAction,
-} from './entities/usage-log.entity';
-import { AuthGuard } from '../auth/guards/jwt-auth.guard';
-import { UserIdMatchGuard } from '../../common/guards/user-id-match.guard';
+import { UsageLogsService } from '@modules/usage-logs/usage-logs.service';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { UsageLog } from '@modules/usage-logs/entities/usage-log.entity';
+import { AuthGuard } from '@modules/auth/guards/jwt-auth.guard';
+import { UserIdMatchGuard } from '@common/guards/user-id-match.guard';
+import { GetUsageLogsDto, GetUsageSummaryDto } from '@modules/usage-logs/dto/get-usage-logs.dto';
+
+@ApiTags('Usage Logs')
 @Controller('usage-logs')
 @UseGuards(AuthGuard, UserIdMatchGuard)
 export class UsageLogsController {
   constructor(private readonly usageLogsService: UsageLogsService) {}
 
   @Get('users/:userId')
-  @ApiOperation({ summary: 'Get usage logs for a user' })
-  @ApiQuery({
-    name: 'startDate',
-    required: true,
-    type: String,
-    description: 'Start date (ISO format)',
-  })
-  @ApiQuery({
-    name: 'endDate',
-    required: true,
-    type: String,
-    description: 'End date (ISO format)',
+  @ApiOperation({
+    summary: 'Retrieve usage logs by user ID',
+    description:
+      'Fetches all usage logs of a user within the specified date range.',
   })
   @ApiResponse({
     status: 200,
-    description: 'Usage logs retrieved successfully.',
+    description: 'Successfully retrieved the usage logs.',
     type: [UsageLog],
   })
-  @ApiResponse({ status: 404, description: 'User not found.' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid date format or startDate is after endDate.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found.',
+  })
   async getUsageLogsForUser(
     @Param('userId') userId: string,
-    @Query('startDate') startDateStr: string,
-    @Query('endDate') endDateStr: string,
+    @Query() query: GetUsageLogsDto,
   ): Promise<UsageLog[]> {
-    const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
+    const { startDate, endDate } = query;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
 
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-      throw new BadRequestException(
-        'Invalid date format. Dates must be in ISO format.',
-      );
-    }
-
-    // Normalize startDate: 00:00:00.000
-    startDate.setHours(0, 0, 0, 0);
-
-    // Normalize endDate: 23:59:59.999
-    endDate.setHours(23, 59, 59, 999);
-
-    // Optionally, ensure startDate <= endDate
-    if (startDate > endDate) {
+    if (start > end) {
       throw new BadRequestException('Start date must be before end date.');
     }
 
-    return this.usageLogsService.getUsageLogsForUser(
-      userId,
-      startDate,
-      endDate,
-    );
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+
+    return this.usageLogsService.getUsageLogsForUser(userId, start, end);
   }
 
   @Get('users/:userId/usage')
   @ApiOperation({
+    summary: 'Get usage summary by user ID',
+    description:
+      'Returns the total number of actions performed by the user on a specific resource type within the given date range.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved the usage summary.',
+    schema: {
+      example: {
+        total: 123,
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid query parameters or startDate is after endDate.',
+  })
+  @ApiOperation({
     summary: 'Get usage summary for a user (e.g., total messages sent)',
-  })
-  @ApiQuery({ name: 'resourceType', required: true, enum: ResourceType })
-  @ApiQuery({ name: 'action', required: true, enum: UsageAction })
-  @ApiQuery({
-    name: 'startDate',
-    required: true,
-    type: String,
-    description: 'Start date (ISO format)',
-  })
-  @ApiQuery({
-    name: 'endDate',
-    required: true,
-    type: String,
-    description: 'End date (ISO format)',
   })
   @ApiResponse({
     status: 200,
@@ -96,25 +84,25 @@ export class UsageLogsController {
   })
   async getUsageSummary(
     @Param('userId') userId: string,
-    @Query('resourceType') resourceType: ResourceType,
-    @Query('action') action: UsageAction,
-    @Query('startDate') startDateStr: string,
-    @Query('endDate') endDateStr: string,
+    @Query() query: GetUsageSummaryDto,
   ): Promise<{ total: number }> {
-    const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
-    // Normalize startDate: 00:00:00.000
-    startDate.setHours(0, 0, 0, 0);
+    const { resourceType, action, startDate, endDate } = query;
 
-    // Normalize endDate: 23:59:59.999
-    endDate.setHours(23, 59, 59, 999);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+
+    if (start > end) {
+      throw new BadRequestException('Start date must be before end date.');
+    }
 
     const total = await this.usageLogsService.sumUsageByUserId(
       userId,
       resourceType,
       action,
-      startDate,
-      endDate,
+      start,
+      end,
     );
     return { total };
   }

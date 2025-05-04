@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { CreateFeatureDto } from './dto/create-feature.dto';
-import { UpdateFeatureDto } from './dto/update-feature.dto';
+import { CreateFeatureDto } from '@modules/features/dto/create-feature.dto';
+import { UpdateFeatureDto } from '@modules/features/dto/update-feature.dto';
 
 @Injectable()
 export class FeaturesService {

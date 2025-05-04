@@ -6,14 +6,12 @@ import {
   UnauthorizedException,
   ValidationPipe,
   Delete,
-  UseGuards,
   Req,
 } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { UsersService } from '../users/users.service';
+import { AuthService } from '@modules/auth/auth.service';
+import { UsersService } from '@modules/users/users.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginDto } from './dto/login.dto';
-import { AuthGuard } from './guards/jwt-auth.guard';
 import { Request } from 'express';
 import {
   ApiBearerAuth,
@@ -21,7 +19,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Public } from 'src/common/decorators/public-route.decorator';
+import { Public } from '@common/decorators/public-route.decorator';
 
 @ApiTags('Authentication')
 @Controller('auth')

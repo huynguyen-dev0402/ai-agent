@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ValidateIf, IsNotEmpty } from 'class-validator';
-import { FormatType } from '../entities/document.entity';
+import { FormatType } from '@modules/documents/entities/document.entity';
 
 export class UploadMultiDto {
   // Common

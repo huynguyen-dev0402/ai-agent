@@ -8,18 +8,18 @@ import {
   Res,
   UseInterceptors,
 } from '@nestjs/common';
-import { ChatbotsService } from '../chatbots/chatbots.service';
-import { AuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ChatbotsService } from '@modules/chatbots/chatbots.service';
+import { AuthGuard } from '@modules/auth/guards/jwt-auth.guard';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { UserIdMatchGuard } from 'src/common/guards/user-id-match.guard';
-import { ChatWithChatbotDto } from './dto/chat-with-chatbot.dto';
+import { UserIdMatchGuard } from '@common/guards/user-id-match.guard';
+import { ChatWithChatbotDto } from '@modules/chatbots/dto/chat-with-chatbot.dto';
 import { Response } from 'express';
-import { CheckQuota } from 'src/common/decorators/check-quota.decorator';
+import { CheckQuota } from '@common/decorators/check-quota.decorator';
 import {
   ResourceType,
   UsageAction,
-} from '../usage-logs/entities/usage-log.entity';
-import { CheckQuotaInterceptor } from 'src/common/interceptors/usage-logs.interceptor';
+} from '@modules/usage-logs/entities/usage-log.entity';
+import { CheckQuotaInterceptor } from '@common/interceptors/usage-logs.interceptor';
 
 @Controller('users/:userId/chatbots')
 @UseGuards(AuthGuard, UserIdMatchGuard)

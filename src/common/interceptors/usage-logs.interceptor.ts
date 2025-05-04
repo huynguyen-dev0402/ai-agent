@@ -9,15 +9,15 @@ import {
 import { Observable } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { Reflector } from '@nestjs/core';
-import { QuotaService } from 'src/modules/quota/quota.service';
+import { QuotaService } from '@modules/quota/quota.service';
 import {
   CHECK_QUOTA_KEY,
   CheckQuotaOptions,
-} from 'src/common/decorators/check-quota.decorator';
+} from '@common/decorators/check-quota.decorator';
 import {
   UsageSource,
   UsageStatus,
-} from 'src/modules/usage-logs/entities/usage-log.entity';
+} from '@modules/usage-logs/entities/usage-log.entity';
 
 @Injectable()
 export class CheckQuotaInterceptor implements NestInterceptor {

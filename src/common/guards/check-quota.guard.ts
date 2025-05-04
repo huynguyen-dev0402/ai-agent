@@ -5,17 +5,17 @@
 //   BadRequestException,
 // } from '@nestjs/common';
 // import { Reflector } from '@nestjs/core';
-// import { UserSubscriptionsService } from 'src/modules/user-subscriptions/user-subscriptions.service';
-// import { UsageLogsService } from 'src/modules/usage-logs/usage-logs.service';
+// import { UserSubscriptionsService } from '@modules/user-subscriptions/user-subscriptions.service';
+// import { UsageLogsService } from '@modules/usage-logs/usage-logs.service';
 // import {
 //   CHECK_QUOTA_KEY,
 //   CheckQuotaOptions,
-// } from 'src/common/decorators/check-quota.decorator';
+// } from '@common/decorators/check-quota.decorator';
 // import {
 //   ResourceType,
 //   UsageSource,
-// } from 'src/modules/usage-logs/entities/usage-log.entity';
-// import { SubscriptionStatus } from 'src/modules/user-subscriptions/entities/user-subscriptions.entity';
+// } from '@modules/usage-logs/entities/usage-log.entity';
+// import { SubscriptionStatus } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
 
 // @Injectable()
 // export class CheckQuotaGuard implements CanActivate {
@@ -29,7 +29,6 @@
 //     const request = context.switchToHttp().getRequest();
 //     const response = context.switchToHttp().getResponse();
 //     const user = request.user;
-    
 
 //     if (!user?.id) {
 //       throw new BadRequestException('User ID not found in request');

@@ -1,7 +1,7 @@
 import { IsString, IsArray, IsNotEmpty, ValidateNested } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { CreateOnboardingSuggestedQuestionDto } from 'src/modules/onboarding-suggested-questions/dto/create-onboarding-suggested-question.dto';
+import { CreateOnboardingSuggestedQuestionDto } from '@modules/onboarding-suggested-questions/dto/create-onboarding-suggested-question.dto';
 export class CreateChatbotOnboardingDto {
   @IsNotEmpty({ message: 'Api token required' })
   api_token: string;

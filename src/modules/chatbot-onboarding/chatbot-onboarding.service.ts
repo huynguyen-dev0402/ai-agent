@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { CreateChatbotOnboardingDto } from './dto/create-chatbot-onboarding.dto';
-import { UpdateChatbotOnboardingDto } from './dto/update-chatbot-onboarding.dto';
+import { CreateChatbotOnboardingDto } from '@modules/chatbot-onboarding/dto/create-chatbot-onboarding.dto';
+import { UpdateChatbotOnboardingDto } from '@modules/chatbot-onboarding/dto/update-chatbot-onboarding.dto';
 
 @Injectable()
 export class ChatbotOnboardingService {

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty } from 'class-validator';
-import { SenderType } from '../entities/message.entity';
+import { SenderType } from '@modules/messages/entities/message.entity';
 export class CreateMessageDto {
   @ApiProperty({
     example: 'your-conversation-id-here',

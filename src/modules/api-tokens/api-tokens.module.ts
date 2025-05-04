@@ -3,11 +3,10 @@ import { ApiTokensService } from './api-tokens.service';
 import { ApiTokensController } from './api-tokens.controller';
 import { ApiToken } from './entities/api-token.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthModule } from '../auth/auth.module';
+import { AuthModule } from '@modules/auth/auth.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
-import { ScheduleModule } from '@nestjs/schedule';
-import { User } from '../users/entities/user.entity';
+import { User } from '@modules/users/entities/user.entity';
 
 @Module({
   imports: [

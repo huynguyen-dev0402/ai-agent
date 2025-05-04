@@ -1,5 +1,4 @@
-import { ValidateIf, IsNotEmpty } from 'class-validator';
-import { FormatType } from '../entities/document.entity';
+import {  IsNotEmpty } from 'class-validator';
 
 export class GetImagesDto {
   @IsNotEmpty({ message: 'Must have token' })

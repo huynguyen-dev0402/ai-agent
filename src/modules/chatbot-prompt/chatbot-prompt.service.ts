@@ -1,13 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { CreateChatbotPromptDto } from './dto/create-chatbot-prompt.dto';
-import { UpdateChatbotPromptDto } from './dto/update-chatbot-prompt.dto';
-import { UpdateChatbotDto } from '../chatbots/dto/update-chatbot.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Resource } from '../resources/entities/resource.entity';
 import { Repository } from 'typeorm';
-import { ChatbotPrompt } from './entities/chatbot-prompt.entity';
-import { User } from '../users/entities/user.entity';
-import { PromptInfoDto } from '../chatbots/dto/prompt.dto';
+import { User } from '@modules/users/entities/user.entity';
+import { PromptInfoDto } from '@modules/chatbots/dto/prompt.dto';
+import { CreateChatbotPromptDto } from '@modules/chatbot-prompt/dto/create-chatbot-prompt.dto';
+import { UpdateChatbotPromptDto } from '@modules/chatbot-prompt/dto/update-chatbot-prompt.dto';
+import { ChatbotPrompt } from '@modules/chatbot-prompt/entities/chatbot-prompt.entity';
 
 @Injectable()
 export class ChatbotPromptService {

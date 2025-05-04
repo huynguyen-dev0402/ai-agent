@@ -1,7 +1,6 @@
-import { Feature } from 'src/modules/features/entities/feature.entity';
-import { Subscription } from 'src/modules/subscriptions/entities/subscription.entity';
-import { UsageLog } from 'src/modules/usage-logs/entities/usage-log.entity';
-import { User } from 'src/modules/users/entities/user.entity';
+import { Subscription } from '@modules/subscriptions/entities/subscription.entity';
+import { UsageLog } from '@modules/usage-logs/entities/usage-log.entity';
+import { User } from '@modules/users/entities/user.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,

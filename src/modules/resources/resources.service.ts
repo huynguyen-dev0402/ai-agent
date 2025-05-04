@@ -1,6 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { CreateResourceDto } from './dto/create-resource.dto';
-import { UpdateResourceDto } from './dto/update-resource.dto';
+import { CreateResourceDto } from '@modules/resources/dto/create-resource.dto';
+import { UpdateResourceDto } from '@modules/resources/dto/update-resource.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   ExternalType,
@@ -8,9 +8,9 @@ import {
   Resource,
 } from './entities/resource.entity';
 import { Repository } from 'typeorm';
-import { UsersService } from '../users/users.service';
-import { Document } from '../documents/entities/document.entity';
-import { UploadMultiDto } from '../documents/dto/upload-multi.dto';
+import { UsersService } from '@modules/users/users.service';
+import { Document } from '@modules/documents/entities/document.entity';
+import { UploadMultiDto } from '@modules/documents/dto/upload-multi.dto';
 
 @Injectable()
 export class ResourcesService {

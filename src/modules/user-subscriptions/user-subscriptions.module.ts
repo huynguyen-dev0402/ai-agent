@@ -1,12 +1,12 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserSubscriptions } from './entities/user-subscriptions.entity';
-import { Subscription } from '../subscriptions/entities/subscription.entity';
-import { User } from '../users/entities/user.entity';
-import { UserSubscriptionsService } from './user-subscriptions.service';
-import { UserSubscriptionsController } from './user-subscriptions.controller';
-import { UsersModule } from '../users/users.module';
-import { UsageLog } from '../usage-logs/entities/usage-log.entity';
+import { UserSubscriptions } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
+import { Subscription } from '@modules/subscriptions/entities/subscription.entity';
+import { User } from '@modules/users/entities/user.entity';
+import { UserSubscriptionsService } from '@modules/user-subscriptions/user-subscriptions.service';
+import { UserSubscriptionsController } from '@modules/user-subscriptions/user-subscriptions.controller';
+import { UsersModule } from '@modules/users/users.module';
+import { UsageLog } from '@modules/usage-logs/entities/usage-log.entity';
 
 @Module({
   imports: [

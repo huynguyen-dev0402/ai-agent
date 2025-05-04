@@ -1,9 +1,12 @@
-import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateConversationDto } from './dto/create-conversation.dto';
+import {
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { CreateConversationDto } from '@modules/conversations/dto/create-conversation.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Conversation } from './entities/conversation.entity';
+import { Conversation } from '@modules/conversations/entities/conversation.entity';
 import { Repository } from 'typeorm';
-import { ChatbotsService } from '../chatbots/chatbots.service';
+import { ChatbotsService } from '@modules/chatbots/chatbots.service';
 
 @Injectable()
 export class ConversationsService {

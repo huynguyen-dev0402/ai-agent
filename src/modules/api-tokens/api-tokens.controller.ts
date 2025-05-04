@@ -6,14 +6,11 @@ import {
   Patch,
   Param,
   Delete,
-  UseGuards,
 } from '@nestjs/common';
 import { ApiTokensService } from './api-tokens.service';
 import { CreateApiTokenDto } from './dto/create-api-token.dto';
 import { UpdateApiTokenDto } from './dto/update-api-token.dto';
-import { AuthGuard } from '../auth/guards/jwt-auth.guard';
 
-//@UseGuards(AuthGuard)
 @Controller('api-tokens')
 export class ApiTokensController {
   constructor(private readonly apiTokensService: ApiTokensService) {}

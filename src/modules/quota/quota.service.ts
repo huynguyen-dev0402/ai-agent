@@ -1,15 +1,15 @@
 // quota/quota.service.ts
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { UserSubscriptionsService } from 'src/modules/user-subscriptions/user-subscriptions.service';
-import { UsageLogsService } from 'src/modules/usage-logs/usage-logs.service';
-import { SubscriptionStatus } from 'src/modules/user-subscriptions/entities/user-subscriptions.entity';
+import { UserSubscriptionsService } from '@modules/user-subscriptions/user-subscriptions.service';
+import { UsageLogsService } from '@modules/usage-logs/usage-logs.service';
+import { SubscriptionStatus } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
 import {
   ResourceType,
   UsageAction,
   UsageSource,
   UsageStatus,
-} from '../usage-logs/entities/usage-log.entity';
-import { Subscription } from '../subscriptions/entities/subscription.entity';
+} from '@modules/usage-logs/entities/usage-log.entity';
+import { Subscription } from '@modules/subscriptions/entities/subscription.entity';
 
 @Injectable()
 export class QuotaService {

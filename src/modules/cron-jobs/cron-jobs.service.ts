@@ -1,10 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ApiToken } from '../api-tokens/entities/api-token.entity';
-import { ApiTokensService } from '../api-tokens/api-tokens.service';
+import { ApiToken } from '@modules/api-tokens/entities/api-token.entity';
+import { ApiTokensService } from '@modules/api-tokens/api-tokens.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { PasswordReset } from '../password-reset/entities/password-reset.entity';
+import { PasswordReset } from '@modules/password-reset/entities/password-reset.entity';
 
 @Injectable()
 export class CronJobsService {

@@ -1,7 +1,6 @@
 import { Body, Controller, Post, ValidationPipe } from '@nestjs/common';
-import { ConversationsService } from './conversations.service';
-import { CreateConversationDto } from './dto/create-conversation.dto';
-
+import { ConversationsService } from '@modules/conversations/conversations.service';
+import { CreateConversationDto } from '@modules/conversations/dto/create-conversation.dto';
 @Controller('conversations')
 export class ConversationsController {
   constructor(private readonly conversationsService: ConversationsService) {}

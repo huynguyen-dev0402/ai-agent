@@ -1,11 +1,11 @@
 import { Exclude } from 'class-transformer';
-import { ApiToken } from 'src/modules/api-tokens/entities/api-token.entity';
-import { ChatbotPrompt } from 'src/modules/chatbot-prompt/entities/chatbot-prompt.entity';
-import { Chatbot } from 'src/modules/chatbots/entities/chatbot.entity';
-import { Resource } from 'src/modules/resources/entities/resource.entity';
-import { UsageLog } from 'src/modules/usage-logs/entities/usage-log.entity';
-import { UserSubscriptions } from 'src/modules/user-subscriptions/entities/user-subscriptions.entity';
-import { Workspace } from 'src/modules/workspaces/entities/workspace.entity';
+import { ApiToken } from '@modules/api-tokens/entities/api-token.entity';
+import { ChatbotPrompt } from '@modules/chatbot-prompt/entities/chatbot-prompt.entity';
+import { Chatbot } from '@modules/chatbots/entities/chatbot.entity';
+import { Resource } from '@modules/resources/entities/resource.entity';
+import { UsageLog } from '@modules/usage-logs/entities/usage-log.entity';
+import { UserSubscriptions } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
+import { Workspace } from '@modules/workspaces/entities/workspace.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,

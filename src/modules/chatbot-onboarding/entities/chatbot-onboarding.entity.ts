@@ -1,5 +1,5 @@
-import { Chatbot } from 'src/modules/chatbots/entities/chatbot.entity';
-import { OnboardingSuggestedQuestion } from 'src/modules/onboarding-suggested-questions/entities/onboarding-suggested-question.entity';
+import { Chatbot } from '@modules/chatbots/entities/chatbot.entity';
+import { OnboardingSuggestedQuestion } from '@modules/onboarding-suggested-questions/entities/onboarding-suggested-question.entity';
 import {
   PrimaryGeneratedColumn,
   Column,

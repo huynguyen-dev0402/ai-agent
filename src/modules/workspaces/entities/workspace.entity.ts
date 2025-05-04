@@ -1,5 +1,5 @@
-import { Chatbot } from 'src/modules/chatbots/entities/chatbot.entity';
-import { User } from 'src/modules/users/entities/user.entity';
+import { Chatbot } from '@modules/chatbots/entities/chatbot.entity';
+import { User } from '@modules/users/entities/user.entity';
 import {
   Entity,
   Column,

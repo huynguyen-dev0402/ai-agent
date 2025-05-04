@@ -1,4 +1,4 @@
-import { ChatbotOnboarding } from 'src/modules/chatbot-onboarding/entities/chatbot-onboarding.entity';
+import { ChatbotOnboarding } from '@modules/chatbot-onboarding/entities/chatbot-onboarding.entity';
 import {
   PrimaryGeneratedColumn,
   Column,

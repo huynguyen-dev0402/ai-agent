@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { ChatbotPromptService } from './chatbot-prompt.service';
-import { CreateChatbotPromptDto } from './dto/create-chatbot-prompt.dto';
-import { UpdateChatbotPromptDto } from './dto/update-chatbot-prompt.dto';
+import { ChatbotPromptService } from '@modules/chatbot-prompt/chatbot-prompt.service';
+import { CreateChatbotPromptDto } from '@modules/chatbot-prompt/dto/create-chatbot-prompt.dto';
+import { UpdateChatbotPromptDto } from '@modules/chatbot-prompt/dto/update-chatbot-prompt.dto';
 
 @Controller('chatbot-prompt')
 export class ChatbotPromptController {

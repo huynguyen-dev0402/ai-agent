@@ -1,16 +1,15 @@
 import { Module } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
+import { AuthService } from '@modules/auth/auth.service';
+import { AuthController } from '@modules/auth/auth.controller';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from '../users/entities/user.entity';
-import { JwtStrategy } from './strategies/jwt.strategy';
+import { User } from '@modules/users/entities/user.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { UsersService } from '../users/users.service';
+import { UsersService } from '@modules/users/users.service';
 import { RedisModule } from '@nestjs-modules/ioredis';
-import { Workspace } from '../workspaces/entities/workspace.entity';
-import { ApiToken } from '../api-tokens/entities/api-token.entity';
+import { Workspace } from '@modules/workspaces/entities/workspace.entity';
+import { ApiToken } from '@modules/api-tokens/entities/api-token.entity';
 
 @Module({
   imports: [
@@ -37,7 +36,7 @@ import { ApiToken } from '../api-tokens/entities/api-token.entity';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, UsersService],
+  providers: [AuthService, UsersService],
   exports: [AuthService],
 })
 export class AuthModule {}

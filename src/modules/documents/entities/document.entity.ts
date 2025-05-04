@@ -1,4 +1,4 @@
-import { Resource } from 'src/modules/resources/entities/resource.entity';
+import { Resource } from '@modules/resources/entities/resource.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,

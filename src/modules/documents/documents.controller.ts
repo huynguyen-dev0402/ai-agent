@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { DocumentsService } from './documents.service';
-import { CreateDocumentDto } from './dto/create-document.dto';
-import { UpdateDocumentDto } from './dto/update-document.dto';
+import { DocumentsService } from '@modules/documents/documents.service';
+import { CreateDocumentDto } from '@modules/documents/dto/create-document.dto';
+import { UpdateDocumentDto } from '@modules/documents/dto/update-document.dto';
 
 @Controller('documents')
 export class DocumentsController {

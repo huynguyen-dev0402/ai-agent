@@ -2,7 +2,7 @@ import { SetMetadata } from '@nestjs/common';
 import {
   ResourceType,
   UsageAction,
-} from 'src/modules/usage-logs/entities/usage-log.entity';
+} from '@modules/usage-logs/entities/usage-log.entity';
 
 export const CHECK_QUOTA_KEY = 'check_quota';
 

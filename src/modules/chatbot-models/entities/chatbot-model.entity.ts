@@ -1,4 +1,4 @@
-import { Chatbot } from 'src/modules/chatbots/entities/chatbot.entity';
+import { Chatbot } from '@modules/chatbots/entities/chatbot.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,

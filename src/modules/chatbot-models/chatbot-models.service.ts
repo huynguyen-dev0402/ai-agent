@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { CreateChatbotModelDto } from './dto/create-chatbot-model.dto';
-import { UpdateChatbotModelDto } from './dto/update-chatbot-model.dto';
+import { CreateChatbotModelDto } from '@modules/chatbot-models/dto/create-chatbot-model.dto';
+import { UpdateChatbotModelDto } from '@modules/chatbot-models/dto/update-chatbot-model.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ChatbotModel } from './entities/chatbot-model.entity';
+import { ChatbotModel } from '@modules/chatbot-models/entities/chatbot-model.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()

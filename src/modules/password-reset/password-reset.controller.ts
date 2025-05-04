@@ -9,13 +9,13 @@ import {
   BadRequestException,
   ValidationPipe,
 } from '@nestjs/common';
-import { PasswordResetService } from './password-reset.service';
-import { CreatePasswordResetDto } from './dto/create-password-reset.dto';
-import { UpdatePasswordResetDto } from './dto/update-password-reset.dto';
-import { successResponse } from 'src/common/utils/response/response.util';
-import { ForgotPasswordDto } from './dto/forgot-password.dto';
-import { ResetPasswordDto } from './dto/reset-password.dto';
-import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { PasswordResetService } from '@modules/password-reset/password-reset.service';
+import { CreatePasswordResetDto } from '@modules/password-reset/dto/create-password-reset.dto';
+import { UpdatePasswordResetDto } from '@modules/password-reset/dto/update-password-reset.dto';
+import { successResponse } from '@common/utils/response/response.util';
+import { ForgotPasswordDto } from '@modules/password-reset/dto/forgot-password.dto';
+import { ResetPasswordDto } from '@modules/password-reset/dto/reset-password.dto';
+import { VerifyOtpDto } from '@modules/password-reset/dto/verify-otp.dto';
 
 @Controller('auth')
 export class PasswordResetController {

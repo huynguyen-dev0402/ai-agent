@@ -1,35 +1,35 @@
 import { forwardRef, Module } from '@nestjs/common';
-import { UsersService } from './users.service';
-import { UsersController } from './users.controller';
+import { UsersService } from '@modules/users/users.service';
+import { UsersController } from '@modules/users/users.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from './entities/user.entity';
-import { AuthModule } from '../auth/auth.module';
-import { ApiTokensModule } from '../api-tokens/api-tokens.module';
-import { WorkspacesModule } from '../workspaces/workspaces.module';
-import { Workspace } from '../workspaces/entities/workspace.entity';
-import { ApiToken } from '../api-tokens/entities/api-token.entity';
-import { Chatbot } from '../chatbots/entities/chatbot.entity';
-import { ChatbotsService } from '../chatbots/chatbots.service';
-import { ChatbotModelsModule } from '../chatbot-models/chatbot-models.module';
-import { ResourcesModule } from '../resources/resources.module';
-import { UploadModule } from '../upload/upload.module';
-import { DocumentsModule } from '../documents/documents.module';
-import { ChatbotPromptModule } from '../chatbot-prompt/chatbot-prompt.module';
-import { ChatbotResource } from '../chatbots/entities/chatbot-resources.entity';
-import { Resource } from '../resources/entities/resource.entity';
-import { ChatbotOnboarding } from '../chatbot-onboarding/entities/chatbot-onboarding.entity';
-import { OnboardingSuggestedQuestion } from '../onboarding-suggested-questions/entities/onboarding-suggested-question.entity';
-import { UserSubscriptions } from '../user-subscriptions/entities/user-subscriptions.entity';
-import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
-import { UserSubscriptionsModule } from '../user-subscriptions/user-subscriptions.module';
-import { UsageLog } from '../usage-logs/entities/usage-log.entity';
-import { UsageLogsModule } from '../usage-logs/usage-logs.module';
+import { User } from '@modules/users/entities/user.entity';
+import { AuthModule } from '@modules/auth/auth.module';
+import { ApiTokensModule } from '@modules/api-tokens/api-tokens.module';
+import { WorkspacesModule } from '@modules/workspaces/workspaces.module';
+import { Workspace } from '@modules/workspaces/entities/workspace.entity';
+import { ApiToken } from '@modules/api-tokens/entities/api-token.entity';
+import { Chatbot } from '@modules/chatbots/entities/chatbot.entity';
+import { ChatbotsService } from '@modules/chatbots/chatbots.service';
+import { ChatbotModelsModule } from '@modules/chatbot-models/chatbot-models.module';
+import { ResourcesModule } from '@modules/resources/resources.module';
+import { UploadModule } from '@modules/upload/upload.module';
+import { DocumentsModule } from '@modules/documents/documents.module';
+import { ChatbotPromptModule } from '@modules/chatbot-prompt/chatbot-prompt.module';
+import { ChatbotResource } from '@modules/chatbots/entities/chatbot-resources.entity';
+import { Resource } from '@modules/resources/entities/resource.entity';
+import { ChatbotOnboarding } from '@modules/chatbot-onboarding/entities/chatbot-onboarding.entity';
+import { OnboardingSuggestedQuestion } from '@modules/onboarding-suggested-questions/entities/onboarding-suggested-question.entity';
+import { UserSubscriptions } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
+import { SubscriptionsModule } from '@modules/subscriptions/subscriptions.module';
+import { UserSubscriptionsModule } from '@modules/user-subscriptions/user-subscriptions.module';
+import { UsageLog } from '@modules/usage-logs/entities/usage-log.entity';
+import { UsageLogsModule } from '@modules/usage-logs/usage-logs.module';
 import { Reflector } from '@nestjs/core';
-import { CheckQuotaInterceptor } from 'src/common/interceptors/usage-logs.interceptor';
-import { QuotaService } from '../quota/quota.service';
-import { MessagesModule } from '../messages/messages.module';
-import { ConversationsModule } from '../conversations/conversations.module';
-import { Conversation } from '../conversations/entities/conversation.entity';
+import { CheckQuotaInterceptor } from '@common/interceptors/usage-logs.interceptor';
+import { QuotaService } from '@modules/quota/quota.service';
+import { MessagesModule } from '@modules/messages/messages.module';
+import { ConversationsModule } from '@modules/conversations/conversations.module';
+import { Conversation } from '@modules/conversations/entities/conversation.entity';
 
 @Module({
   imports: [
@@ -44,7 +44,7 @@ import { Conversation } from '../conversations/entities/conversation.entity';
       OnboardingSuggestedQuestion,
       UserSubscriptions,
       UsageLog,
-      Conversation
+      Conversation,
     ]),
     AuthModule,
     ApiTokensModule,

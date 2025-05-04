@@ -1,4 +1,4 @@
-import { Conversation } from 'src/modules/conversations/entities/conversation.entity';
+import { Conversation } from '@modules/conversations/entities/conversation.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,

@@ -1,22 +1,21 @@
-import { CreatePasswordResetDto } from './dto/create-password-reset.dto';
-import { UpdatePasswordResetDto } from './dto/update-password-reset.dto';
+import { CreatePasswordResetDto } from '@modules/password-reset/dto/create-password-reset.dto';
+import { UpdatePasswordResetDto } from '@modules/password-reset/dto/update-password-reset.dto';
 import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
-import { PasswordReset } from './entities/password-reset.entity';
-import { UsersService } from '../users/users.service';
-import { hashPassword } from 'src/common/utils/hash-password/hashing.util';
-import { generateUniqueString } from 'src/common/utils/generate-random/generate-username.util';
-import { ForgotPasswordDto } from './dto/forgot-password.dto';
-import { ResetPasswordDto } from './dto/reset-password.dto';
-import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { PasswordReset } from '@modules/password-reset/entities/password-reset.entity';
+import { UsersService } from '@modules/users/users.service';
+import { hashPassword } from '@common/utils/hash-password/hashing.util';
+import { generateUniqueString } from '@common/utils/generate-random/generate-username.util';
+import { ForgotPasswordDto } from '@modules/password-reset/dto/forgot-password.dto';
+import { ResetPasswordDto } from '@modules/password-reset/dto/reset-password.dto';
+import { VerifyOtpDto } from '@modules/password-reset/dto/verify-otp.dto';
 
 @Injectable()
 export class PasswordResetService {

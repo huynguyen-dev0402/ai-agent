@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { UsageLogsService } from './usage-logs.service';
-import { UsageLogsController } from './usage-logs.controller';
+import { UsageLogsService } from '@modules/usage-logs/usage-logs.service';
+import { UsageLogsController } from '@modules/usage-logs/usage-logs.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UsageLog } from './entities/usage-log.entity';
+import { UsageLog } from '@modules/usage-logs/entities/usage-log.entity';
 import { BullModule } from '@nestjs/bullmq';
-import { UsageLogsProcessor } from './usage-logs.processor';
-import { AuthModule } from '../auth/auth.module';
+import { UsageLogsProcessor } from '@modules/usage-logs/usage-logs.processor';
+import { AuthModule } from '@modules/auth/auth.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([UsageLog]),

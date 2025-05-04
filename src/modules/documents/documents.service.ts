@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { CreateDocumentDto } from './dto/create-document.dto';
-import { UpdateDocumentDto } from './dto/update-document.dto';
-import { GetDocumentDto } from './dto/get-document.dto';
+import { CreateDocumentDto } from '@modules/documents/dto/create-document.dto';
+import { UpdateDocumentDto } from '@modules/documents/dto/update-document.dto';
+import { GetDocumentDto } from '@modules/documents/dto/get-document.dto';
 
 @Injectable()
 export class DocumentsService {

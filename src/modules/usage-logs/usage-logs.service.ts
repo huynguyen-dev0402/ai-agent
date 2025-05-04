@@ -5,7 +5,7 @@ import {
   UsageLog,
   UsageSource,
   UsageStatus,
-} from './entities/usage-log.entity';
+} from '@modules/usage-logs/entities/usage-log.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
 import { Queue } from 'bullmq';

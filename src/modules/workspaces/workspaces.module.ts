@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { WorkspacesService } from './workspaces.service';
-import { WorkspacesController } from './workspaces.controller';
+import { WorkspacesService } from '@modules/workspaces/workspaces.service';
+import { WorkspacesController } from '@modules/workspaces/workspaces.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Workspace } from './entities/workspace.entity';
-import { AuthModule } from '../auth/auth.module';
+import { Workspace } from '@modules/workspaces/entities/workspace.entity';
+import { AuthModule } from '@modules/auth/auth.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Workspace]), AuthModule],

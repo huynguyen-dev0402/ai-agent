@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { FeaturesService } from './features.service';
-import { CreateFeatureDto } from './dto/create-feature.dto';
-import { UpdateFeatureDto } from './dto/update-feature.dto';
+import { FeaturesService } from '@modules/features/features.service';
+import { CreateFeatureDto } from '@modules/features/dto/create-feature.dto';
+import { UpdateFeatureDto } from '@modules/features/dto/update-feature.dto';
 
 @Controller('features')
 export class FeaturesController {

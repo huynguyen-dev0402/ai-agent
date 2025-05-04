@@ -1,92 +1,74 @@
-import { BadRequestException, Controller, Get, Query, UnauthorizedException } from '@nestjs/common';
-import { MessagesService } from './messages.service';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Query,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { MessagesService } from '@modules/messages/messages.service';
+import {
+  GetMessageHistoryDto,
+  GetCustomerMessageHistoryDto,
+  GetMessagesByAgentDto,
+} from '@modules/messages/dto/get-message-history.dto';
 
 @Controller('messages')
 export class MessagesController {
   constructor(private readonly messagesService: MessagesService) {}
+
   @Get('history')
-  async getMessageHistory(
-    @Query('endUserId') endUserId: string,
-    @Query('status') status?: 'active' | 'ended',
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-    @Query('limit') limit: number = 50,
-    @Query('offset') offset: number = 0,
-  ) {
-    if (!endUserId) {
+  async getMessageHistory(@Query() query: GetMessageHistoryDto) {
+    if (!query.endUserId) {
       throw new BadRequestException('endUserId is required');
     }
 
-    const history = await this.messagesService.getMessageHistory(endUserId, {
-      status,
-      startDate: startDate ? new Date(startDate) : undefined,
-      endDate: endDate ? new Date(endDate) : undefined,
-      limit,
-      offset,
-    });
+    const history = await this.messagesService.getMessageHistory(
+      query.endUserId,
+      {
+        ...query,
+        startDate: query.startDate ? new Date(query.startDate) : undefined,
+        endDate: query.endDate ? new Date(query.endDate) : undefined,
+      },
+    );
 
-    return {
-      status: 'success',
-      data: history,
-    };
+    return { status: 'success', data: history };
   }
-  //API lấy danh sách tin nhắn theo user (khách hàng sở hữu chatbot)
+
   @Get('customer-history')
   async getCustomerMessageHistory(
-    @Query('userId') userId: string,
-    @Query('chatbotId') chatbotId?: string,
-    @Query('status') status?: 'active' | 'ended',
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-    @Query('limit') limit: number = 50,
-    @Query('offset') offset: number = 0,
+    @Query() query: GetCustomerMessageHistoryDto,
   ) {
-    if (!userId) {
+    if (!query.userId) {
       throw new UnauthorizedException('userId is required');
     }
 
     const history = await this.messagesService.getCustomerMessageHistory(
-      userId,
+      query.userId,
       {
-        chatbotId,
-        status,
-        startDate: startDate ? new Date(startDate) : undefined,
-        endDate: endDate ? new Date(endDate) : undefined,
-        limit,
-        offset,
+        ...query,
+        startDate: query.startDate ? new Date(query.startDate) : undefined,
+        endDate: query.endDate ? new Date(query.endDate) : undefined,
       },
     );
 
-    return {
-      status: 'success',
-      data: history,
-    };
+    return { status: 'success', data: history };
   }
 
   @Get('by-agent')
-  async getMessagesByAgent(
-    @Query('chatbotId') chatbotId: string,
-    @Query('status') status?: 'active' | 'ended',
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-    @Query('limit') limit: number = 50,
-    @Query('offset') offset: number = 0,
-  ) {
-    if (!chatbotId) {
+  async getMessagesByAgent(@Query() query: GetMessagesByAgentDto) {
+    if (!query.chatbotId) {
       throw new BadRequestException('chatbotId is required');
     }
 
-    const history = await this.messagesService.getMessagesByAgent(chatbotId, {
-      status,
-      startDate: startDate ? new Date(startDate) : undefined,
-      endDate: endDate ? new Date(endDate) : undefined,
-      limit,
-      offset,
-    });
+    const history = await this.messagesService.getMessagesByAgent(
+      query.chatbotId,
+      {
+        ...query,
+        startDate: query.startDate ? new Date(query.startDate) : undefined,
+        endDate: query.endDate ? new Date(query.endDate) : undefined,
+      },
+    );
 
-    return {
-      status: 'success',
-      data: history,
-    };
+    return { status: 'success', data: history };
   }
 }

@@ -11,16 +11,16 @@ import {
   ValidationPipe,
   HttpCode,
 } from '@nestjs/common';
-import { SubscriptionsService } from './subscriptions.service';
-import { CreateSubscriptionDto } from './dto/create-subscription.dto';
-import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
-import { SuperAdminGuard } from '../author/guards/super-admin.guard';
-import { AuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SubscriptionsService } from '@modules/subscriptions/subscriptions.service';
+import { CreateSubscriptionDto } from '@modules/subscriptions/dto/create-subscription.dto';
+import { UpdateSubscriptionDto } from '@modules/subscriptions/dto/update-subscription.dto';
+import { SuperAdminGuard } from '@modules/author/guards/super-admin.guard';
+import { AuthGuard } from '@modules/auth/guards/jwt-auth.guard';
 import { ApiBody, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
-import { UserSubscriptionsService } from '../user-subscriptions/user-subscriptions.service';
-import { ActionSubscriptionDto } from './dto/action-subscription.dto';
-import { UserSubscriptions } from '../user-subscriptions/entities/user-subscriptions.entity';
-import { successResponse } from 'src/common/utils/response/response.util';
+import { UserSubscriptionsService } from '@modules/user-subscriptions/user-subscriptions.service';
+import { ActionSubscriptionDto } from '@modules/subscriptions/dto/action-subscription.dto';
+import { UserSubscriptions } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
+import { successResponse } from '@common/utils/response/response.util';
 
 @Controller('subscriptions')
 @UseGuards(AuthGuard)

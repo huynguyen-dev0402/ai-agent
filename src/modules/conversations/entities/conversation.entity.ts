@@ -1,6 +1,6 @@
-import { Chatbot } from 'src/modules/chatbots/entities/chatbot.entity';
-import { EndUser } from 'src/modules/end-users/entities/end-user.entity';
-import { Message } from 'src/modules/messages/entities/message.entity';
+import { Chatbot } from '@modules/chatbots/entities/chatbot.entity';
+import { EndUser } from '@modules/end-users/entities/end-user.entity';
+import { Message } from '@modules/messages/entities/message.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,

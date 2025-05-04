@@ -1,5 +1,5 @@
-import { UserSubscriptions } from 'src/modules/user-subscriptions/entities/user-subscriptions.entity';
-import { User } from 'src/modules/users/entities/user.entity';
+import { UserSubscriptions } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
+import { User } from '@modules/users/entities/user.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -37,7 +37,7 @@ export enum UsageSource {
 export enum UsageStatus {
   ACTIVE = 'ACTIVE',
   CANCELED = 'CANCELED',
-  PENDING = "PENDING",
+  PENDING = 'PENDING',
 }
 
 @Entity('usage_logs')

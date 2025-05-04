@@ -5,8 +5,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Observable } from 'rxjs';
-import { User } from 'src/modules/users/entities/user.entity';
+import { User } from '@modules/users/entities/user.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()

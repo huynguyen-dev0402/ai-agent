@@ -1,4 +1,4 @@
-import { SubscriptionFeatures } from 'src/modules/subscription-features/entities/subscription-features.entity';
+import { SubscriptionFeatures } from '@modules/subscription-features/entities/subscription-features.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
