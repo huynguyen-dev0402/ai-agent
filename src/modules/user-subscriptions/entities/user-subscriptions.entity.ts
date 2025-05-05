@@ -19,7 +19,6 @@ export enum SubscriptionStatus {
 }
 
 @Entity('user_subscriptions')
-@Unique(['user', 'subscription'])
 export class UserSubscriptions {
   @PrimaryGeneratedColumn('uuid')
   id: string;

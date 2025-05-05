@@ -18,6 +18,8 @@ import {
 } from 'typeorm';
 import { ChatbotToken } from '@modules/chatbot-tokens/entities/chatbot-token.entity';
 import { ChatbotEmbedLog } from '@modules/chatbot-embed/entities/chatbot-embed-log.entity';
+import { Ticket } from '@modules/tickets/entities/ticket.entity';
+import { WorkspaceMember } from '@modules/workspace-members/entities/workspace-member.entity';
 
 export enum UserStatus {
   ACTIVE = 'active',
@@ -111,4 +113,13 @@ export class User {
 
   @OneToMany(() => ChatbotEmbedLog, (embed_logs) => embed_logs.user)
   embed_logs: ChatbotEmbedLog[];
+
+  @OneToMany(() => Ticket, (tickets) => tickets.user)
+  tickets: Ticket[];
+
+  @OneToMany(
+    () => WorkspaceMember,
+    (workspace_members) => workspace_members.user,
+  )
+  workspace_members: WorkspaceMember[];
 }

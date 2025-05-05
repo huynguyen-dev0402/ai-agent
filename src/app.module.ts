@@ -31,6 +31,8 @@ import { MessagesModule } from '@modules/messages/messages.module';
 import { EndUsersModule } from '@modules/end-users/end-users.module';
 import { ChatbotTokensModule } from './modules/chatbot-tokens/chatbot-tokens.module';
 import { ChatbotEmbedModule } from './modules/chatbot-embed/chatbot-embed.module';
+import { WorkspaceMembersModule } from './modules/workspace-members/workspace-members.module';
+import { TicketsModule } from './modules/tickets/tickets.module';
 
 @Module({
   imports: [
@@ -74,6 +76,8 @@ import { ChatbotEmbedModule } from './modules/chatbot-embed/chatbot-embed.module
     EndUsersModule,
     ChatbotTokensModule,
     ChatbotEmbedModule,
+    WorkspaceMembersModule,
+    TicketsModule,
   ],
   controllers: [AppController],
   providers: [

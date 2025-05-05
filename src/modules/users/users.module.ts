@@ -30,6 +30,7 @@ import { QuotaService } from '@modules/quota/quota.service';
 import { MessagesModule } from '@modules/messages/messages.module';
 import { Conversation } from '@modules/conversations/entities/conversation.entity';
 import { ChatbotTokensModule } from '@modules/chatbot-tokens/chatbot-tokens.module';
+import { WorkspaceMembersModule } from '@modules/workspace-members/workspace-members.module';
 
 @Module({
   imports: [

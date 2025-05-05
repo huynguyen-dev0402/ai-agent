@@ -1,5 +1,6 @@
 import { Chatbot } from '@modules/chatbots/entities/chatbot.entity';
 import { User } from '@modules/users/entities/user.entity';
+import { WorkspaceMember } from '@modules/workspace-members/entities/workspace-member.entity';
 import {
   Entity,
   Column,
@@ -50,4 +51,10 @@ export class Workspace {
 
   @OneToMany(() => User, (user) => user.workspace)
   users: User[];
+
+  @OneToMany(
+    () => WorkspaceMember,
+    (workspace_members) => workspace_members.workspace,
+  )
+  workspace_members: WorkspaceMember[];
 }
