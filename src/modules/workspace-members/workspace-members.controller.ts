@@ -10,6 +10,8 @@ import {
   BadRequestException,
   UseInterceptors,
   Req,
+  Get,
+  Query,
 } from '@nestjs/common';
 import { WorkspaceMembersService } from './workspace-members.service';
 import { AdminGuard } from '@common/guards/workspace-admin.guard';
@@ -30,6 +32,22 @@ export class WorkspaceMembersController {
     private readonly workspaceMembersService: WorkspaceMembersService,
   ) {}
 
+  @Get()
+  async getMembers(
+    @Param('workspaceId') workspaceId: string,
+    @Query('userId') userId: string,
+  ) {
+    const members = await this.workspaceMembersService.findAllMember(
+      workspaceId,
+      userId,
+    );
+    return {
+      success: true,
+      message: 'Get members success',
+      data: members,
+    };
+  }
+
   @Post()
   @UseGuards(AdminGuard)
   @UseInterceptors(CheckQuotaInterceptor) // Áp dụng interceptor để ghi log usage
@@ -41,9 +59,11 @@ export class WorkspaceMembersController {
   async addMember(
     @Param('workspaceId') workspaceId: string,
     @Body() addMemberDto: AddMemberDto,
+    @Req() request: Request & { user: { [key: string]: string } },
   ) {
     const member = await this.workspaceMembersService.addMember(
       workspaceId,
+      request.user.id,
       addMemberDto,
     );
     return {
@@ -58,9 +78,11 @@ export class WorkspaceMembersController {
   async updateMemberRole(
     @Param('workspaceId') workspaceId: string,
     @Body() addMemberDto: AddMemberDto,
+    @Req() request: Request & { user: { [key: string]: string } },
   ) {
     const member = await this.workspaceMembersService.updateMemberRole(
       workspaceId,
+      request.user.id,
       addMemberDto,
     );
     return {

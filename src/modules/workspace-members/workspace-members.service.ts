@@ -25,7 +25,42 @@ export class WorkspaceMembersService {
     private usersRepository: Repository<User>,
   ) {}
 
-  async addMember(workspaceId: string, addMemberDto: AddMemberDto) {
+  async findAllMember(workspaceId: string, userId: string) {
+    const workspace = await this.workspacesRepository.findOne({
+      where: { id: workspaceId },
+    });
+    if (!workspace) {
+      throw new NotFoundException('Workspace không tồn tại');
+    }
+    const members = await this.workspaceMembersRepository.find({
+      where: {
+        user_manager_id: userId,
+        workspace: {
+          id: workspaceId,
+        },
+      },
+      relations: ['workspace', 'user'],
+      select: {
+        role: true,
+        joined_at: true,
+        user: {
+          id: true,
+          username: true,
+        },
+        workspace: {
+          id: true,
+          workspace_name: true,
+        },
+      },
+    });
+    return members;
+  }
+
+  async addMember(
+    userId: string,
+    workspaceId: string,
+    addMemberDto: AddMemberDto,
+  ) {
     // Kiểm tra workspace tồn tại
     const workspace = await this.workspacesRepository.findOne({
       where: { id: workspaceId },
@@ -47,6 +82,7 @@ export class WorkspaceMembersService {
       where: {
         workspace: { id: workspaceId },
         user: { id: addMemberDto.userId },
+        user_manager_id: userId,
       },
     });
     if (existingMember) {
@@ -60,6 +96,7 @@ export class WorkspaceMembersService {
       workspace: { id: workspaceId },
       user: { id: addMemberDto.userId },
       role: addMemberDto.role,
+      user_manager_id: userId,
       joined_at: new Date(),
       created_at: new Date(),
     });
@@ -67,10 +104,18 @@ export class WorkspaceMembersService {
     return this.workspaceMembersRepository.save(newMember);
   }
 
-  async updateMemberRole(workspaceId: string, addMemberDto:AddMemberDto) {
+  async updateMemberRole(
+    workspaceId: string,
+    userId: string,
+    addMemberDto: AddMemberDto,
+  ) {
     // Kiểm tra thành viên tồn tại
     const membership = await this.workspaceMembersRepository.findOne({
-      where: { workspace: { id: workspaceId }, user: { id: addMemberDto.userId } },
+      where: {
+        workspace: { id: workspaceId },
+        user: { id: addMemberDto.userId },
+        user_manager_id: userId,
+      },
     });
     if (!membership) {
       throw new NotFoundException('Thành viên không tồn tại trong workspace');
@@ -89,7 +134,11 @@ export class WorkspaceMembersService {
   ) {
     // Kiểm tra thành viên tồn tại
     const membership = await this.workspaceMembersRepository.findOne({
-      where: { workspace: { id: workspaceId }, user: { id: userId } },
+      where: {
+        workspace: { id: workspaceId },
+        user: { id: currentUserId },
+        user_manager_id: userId,
+      },
     });
     if (!membership) {
       throw new NotFoundException('Thành viên không tồn tại trong workspace');
@@ -103,7 +152,8 @@ export class WorkspaceMembersService {
     // Xóa thành viên
     await this.workspaceMembersRepository.delete({
       workspace: { id: workspaceId },
-      user: { id: userId },
+      user: { id: currentUserId },
+      user_manager_id: userId,
     });
     return { message: 'Xóa thành viên thành công' };
   }

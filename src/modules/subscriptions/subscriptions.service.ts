@@ -50,8 +50,7 @@ export class SubscriptionsService {
     return subscriptions;
   }
 
-  // Hàm mới để lấy số lượng limit còn lại
-  async getRemainingLimits(userId: string, startDate: Date, endDate: Date) {
+  async getRemainingLimits(userId: string) {
     // Lấy thông tin subscription
     const subscription = await this.findOneByUserId(userId);
     if (!subscription) {
@@ -80,30 +79,30 @@ export class SubscriptionsService {
         limitField: 'member_limit',
         action: UsageAction.CREATE,
       },
-      // Thêm các tài nguyên khác nếu cần, ví dụ:
-      // { resourceType: ResourceType.MEMBER, limitField: 'member_limit', action: UsageAction.ADD },
     ];
 
-    // Tính số lượng còn lại cho từng tài nguyên
-    const remainingLimits = {};
-    for (const { resourceType, limitField, action } of resourceLimits) {
-      // Lấy tổng limit từ subscription
-      const totalLimit = subscription[limitField] || 0;
+    // Tính toán số lượng còn lại đồng thời cho các loại tài nguyên
+    const remainingEntries = await Promise.all(
+      resourceLimits.map(async ({ resourceType, limitField, action }) => {
+        if (!(limitField in subscription)) {
+          throw new Error(`Invalid limit field: ${limitField}`);
+        }
 
-      // Tính tổng usage đã sử dụng
-      const used = await this.usageLogsService.sumUsageByUserId(
-        userId,
-        resourceType,
-        action,
-        startDate,
-        endDate,
-      );
+        const totalLimit = subscription[limitField] || 0;
 
-      // Tính số lượng còn lại
-      remainingLimits[resourceType] = Math.max(totalLimit - used, 0);
-    }
+        const used = await this.usageLogsService.sumUsageByUserId(
+          userId,
+          resourceType,
+          action,
+          subscription.created_at,
+          new Date(),
+        );
 
-    return remainingLimits;
+        return [resourceType, Math.max(totalLimit - used, 0)];
+      }),
+    );
+
+    return Object.fromEntries(remainingEntries);
   }
 
   async findOneByUserId(userId: string) {

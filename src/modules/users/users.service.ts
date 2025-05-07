@@ -12,7 +12,10 @@ import { hashPassword } from '@common/utils/hash-password/hashing.util';
 import { generateUniqueString } from '@common/utils/generate-random/generate-username.util';
 import { plainToInstance } from 'class-transformer';
 import { Workspace } from '@modules/workspaces/entities/workspace.entity';
-import { ApiToken, TokenStatus } from '@modules/api-tokens/entities/api-token.entity';
+import {
+  ApiToken,
+  TokenStatus,
+} from '@modules/api-tokens/entities/api-token.entity';
 
 @Injectable()
 export class UsersService {
@@ -179,8 +182,20 @@ export class UsersService {
     return true;
   }
 
-  update(id: string, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async update(id: string, updateUserDto: UpdateUserDto) {
+    const response = await this.userRepository.update(id, updateUserDto);
+    if (response.affected === 0) {
+      throw new NotFoundException('User not found or no changes made');
+    }
+    const user = await this.userRepository.findOne({
+      where: {
+        id,
+      },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found after update');
+    }
+    return plainToInstance(User, user);
   }
 
   async remove(id: string) {

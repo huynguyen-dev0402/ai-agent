@@ -18,7 +18,6 @@ export enum WorkspaceMemberRole {
 }
 
 @Entity('workspace_members')
-@Unique('idx_workspace_members_unique', ['workspace', 'user'])
 @Index('idx_workspace_members_workspace_id', ['workspace'])
 @Index('idx_workspace_members_user_id', ['user'])
 export class WorkspaceMember {
@@ -38,6 +37,9 @@ export class WorkspaceMember {
     default: () => 'CURRENT_TIMESTAMP',
   })
   joined_at: Date;
+
+  @Column({ type: 'uuid', unique: true })
+  user_manager_id: string;
 
   @CreateDateColumn({
     type: 'timestamp',

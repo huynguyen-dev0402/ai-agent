@@ -756,20 +756,9 @@ export class UsersController {
   })
   async getSubscriptionsLimits(
     @Req() request: Request & { user: { [key: string]: string } },
-    @Query('startDate') startDateStr: string,
-    @Query('endDate') endDateStr: string,
   ) {
-    const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
-    // Normalize startDate: 00:00:00.000
-    startDate.setHours(0, 0, 0, 0);
-
-    // Normalize endDate: 23:59:59.999
-    endDate.setHours(23, 59, 59, 999);
     const remainingLimits = await this.subscriptionService.getRemainingLimits(
       request.user.id,
-      startDate,
-      endDate,
     );
 
     return {
@@ -878,7 +867,7 @@ export class UsersController {
     };
   }
 
-  @Patch(':id')
+  @Patch('/profile/update')
   @ApiOperation({ summary: 'Update a user' })
   @ApiResponse({
     status: 200,
@@ -886,10 +875,10 @@ export class UsersController {
   })
   @ApiResponse({ status: 404, description: 'User not found' })
   update(
-    @Param('id') id: string,
+    @Req() request: Request & { user: { [key: string]: string } },
     @Body(new ValidationPipe()) updateUserDto: UpdateUserDto,
   ) {
-    return this.usersService.update(id, updateUserDto);
+    return this.usersService.update(request.user.id, updateUserDto);
   }
 
   @Delete(':id')

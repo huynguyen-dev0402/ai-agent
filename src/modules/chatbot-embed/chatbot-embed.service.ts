@@ -28,8 +28,8 @@ export class ChatbotEmbedService {
   ) {}
 
   async validateChatbotEmbed(
-    query:InitChatbotQueryDto
-  ): Promise<{ chatbotId: string; userId: string }> {
+    query: InitChatbotQueryDto,
+  ): Promise<Chatbot> {
     const { userId, chatbotId, token } = query;
     // Bước 1: Xác thực token
     const payload = await this.chatbotTokenService.verifyChatbotToken(token);
@@ -42,6 +42,10 @@ export class ChatbotEmbedService {
     const chatbot = await this.chatbotRepository.findOne({
       where: { id: chatbotId },
       relations: ['user'],
+      select: {
+        chatbot_name: true,
+        icon_url: true,
+      },
     });
     if (!chatbot) {
       await this.logEmbedAttempt(chatbotId, userId, false, 'Chatbot not found');
@@ -71,7 +75,7 @@ export class ChatbotEmbedService {
     // Bước 3: Ghi log thành công
     await this.logEmbedAttempt(chatbotId, userId, true);
 
-    return { chatbotId, userId };
+    return chatbot;
   }
 
   async initializeConversation(
