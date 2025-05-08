@@ -42,6 +42,7 @@ export class ChatbotEmbedService {
       relations: ['user'],
       select: {
         id: true,
+        status:true,
         chatbot_name: true,
         icon_url: true,
         user: {

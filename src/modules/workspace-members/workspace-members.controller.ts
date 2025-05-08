@@ -25,6 +25,7 @@ import {
 import { QUANTITY_REDUCE } from '@common/constants/quantity.constant';
 import { AddMemberDto } from './dto/add-member.dto';
 import { Request } from 'express';
+import { EditMemberDto } from './dto/edit-member.dto';
 
 @Controller('workspaces/:workspaceId/members')
 export class WorkspaceMembersController {
@@ -77,13 +78,13 @@ export class WorkspaceMembersController {
   @UseGuards(AdminGuard)
   async updateMemberRole(
     @Param('workspaceId') workspaceId: string,
-    @Body() addMemberDto: AddMemberDto,
+    @Body() editMemberDto: EditMemberDto,
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
     const member = await this.workspaceMembersService.updateMemberRole(
       workspaceId,
       request.user.id,
-      addMemberDto,
+      editMemberDto,
     );
     return {
       success: true,

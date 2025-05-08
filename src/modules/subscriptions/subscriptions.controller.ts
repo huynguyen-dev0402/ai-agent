@@ -21,6 +21,7 @@ import { UserSubscriptionsService } from '@modules/user-subscriptions/user-subsc
 import { ActionSubscriptionDto } from '@modules/subscriptions/dto/action-subscription.dto';
 import { UserSubscriptions } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
 import { successResponse } from '@common/utils/response/response.util';
+import { Public } from '@common/decorators/public-route.decorator';
 
 @Controller('subscriptions')
 @UseGuards(AuthGuard)
@@ -195,6 +196,7 @@ export class SubscriptionsController {
   }
 
   @Get()
+  @Public()
   findAll() {
     return this.subscriptionsService.findAll();
   }
