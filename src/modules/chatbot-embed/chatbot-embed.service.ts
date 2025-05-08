@@ -27,9 +27,7 @@ export class ChatbotEmbedService {
     private readonly conversationService: ConversationsService,
   ) {}
 
-  async validateChatbotEmbed(
-    query: InitChatbotQueryDto,
-  ): Promise<Chatbot> {
+  async validateChatbotEmbed(query: InitChatbotQueryDto): Promise<Chatbot> {
     const { userId, chatbotId, token } = query;
     // Bước 1: Xác thực token
     const payload = await this.chatbotTokenService.verifyChatbotToken(token);
@@ -43,8 +41,12 @@ export class ChatbotEmbedService {
       where: { id: chatbotId },
       relations: ['user'],
       select: {
+        id: true,
         chatbot_name: true,
         icon_url: true,
+        user: {
+          id: true,
+        },
       },
     });
     if (!chatbot) {
