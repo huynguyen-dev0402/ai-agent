@@ -63,8 +63,8 @@ export class WorkspaceMembersController {
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
     const member = await this.workspaceMembersService.addMember(
-      workspaceId,
       request.user.id,
+      workspaceId,
       addMemberDto,
     );
     return {

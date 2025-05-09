@@ -33,6 +33,7 @@ import { ChatbotTokensModule } from './modules/chatbot-tokens/chatbot-tokens.mod
 import { ChatbotEmbedModule } from './modules/chatbot-embed/chatbot-embed.module';
 import { WorkspaceMembersModule } from './modules/workspace-members/workspace-members.module';
 import { TicketsModule } from './modules/tickets/tickets.module';
+import { DomainsModule } from './modules/domains/domains.module';
 
 @Module({
   imports: [
@@ -78,6 +79,7 @@ import { TicketsModule } from './modules/tickets/tickets.module';
     ChatbotEmbedModule,
     WorkspaceMembersModule,
     TicketsModule,
+    DomainsModule,
   ],
   controllers: [AppController],
   providers: [
