@@ -64,6 +64,17 @@ export class DomainsService {
     return domain;
   }
 
+  async findDomainsForUser(userId: string) {
+    const domains = await this.domainsRepository.find({
+      where: {
+        user: {
+          id: userId,
+        },
+      },
+    });
+    return domains
+  }
+
   async verifyDomain(domainId: string, userId: string): Promise<boolean> {
     const domain = await this.findOne(domainId);
     if (!domain) {

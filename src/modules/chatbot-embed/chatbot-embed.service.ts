@@ -233,21 +233,10 @@ export class ChatbotEmbedService {
       domainId,
     );
 
-    // Bước 9: Tạo script với domainId
-    const script = `
-      <script>
-        window.ChatbotConfig = {
-          siteURL: "https://ai-agent-v2.vercel.app",
-          token: "${token}",
-          userId:"${userId}",
-          chatbotId:${chatbotId}
-        };
-      </script>
-      <script src="https://ai-agent-v2.vercel.app/embed/embed-chatbot.js" async></script>
-    `;
-
     return {
-      script: script.trim(),
+      token: token,
+      userId: userId,
+      chatbotId: chatbotId,
     };
   }
 }

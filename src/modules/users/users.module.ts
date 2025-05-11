@@ -32,6 +32,7 @@ import { ChatbotTokensModule } from '@modules/chatbot-tokens/chatbot-tokens.modu
 import { WorkspaceMembersModule } from '@modules/workspace-members/workspace-members.module';
 import { Domain } from '@modules/domains/entities/domain.entity';
 import { ChatbotToken } from '@modules/chatbot-tokens/entities/chatbot-token.entity';
+import { DomainsModule } from '@modules/domains/domains.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { ChatbotToken } from '@modules/chatbot-tokens/entities/chatbot-token.ent
     UsageLogsModule,
     MessagesModule,
     ChatbotTokensModule,
+    DomainsModule,
     forwardRef(() => UserSubscriptionsModule),
     forwardRef(() => ResourcesModule),
   ],

@@ -61,6 +61,7 @@ import {
 import { CheckQuotaInterceptor } from '@common/interceptors/usage-logs.interceptor';
 import { QUANTITY_REDUCE } from '@common/constants/quantity.constant';
 import { ChatbotTokensService } from '@modules/chatbot-tokens/chatbot-tokens.service';
+import { DomainsService } from '@modules/domains/domains.service';
 
 @Controller('users')
 @UseGuards(AuthGuard)
@@ -70,6 +71,7 @@ export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly chatbotService: ChatbotsService,
+    private readonly domainService: DomainsService,
     private readonly workspaceService: WorkspacesService,
     private readonly resourceService: ResourcesService,
     private readonly documentService: DocumentsService,
@@ -831,6 +833,28 @@ export class UsersController {
       success: true,
       message: 'Chatbot retrieved successfully',
       chatbot,
+    };
+  }
+
+  @Get('/profile/domains')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get list of domains' })
+  @ApiResponse({
+    status: 200,
+    description: 'Domains retrieved successfully',
+    type: Chatbot,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async findDomains(
+    @Req() request: Request & { user: { [key: string]: string } },
+  ) {
+    const domains = await this.domainService.findDomainsForUser(
+      request.user.id,
+    );
+    return {
+      success: true,
+      message: 'Domains retrieved successfully',
+      domains,
     };
   }
 
