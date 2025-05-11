@@ -20,6 +20,7 @@ import { ChatbotToken } from '@modules/chatbot-tokens/entities/chatbot-token.ent
 import { ChatbotEmbedLog } from '@modules/chatbot-embed/entities/chatbot-embed-log.entity';
 import { Ticket } from '@modules/tickets/entities/ticket.entity';
 import { WorkspaceMember } from '@modules/workspace-members/entities/workspace-member.entity';
+import { Domain } from '@modules/domains/entities/domain.entity';
 
 export enum UserStatus {
   ACTIVE = 'active',
@@ -48,6 +49,9 @@ export class User {
 
   @Column({ type: 'varchar', unique: true, nullable: false })
   email: string;
+
+  @Column({ type: 'text', nullable: true })
+  domain?: string;
 
   @Column({ type: 'text', nullable: true })
   address?: string;
@@ -122,4 +126,7 @@ export class User {
     (workspace_members) => workspace_members.user,
   )
   workspace_members: WorkspaceMember[];
+
+  @OneToMany(() => Domain, (domains) => domains.user)
+  domains: Domain[];
 }

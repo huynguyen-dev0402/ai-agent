@@ -7,6 +7,9 @@ import {
   Post,
   Res,
   UseInterceptors,
+  UseGuards,
+  Req,
+  BadRequestException,
 } from '@nestjs/common';
 import { ChatbotEmbedService } from '@modules/chatbot-embed/chatbot-embed.service';
 import { StartConversationDto } from '@modules/chatbot-embed/dto/start-conversation.dto';
@@ -19,7 +22,7 @@ import {
 import { ChatbotsService } from '@modules/chatbots/chatbots.service';
 import { Public } from '@common/decorators/public-route.decorator';
 import { ChatWithChatbotEmbedDto } from '@modules/chatbot-embed/dto/chat-chatbot-embed.dto';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { QUANTITY_REDUCE } from '@common/constants/quantity.constant';
 import {
   ApiTags,
@@ -58,52 +61,24 @@ export class ChatbotEmbedController {
     },
   })
   @ApiResponse({ status: 403, description: 'Missing or invalid parameters' })
-  async initChatbot(@Query() query: InitChatbotQueryDto) {
-    const response = await this.chatbotEmbedService.validateChatbotEmbed(query);
+  async initChatbot(
+    @Query() query: InitChatbotQueryDto,
+    @Req() request: Request,
+  ) {
+    const host = request.headers.host;
+    if (!host) {
+      throw new BadRequestException('Host is not empty');
+    }
+    const response = await this.chatbotEmbedService.validateChatbotEmbed(
+      query,
+      host,
+    );
 
     // Trả về dữ liệu cần thiết để render chatbot trong iframe
     return {
       status: 'success',
       data: response,
       // Thêm các thông tin khác nếu cần (ví dụ: chatbot_name, icon_url, prompt_info)
-    };
-  }
-
-  @Post('start-conversation')
-  @Public()
-  @ApiOperation({ summary: 'Start a conversation with the embedded chatbot' })
-  @ApiBody({ type: StartConversationDto })
-  @ApiResponse({
-    status: 200,
-    description: 'Conversation started successfully',
-    schema: {
-      example: {
-        status: 'success',
-        data: {
-          conversationId: 'uuid',
-          endUserId: 'end-user-id',
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 403, description: 'Missing required fields' })
-  async startConversation(@Body() startConversationDto: StartConversationDto) {
-    const { external_id, platform, chatbot_id } = startConversationDto;
-    if (!chatbot_id || !external_id || !platform) {
-      throw new ForbiddenException('Missing required parameters');
-    }
-
-    const { conversationId, endUserId } =
-      await this.chatbotEmbedService.initializeConversation(
-        startConversationDto,
-      );
-
-    return {
-      status: 'success',
-      data: {
-        conversationId,
-        endUserId,
-      },
     };
   }
 
@@ -129,11 +104,30 @@ export class ChatbotEmbedController {
   })
   async chatWithBot(
     @Body() chatEmbedChatbot: ChatWithChatbotEmbedDto,
+    @Req() request: Request,
     @Res({ passthrough: false }) response: Response,
   ) {
+    const host = request.headers.host;
+    if (!host) {
+      throw new BadRequestException('Host is not empty');
+    }
     return await this.chatbotService.chatWithBotEmbedStream(
       chatEmbedChatbot,
+      host,
       response,
+    );
+  }
+
+  @Get('script')
+  async getEmbedScript(
+    @Query('chatbotId') chatbotId: string,
+    @Query('domainId') domainId: string,
+    @Req() request: Request & { user: { [key: string]: string } },
+  ) {
+    return this.chatbotEmbedService.generateEmbedScript(
+      chatbotId,
+      domainId,
+      request.user.id,
     );
   }
 }

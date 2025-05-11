@@ -12,7 +12,6 @@ import { ChatbotOnboardingModule } from '@modules/chatbot-onboarding/chatbot-onb
 import { OnboardingSuggestedQuestionsModule } from '@modules/onboarding-suggested-questions/onboarding-suggested-questions.module';
 import { WorkspacesModule } from '@modules/workspaces/workspaces.module';
 import { ResourcesModule } from '@modules/resources/resources.module';
-import { UploadModule } from '@modules/upload/upload.module';
 import { DocumentsModule } from '@modules/documents/documents.module';
 import { ChatbotPromptModule } from '@modules/chatbot-prompt/chatbot-prompt.module';
 import { PasswordResetModule } from '@modules/password-reset/password-reset.module';
@@ -60,7 +59,6 @@ import { DomainsModule } from './modules/domains/domains.module';
     OnboardingSuggestedQuestionsModule,
     WorkspacesModule,
     ResourcesModule,
-    UploadModule,
     DocumentsModule,
     ChatbotPromptModule,
     PasswordResetModule,

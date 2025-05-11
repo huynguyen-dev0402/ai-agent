@@ -67,7 +67,7 @@ export class WorkspaceMembersService {
   ) {
     // Kiểm tra workspace tồn tại
     const workspace = await this.workspacesRepository.findOne({
-      where: { id: workspaceId },
+      where: { users: { id: userId } },
     });
     if (!workspace) {
       throw new NotFoundException('Workspace not found');
@@ -140,8 +140,8 @@ export class WorkspaceMembersService {
     const membership = await this.workspaceMembersRepository.findOne({
       where: {
         workspace: { id: workspaceId },
-        user: { id: currentUserId },
-        user_manager_id: userId,
+        user: { id: userId },
+        user_manager_id: currentUserId,
       },
     });
     if (!membership) {

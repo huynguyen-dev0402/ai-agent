@@ -1,8 +1,17 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { ChatbotToken } from '@modules/chatbot-tokens/entities/chatbot-token.entity';
+import {
+  ChatbotToken,
+  ChatbotTokenStatus,
+} from '@modules/chatbot-tokens/entities/chatbot-token.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
+
+interface ChatbotTokenPayload {
+  userId: string;
+  chatbotId: string;
+  domainId: string;
+}
 
 @Injectable()
 export class ChatbotTokensService {
@@ -15,17 +24,16 @@ export class ChatbotTokensService {
   async generateChatbotToken(
     userId: string,
     chatbotId: string,
+    domainId: string,
   ): Promise<string> {
-    const payload = { userId, chatbotId };
-    const token = this.jwtService.sign(payload, { expiresIn: '30d' });
+    const payload = { userId, chatbotId, domainId };
+    const token = this.jwtService.sign(payload);
 
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30);
     const tokenEntity = this.chatbotTokenRepository.create({
       user: { id: userId },
       chatbot: { id: chatbotId },
+      status: ChatbotTokenStatus.ACTIVE,
       token,
-      expires_at: expiresAt,
       created_at: new Date(),
     });
     await this.chatbotTokenRepository.save(tokenEntity);
@@ -33,29 +41,42 @@ export class ChatbotTokensService {
     return token;
   }
 
-  async verifyChatbotToken(
-    token: string,
-  ): Promise<{ userId: string; chatbotId: string }> {
+  async verifyChatbotToken(token: string): Promise<ChatbotTokenPayload> {
     try {
-      const payload = this.jwtService.verify(token);
+      // Kiểm tra token có bị revoke chưa
       const tokenEntity = await this.chatbotTokenRepository.findOne({
-        where: { token },
+        where: { token, status: ChatbotTokenStatus.ACTIVE },
       });
-      if (!tokenEntity || tokenEntity.expires_at < new Date()) {
-        throw new UnauthorizedException('Invalid or expired token');
+
+      if (!tokenEntity) {
+        throw new UnauthorizedException('Token has been revoked');
       }
-      return { userId: payload.userId, chatbotId: payload.chatbotId };
+
+      // Verify token dùng cấu hình mặc định
+      return await this.jwtService.verify(token);
     } catch (error) {
-      throw new UnauthorizedException('Invalid or expired token');
+      throw new UnauthorizedException('Invalid token');
+    }
+  }
+
+  async revokeToken(token: string): Promise<void> {
+    const tokenEntity = await this.chatbotTokenRepository.findOne({
+      where: { token, status: ChatbotTokenStatus.ACTIVE },
+    });
+
+    if (tokenEntity) {
+      tokenEntity.status = ChatbotTokenStatus.REVOKED;
+      await this.chatbotTokenRepository.save(tokenEntity);
     }
   }
 
   async getTokenForUser(userId: string) {
-    return this.chatbotTokenRepository.find({
+    return this.chatbotTokenRepository.findOne({
       where: {
         user: {
           id: userId,
         },
+        status: ChatbotTokenStatus.ACTIVE,
       },
       select: {
         user: {
@@ -64,6 +85,8 @@ export class ChatbotTokensService {
         chatbot: {
           id: true,
         },
+        token: true,
+        created_at: true,
       },
     });
   }

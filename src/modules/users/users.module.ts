@@ -12,7 +12,6 @@ import { Chatbot } from '@modules/chatbots/entities/chatbot.entity';
 import { ChatbotsService } from '@modules/chatbots/chatbots.service';
 import { ChatbotModelsModule } from '@modules/chatbot-models/chatbot-models.module';
 import { ResourcesModule } from '@modules/resources/resources.module';
-import { UploadModule } from '@modules/upload/upload.module';
 import { DocumentsModule } from '@modules/documents/documents.module';
 import { ChatbotPromptModule } from '@modules/chatbot-prompt/chatbot-prompt.module';
 import { ChatbotResource } from '@modules/chatbots/entities/chatbot-resources.entity';
@@ -31,6 +30,8 @@ import { MessagesModule } from '@modules/messages/messages.module';
 import { Conversation } from '@modules/conversations/entities/conversation.entity';
 import { ChatbotTokensModule } from '@modules/chatbot-tokens/chatbot-tokens.module';
 import { WorkspaceMembersModule } from '@modules/workspace-members/workspace-members.module';
+import { Domain } from '@modules/domains/entities/domain.entity';
+import { ChatbotToken } from '@modules/chatbot-tokens/entities/chatbot-token.entity';
 
 @Module({
   imports: [
@@ -46,12 +47,13 @@ import { WorkspaceMembersModule } from '@modules/workspace-members/workspace-mem
       UserSubscriptions,
       UsageLog,
       Conversation,
+      Domain,
+      ChatbotToken
     ]),
     AuthModule,
     ApiTokensModule,
     WorkspacesModule,
     ChatbotModelsModule,
-    UploadModule,
     DocumentsModule,
     ChatbotPromptModule,
     SubscriptionsModule,

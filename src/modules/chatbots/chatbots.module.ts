@@ -23,6 +23,9 @@ import { QuotaService } from '@modules/quota/quota.service';
 import { MessagesModule } from '@modules/messages/messages.module';
 import { Message } from '@modules/messages/entities/message.entity';
 import { Conversation } from '@modules/conversations/entities/conversation.entity';
+import { ChatbotToken } from '@modules/chatbot-tokens/entities/chatbot-token.entity';
+import { ChatbotTokensModule } from '@modules/chatbot-tokens/chatbot-tokens.module';
+import { Domain } from '@modules/domains/entities/domain.entity';
 
 @Module({
   imports: [
@@ -36,6 +39,8 @@ import { Conversation } from '@modules/conversations/entities/conversation.entit
       ChatbotModel,
       Message,
       Conversation,
+      ChatbotToken,
+      Domain
     ]),
     AuthModule,
     WorkspacesModule,
@@ -44,6 +49,7 @@ import { Conversation } from '@modules/conversations/entities/conversation.entit
     UserSubscriptionsModule,
     UsageLogsModule,
     MessagesModule,
+    ChatbotTokensModule
   ],
   controllers: [ChatbotsController],
   providers: [ChatbotsService, CheckQuotaInterceptor, Reflector, QuotaService],

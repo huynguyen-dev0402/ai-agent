@@ -1,25 +1,22 @@
-import { Chatbot } from '@modules/chatbots/entities/chatbot.entity';
-import { User } from '@modules/users/entities/user.entity';
 import {
   Entity,
-  PrimaryGeneratedColumn,
   Column,
+  PrimaryGeneratedColumn,
   ManyToOne,
-  JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  JoinColumn,
   Index,
 } from 'typeorm';
+import { User } from '@modules/users/entities/user.entity';
+import { Chatbot } from '@modules/chatbots/entities/chatbot.entity';
 
-export enum EmbedStatus {
+export enum ChatbotTokenStatus {
   ACTIVE = 'active',
-  EXPIRES = 'expires',
+  INACTIVE='inactive',
   REVOKED = 'revoked',
 }
-
 @Entity('chatbot_tokens')
-@Index('idx_chatbot_tokens_token', ['token'], { unique: true })
-@Index('idx_chatbot_tokens_status', ['status'])
 export class ChatbotToken {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -29,16 +26,10 @@ export class ChatbotToken {
 
   @Column({
     type: 'enum',
-    enum: EmbedStatus,
-    default: EmbedStatus.ACTIVE,
+    enum: ChatbotTokenStatus,
+    default: ChatbotTokenStatus.ACTIVE,
   })
-  status: EmbedStatus;
-
-  @Column({ type: 'uuid', nullable: true })
-  created_by?: string;
-
-  @Column({ type: 'timestamp' })
-  expires_at: Date;
+  status: ChatbotTokenStatus;
 
   @CreateDateColumn({
     type: 'timestamp',
@@ -50,7 +41,7 @@ export class ChatbotToken {
   @UpdateDateColumn({
     type: 'timestamp',
     nullable: true,
-    onUpdate: 'CURRENT_TIMESTAMP',
+    default: () => 'CURRENT_TIMESTAMP',
   })
   updated_at: Date;
 

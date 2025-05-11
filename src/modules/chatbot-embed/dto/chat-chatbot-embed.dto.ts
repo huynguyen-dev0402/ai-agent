@@ -11,20 +11,20 @@ export class ChatWithChatbotEmbedDto {
   conversation_id: string;
 
   @ApiProperty({
-    description: 'Unique ID of the chatbot that will receive the message.',
+    description: 'Unique token of the chatbot that will receive the message.',
     type: String,
-    example: 'cfe2bdf6-1fa4-4b32-88e3-08c9c9d5de87',
+    example: 'jwt token',
   })
-  @IsNotEmpty({ message: 'Must have chatbot_id' })
-  chatbot_id: string;
+  @IsNotEmpty({ message: 'Must have token' })
+  token: string;
 
-  @ApiProperty({
-    description: 'Unique ID of the user sending the message.',
-    type: String,
-    example: '52d2c843-d54e-4e48-9959-5e81ac31483a',
-  })
-  @IsNotEmpty({ message: 'Must have user_id' })
-  user_id: string;
+  // @ApiProperty({
+  //   description: 'Unique ID of the user sending the message.',
+  //   type: String,
+  //   example: '52d2c843-d54e-4e48-9959-5e81ac31483a',
+  // })
+  // @IsNotEmpty({ message: 'Must have user_id' })
+  // user_id: string;
 
   @ApiProperty({
     description: 'Content of the message to be sent to the chatbot.',

@@ -1,6 +1,4 @@
-import {
-  comparePassword,
-} from '@common/utils/hash-password/hashing.util';
+import { comparePassword } from '@common/utils/hash-password/hashing.util';
 import { UsersService } from '@modules/users/users.service';
 import {
   BadRequestException,
@@ -11,7 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from '@modules/auth/dto/login.dto';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
-import * as md5 from 'md5';
+import md5 from 'md5';
 
 type User = {
   id: string;

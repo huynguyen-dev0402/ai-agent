@@ -38,7 +38,7 @@ export class WorkspaceMember {
   })
   joined_at: Date;
 
-  @Column({ type: 'uuid', unique: true })
+  @Column({ type: 'uuid' })
   user_manager_id: string;
 
   @CreateDateColumn({

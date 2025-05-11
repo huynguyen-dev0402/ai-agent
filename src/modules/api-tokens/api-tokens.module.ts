@@ -15,7 +15,6 @@ import { User } from '@modules/users/entities/user.entity';
     }),
     TypeOrmModule.forFeature([ApiToken, User]),
     JwtModule.registerAsync({
-      imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         privateKey: configService.get<string>('PRIVATE_KEY_EXTERNAL'),
         signOptions: {

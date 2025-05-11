@@ -55,7 +55,7 @@ export class UsersService {
     createUserDto.password = hashPassword(password);
     const newUser = this.userRepository.create({
       ...createUserDto,
-      workspace,
+      workspace:{id:workspaceId},
     });
     await this.userRepository.save(newUser);
     return plainToInstance(User, newUser);

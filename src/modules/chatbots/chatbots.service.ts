@@ -1,9 +1,11 @@
 import { KnowledgeDto } from '@modules/chatbots/dto/knowledge.dto';
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { CreateChatbotDto } from '@modules/chatbots/dto/create-chatbot.dto';
 import { UpdateChatbotDto } from '@modules/chatbots/dto/update-chatbot.dto';
@@ -32,6 +34,12 @@ import { MessagesService } from '@modules/messages/messages.service';
 import { SenderType } from '@modules/messages/entities/message.entity';
 import { Conversation } from '@modules/conversations/entities/conversation.entity';
 import { ChatWithChatbotEmbedDto } from '@modules/chatbot-embed/dto/chat-chatbot-embed.dto';
+import { ChatbotTokensService } from '@modules/chatbot-tokens/chatbot-tokens.service';
+import { Domain, DomainStatus } from '@modules/domains/entities/domain.entity';
+import {
+  ChatbotToken,
+  ChatbotTokenStatus,
+} from '@modules/chatbot-tokens/entities/chatbot-token.entity';
 
 @Injectable()
 export class ChatbotsService {
@@ -42,6 +50,7 @@ export class ChatbotsService {
     private readonly chatbotModelsService: ChatbotModelsService,
     private readonly workspaceService: WorkspacesService,
     private readonly messageService: MessagesService,
+    private readonly chatbotTokenService: ChatbotTokensService,
     @InjectRepository(ChatbotResource)
     private chatbotResourceRepository: Repository<ChatbotResource>,
     @InjectRepository(Resource)
@@ -54,8 +63,21 @@ export class ChatbotsService {
     private suggestRepository: Repository<OnboardingSuggestedQuestion>,
     @InjectRepository(Conversation)
     private conversationRepository: Repository<Conversation>,
+    @InjectRepository(Domain)
+    private readonly domainRepository: Repository<Domain>,
+    @InjectRepository(ChatbotToken)
+    private readonly chatbotTokenRepository: Repository<ChatbotToken>,
     private dataSource: DataSource,
   ) {}
+
+  private normalizeHost(host: string): string {
+    let normalized = host.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    normalized = normalized
+      .replace(/^www\./, '')
+      .trim()
+      .toLowerCase();
+    return normalized;
+  }
 
   async findAllChatbotsForUser(userId: string) {
     const chatbots = await this.chatbotRepository.find({
@@ -230,46 +252,118 @@ export class ChatbotsService {
 
   async chatWithBotEmbedStream(
     chatEmbedChatbot: ChatWithChatbotEmbedDto,
+    host: string,
     res: Response,
   ) {
+    const payload = await this.chatbotTokenService.verifyChatbotToken(
+      chatEmbedChatbot.token,
+    );
+    if (
+      !payload ||
+      !payload.userId ||
+      !payload.chatbotId ||
+      !payload.domainId
+    ) {
+      throw new UnauthorizedException('Invalid token');
+    }
+
+    // Bước 2: Kiểm tra trạng thái token
+    const tokenRecord = await this.chatbotTokenRepository.findOne({
+      where: {
+        token: chatEmbedChatbot.token,
+        status: ChatbotTokenStatus.ACTIVE,
+      },
+    });
+    if (!tokenRecord) {
+      throw new UnauthorizedException('Token is revoked or inactive');
+    }
+
+    const normalizedHost = this.normalizeHost(host);
+    const domain = await this.domainRepository.findOne({
+      where: {
+        id: payload.domainId,
+        status: DomainStatus.ACTIVE,
+        isVerified: true,
+        name: normalizedHost,
+      },
+      relations: ['user'],
+    });
+
+    if (!domain) {
+      throw new ForbiddenException('Domain not found or not authorized');
+    }
+
+    // Bước 4: Truy vấn user, chatbot, conversation
     const [user, chatbot, conversation] = await Promise.all([
-      await this.userRepository.findOne({
+      // Truy vấn user: Chỉ lấy các trường cần thiết
+      this.userRepository.findOne({
         where: {
-          id: chatEmbedChatbot.user_id,
+          id: payload.userId,
           status: UserStatus.ACTIVE,
         },
-        relations: {
-          api_token: true,
-        },
+        relations: ['api_token'],
         select: {
           id: true,
-          external_user_id:true,
+          external_user_id: true,
           api_token: {
             id: true,
             token: true,
           },
         },
       }),
-      await this.chatbotRepository.findOne({
-        where: { id: chatEmbedChatbot.chatbot_id },
+      // Truy vấn chatbot: Chỉ lấy id và user.id để kiểm tra quyền sở hữu
+      this.chatbotRepository.findOne({
+        where: { id: payload.chatbotId },
+        relations: ['user'],
+        select: {
+          id: true,
+          external_bot_id: true,
+          user: {
+            id: true,
+          },
+        },
       }),
-      await this.conversationRepository.findOne({
-        where: {
-          id: chatEmbedChatbot.conversation_id,
+      // Truy vấn conversation: Chỉ lấy id, external_conversation_id, và chatbot.user.id
+      this.conversationRepository.findOne({
+        where: { id: chatEmbedChatbot.conversation_id },
+        relations: ['chatbot', 'chatbot.user'],
+        select: {
+          id: true,
+          external_conversation_id: true,
+          chatbot: {
+            id: true,
+            user: {
+              id: true,
+            },
+          },
         },
       }),
     ]);
 
+    // Bước 3: Kiểm tra tồn tại
     if (!user) {
       throw new NotFoundException('User not found');
     }
-
     if (!chatbot) {
       throw new NotFoundException('Chatbot not found');
     }
-
     if (!conversation) {
       throw new NotFoundException('Conversation not found');
+    }
+
+    // Bước 4: Kiểm tra quyền sở hữu
+    if (chatbot.user.id !== payload.userId) {
+      throw new ForbiddenException(
+        'You do not have permission to use this chatbot',
+      );
+    }
+    if (conversation.chatbot.id !== payload.chatbotId) {
+      throw new ForbiddenException(
+        'Conversation does not belong to this chatbot',
+      );
+    }
+    if (conversation.chatbot.user.id !== payload.userId) {
+      throw new ForbiddenException('Conversation does not belong to this user');
     }
 
     await this.messageService.saveMessageUser({

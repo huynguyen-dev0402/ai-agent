@@ -721,7 +721,7 @@ export class UsersController {
     const chatbotTokens = await this.chatbotTokenService.getTokenForUser(
       request.user.id,
     );
-    if (!chatbotTokens.length) {
+    if (!chatbotTokens) {
       throw new NotFoundException('No active subscription found for this user');
     }
     return {
@@ -740,20 +740,6 @@ export class UsersController {
     type: Subscription,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiQuery({
-    name: 'startDate',
-    required: true,
-    type: String,
-    description:
-      'The start date for filtering subscriptions, in the format YYYY-MM-DD',
-  })
-  @ApiQuery({
-    name: 'endDate',
-    required: true,
-    type: String,
-    description:
-      'The end date for filtering subscriptions, in the format YYYY-MM-DD',
-  })
   async getSubscriptionsLimits(
     @Req() request: Request & { user: { [key: string]: string } },
   ) {

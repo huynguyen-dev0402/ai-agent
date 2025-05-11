@@ -17,6 +17,7 @@ import { UserSubscriptionsModule } from '@modules/user-subscriptions/user-subscr
 import { UsageLogsModule } from '@modules/usage-logs/usage-logs.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ChatbotTokensModule } from '@modules/chatbot-tokens/chatbot-tokens.module';
+import { Domain } from '@modules/domains/entities/domain.entity';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { ChatbotTokensModule } from '@modules/chatbot-tokens/chatbot-tokens.modu
       Chatbot,
       Conversation,
       EndUser,
+      Domain,
     ]),
     ConversationsModule,
     ChatbotsModule,
