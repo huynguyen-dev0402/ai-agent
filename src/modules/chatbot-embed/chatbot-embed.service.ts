@@ -15,7 +15,10 @@ import { ChatbotTokensService } from '@modules/chatbot-tokens/chatbot-tokens.ser
 import { InitChatbotQueryDto } from './dto/init-chatbot-query.dto';
 import { Domain, DomainStatus } from '@modules/domains/entities/domain.entity';
 import { ChatbotStatus } from '@modules/chatbots/entities/chatbot.entity';
-import { ChatbotToken, ChatbotTokenStatus } from '@modules/chatbot-tokens/entities/chatbot-token.entity';
+import {
+  ChatbotToken,
+  ChatbotTokenStatus,
+} from '@modules/chatbot-tokens/entities/chatbot-token.entity';
 
 @Injectable()
 export class ChatbotEmbedService {
@@ -236,6 +239,8 @@ export class ChatbotEmbedService {
         window.ChatbotConfig = {
           siteURL: "https://ai-agent-v2.vercel.app",
           token: "${token}",
+          userId:"${userId}",
+          chatbotId:${chatbotId}
         };
       </script>
       <script src="https://ai-agent-v2.vercel.app/embed/embed-chatbot.js" async></script>
