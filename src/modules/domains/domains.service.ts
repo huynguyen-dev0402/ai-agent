@@ -75,7 +75,7 @@ export class DomainsService {
     return domains
   }
 
-  async verifyDomain(domainId: string, userId: string): Promise<boolean> {
+  async verifyDomain(domainId: string, userId: string): Promise<Domain | null> {
     const domain = await this.findOne(domainId);
     if (!domain) {
       throw new NotFoundException('Domain not found');
@@ -94,9 +94,13 @@ export class DomainsService {
     });
 
     if (isVerifiedDomain.affected === 0) {
-      return false;
+      return null;
     }
 
-    return true;
+    return this.domainsRepository.findOne({
+      where:{
+        id: domainId
+      }
+    });
   }
 }

@@ -33,6 +33,6 @@ export class DomainsController {
         'Domain verification failed. Domain is unreachable or invalid.',
       );
     }
-    return true;
+    return isVerified;
   }
 }
