@@ -19,14 +19,6 @@ export class ChatWithChatbotEmbedDto {
   token: string;
 
   @ApiProperty({
-    description: 'Domain',
-    type: String,
-    example: 'https://abc.com',
-  })
-  @IsNotEmpty({ message: 'Must have domain_client' })
-  domain_client: string;
-
-  @ApiProperty({
     description: 'Content of the message to be sent to the chatbot.',
     type: String,
     example: 'Hi, how can you help me today?',

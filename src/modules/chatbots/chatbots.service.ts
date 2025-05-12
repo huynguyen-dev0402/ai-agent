@@ -277,21 +277,6 @@ export class ChatbotsService {
       throw new UnauthorizedException('Token is revoked or inactive');
     }
 
-    const normalizedHost = this.normalizeHost(chatEmbedChatbot.domain_client);
-    const domain = await this.domainRepository.findOne({
-      where: {
-        id: payload.domainId,
-        status: DomainStatus.ACTIVE,
-        isVerified: true,
-        name: normalizedHost,
-      },
-      relations: ['user'],
-    });
-
-    if (!domain) {
-      throw new ForbiddenException('Domain not found or not authorized');
-    }
-
     // Bước 4: Truy vấn user, chatbot, conversation
     const [user, chatbot, conversation] = await Promise.all([
       // Truy vấn user: Chỉ lấy các trường cần thiết
