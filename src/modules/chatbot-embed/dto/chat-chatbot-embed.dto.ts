@@ -18,13 +18,13 @@ export class ChatWithChatbotEmbedDto {
   @IsNotEmpty({ message: 'Must have token' })
   token: string;
 
-  // @ApiProperty({
-  //   description: 'Unique ID of the user sending the message.',
-  //   type: String,
-  //   example: '52d2c843-d54e-4e48-9959-5e81ac31483a',
-  // })
-  // @IsNotEmpty({ message: 'Must have user_id' })
-  // user_id: string;
+  @ApiProperty({
+    description: 'Domain',
+    type: String,
+    example: 'https://abc.com',
+  })
+  @IsNotEmpty({ message: 'Must have domain_client' })
+  domain_client: string;
 
   @ApiProperty({
     description: 'Content of the message to be sent to the chatbot.',

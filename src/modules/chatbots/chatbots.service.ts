@@ -252,7 +252,6 @@ export class ChatbotsService {
 
   async chatWithBotEmbedStream(
     chatEmbedChatbot: ChatWithChatbotEmbedDto,
-    host: string,
     res: Response,
   ) {
     const payload = await this.chatbotTokenService.verifyChatbotToken(
@@ -260,9 +259,9 @@ export class ChatbotsService {
     );
     if (
       !payload ||
-      !payload.userId ||
-      !payload.chatbotId ||
-      !payload.domainId
+      !payload?.userId ||
+      !payload?.chatbotId ||
+      !payload?.domainId
     ) {
       throw new UnauthorizedException('Invalid token');
     }
@@ -278,7 +277,7 @@ export class ChatbotsService {
       throw new UnauthorizedException('Token is revoked or inactive');
     }
 
-    const normalizedHost = this.normalizeHost(host);
+    const normalizedHost = this.normalizeHost(chatEmbedChatbot.domain_client);
     const domain = await this.domainRepository.findOne({
       where: {
         id: payload.domainId,

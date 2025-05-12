@@ -47,6 +47,7 @@ export class ChatbotEmbedController {
   @ApiQuery({ name: 'chatbotId', required: true, type: String })
   @ApiQuery({ name: 'userId', required: true, type: String })
   @ApiQuery({ name: 'token', required: true, type: String })
+  @ApiQuery({ name: 'domain', required: true, type: String })
   @ApiResponse({
     status: 200,
     description: 'Chatbot initialized successfully',
@@ -63,15 +64,9 @@ export class ChatbotEmbedController {
   @ApiResponse({ status: 403, description: 'Missing or invalid parameters' })
   async initChatbot(
     @Query() query: InitChatbotQueryDto,
-    @Req() request: Request,
   ) {
-    const host = request.headers.host;
-    if (!host) {
-      throw new BadRequestException('Host is not empty');
-    }
     const response = await this.chatbotEmbedService.validateChatbotEmbed(
       query,
-      host,
     );
 
     // Trả về dữ liệu cần thiết để render chatbot trong iframe
@@ -104,16 +99,10 @@ export class ChatbotEmbedController {
   })
   async chatWithBot(
     @Body() chatEmbedChatbot: ChatWithChatbotEmbedDto,
-    @Req() request: Request,
     @Res({ passthrough: false }) response: Response,
   ) {
-    const host = request.headers.host;
-    if (!host) {
-      throw new BadRequestException('Host is not empty');
-    }
     return await this.chatbotService.chatWithBotEmbedStream(
       chatEmbedChatbot,
-      host,
       response,
     );
   }
