@@ -37,12 +37,11 @@ export class ChatbotEmbedService {
     private readonly conversationService: ConversationsService,
   ) {}
 
-  
-
   async validateChatbotEmbed(
     query: InitChatbotQueryDto,
+    domainClient: string,
   ): Promise<Chatbot> {
-    const { userId, chatbotId, token, domainClient } = query;
+    const { userId, chatbotId, token } = query;
 
     // Bước 1: Xác thực token
     const payload = await this.chatbotTokenService.verifyChatbotToken(token);
@@ -117,7 +116,7 @@ export class ChatbotEmbedService {
       throw new ForbiddenException('Domain not found');
     }
 
-    const normalizedOrigin = new URL(domainClient).host;
+    const normalizedOrigin = new URL(domainClient).hostname;
     if (domain.name !== normalizedOrigin) {
       throw new ForbiddenException(`Origin (${normalizedOrigin}) not allowed`);
     }

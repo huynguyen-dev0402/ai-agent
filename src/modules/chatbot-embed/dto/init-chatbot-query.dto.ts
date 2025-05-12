@@ -16,9 +16,4 @@ export class InitChatbotQueryDto {
   @IsNotEmpty()
   @IsString()
   token: string;
-
-  @ApiProperty({ description: 'Domain client' })
-  @IsNotEmpty()
-  @IsString()
-  domainClient: string;
 }

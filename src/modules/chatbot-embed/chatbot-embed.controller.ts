@@ -47,7 +47,7 @@ export class ChatbotEmbedController {
   @ApiQuery({ name: 'chatbotId', required: true, type: String })
   @ApiQuery({ name: 'userId', required: true, type: String })
   @ApiQuery({ name: 'token', required: true, type: String })
-  @ApiQuery({ name: 'domain', required: true, type: String })
+  @ApiQuery({ name: 'domainClient', required: true, type: String })
   @ApiResponse({
     status: 200,
     description: 'Chatbot initialized successfully',
@@ -64,10 +64,16 @@ export class ChatbotEmbedController {
   @ApiResponse({ status: 403, description: 'Missing or invalid parameters' })
   async initChatbot(
     @Query() query: InitChatbotQueryDto,
+    @Req() request: Request,
   ) {
-    const response = await this.chatbotEmbedService.validateChatbotEmbed(
-      query,
-    );
+    const refererRaw = request.headers.referer || request.headers.referrer;
+    const referer = Array.isArray(refererRaw) ? refererRaw[0] : refererRaw;
+    const domain = referer ? new URL(referer).origin : null;
+    if(!domain){
+      throw new BadRequestException("Domain is not empty")
+    }
+
+    const response = await this.chatbotEmbedService.validateChatbotEmbed(query, domain);
 
     // Trả về dữ liệu cần thiết để render chatbot trong iframe
     return {
