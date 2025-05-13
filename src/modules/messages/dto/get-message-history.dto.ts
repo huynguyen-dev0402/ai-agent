@@ -10,10 +10,6 @@ import { Type } from 'class-transformer';
 import { DEFAULT_LIMIT, DEFAULT_OFFSET } from '@common/constants/pagination.constant';
 
 export class GetMessageHistoryDto {
-  @ApiProperty({ description: 'ID của end user', example: 'abc123' })
-  @IsString()
-  endUserId: string;
-
   @ApiPropertyOptional({
     enum: ['active', 'ended'],
     description: 'Trạng thái cuộc trò chuyện',
@@ -82,4 +78,10 @@ export class GetMessagesByAgentDto extends GetMessageHistoryDto {
   @ApiProperty({ description: 'ID của chatbot', example: 'chatbot_789' })
   @IsString()
   chatbotId: string;
+}
+
+export class GetMessagesByConversationDto extends GetMessageHistoryDto {
+  @ApiProperty({ description: 'ID của conversation', example: 'chatbot_789' })
+  @IsString()
+  conversationId: string;
 }

@@ -10,20 +10,24 @@ import {
   GetMessageHistoryDto,
   GetCustomerMessageHistoryDto,
   GetMessagesByAgentDto,
+  GetMessagesByConversationDto,
 } from '@modules/messages/dto/get-message-history.dto';
+import { Public } from '@common/decorators/public-route.decorator';
 
 @Controller('messages')
 export class MessagesController {
   constructor(private readonly messagesService: MessagesService) {}
 
-  @Get('history')
-  async getMessageHistory(@Query() query: GetMessageHistoryDto) {
-    if (!query.endUserId) {
-      throw new BadRequestException('endUserId is required');
+  @Get('by-conversation')
+  async getMessagesByConversationId(
+    @Query() query:GetMessagesByConversationDto
+  ) {
+    if (!query?.conversationId) {
+      throw new BadRequestException('conversationId is required');
     }
 
-    const history = await this.messagesService.getMessageHistory(
-      query.endUserId,
+    const history = await this.messagesService.getMessagesByConversationId(
+      query.conversationId,
       {
         ...query,
         startDate: query.startDate ? new Date(query.startDate) : undefined,
@@ -35,6 +39,7 @@ export class MessagesController {
   }
 
   @Get('customer-history')
+  @Public()
   async getCustomerMessageHistory(
     @Query() query: GetCustomerMessageHistoryDto,
   ) {
