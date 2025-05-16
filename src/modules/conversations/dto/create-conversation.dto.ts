@@ -12,10 +12,4 @@ export class CreateConversationDto {
   })
   @IsNotEmpty({ message: 'Id chatbot required' })
   chatbot_id: string;
-
-  @ApiProperty({
-    example: 'your-end-user-id-here',
-  })
-  @IsOptional()
-  end_user_id?: string;
 }

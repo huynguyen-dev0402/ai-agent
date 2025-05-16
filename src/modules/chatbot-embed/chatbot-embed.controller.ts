@@ -47,7 +47,6 @@ export class ChatbotEmbedController {
   @ApiQuery({ name: 'chatbotId', required: true, type: String })
   @ApiQuery({ name: 'userId', required: true, type: String })
   @ApiQuery({ name: 'token', required: true, type: String })
-  @ApiQuery({ name: 'domainClient', required: true, type: String })
   @ApiResponse({
     status: 200,
     description: 'Chatbot initialized successfully',
@@ -66,9 +65,7 @@ export class ChatbotEmbedController {
     @Query() query: InitChatbotQueryDto,
     @Req() request: Request,
   ) {
-    const refererRaw = request.headers.referer || request.headers.referrer;
-    const referer = Array.isArray(refererRaw) ? refererRaw[0] : refererRaw;
-    const domain = referer ? new URL(referer).origin : null;
+    const domain = request.headers.origin;
     if(!domain){
       throw new BadRequestException("Domain is not empty")
     }

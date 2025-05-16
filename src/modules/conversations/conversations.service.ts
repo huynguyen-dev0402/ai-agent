@@ -22,6 +22,17 @@ export class ConversationsService {
       },
     });
   }
+
+  async findAllByChatbotId(chatbotId: string) {
+    return this.conversationRepository.findOne({
+      where: {
+        chatbot: {
+          id: chatbotId,
+        },
+      },
+    });
+  }
+
   async createConversation(createDto: CreateConversationDto): Promise<any> {
     const user = await this.userRepository
       .createQueryBuilder('user')
@@ -68,7 +79,6 @@ export class ConversationsService {
       }
       const newConversation = this.conversationRepository.create({
         chatbot: { id: user.chatbots[0].id },
-        end_user: { id: createDto.end_user_id },
         external_conversation_id: data.data.id,
       });
       return this.conversationRepository.save(newConversation);
