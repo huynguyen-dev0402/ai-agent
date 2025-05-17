@@ -183,6 +183,9 @@ export class UsersService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
+    if(updateUserDto?.password){
+      updateUserDto.password = hashPassword(updateUserDto.password);
+    }
     const response = await this.userRepository.update(id, updateUserDto);
     if (response.affected === 0) {
       throw new NotFoundException('User not found or no changes made');
