@@ -13,6 +13,7 @@ import {
 import { Subscription } from '@modules/subscriptions/entities/subscription.entity';
 import { UsersService } from '@modules/users/users.service';
 import { UserStatus } from '@modules/users/entities/user.entity';
+import { PaymentsService } from '@modules/payments/payments.service';
 
 @Injectable()
 export class UserSubscriptionsService {
@@ -24,6 +25,7 @@ export class UserSubscriptionsService {
     @InjectRepository(Subscription)
     private readonly subscriptionRepository: Repository<Subscription>,
     private readonly userService: UsersService,
+    private readonly paymentsService: PaymentsService,
   ) {}
 
   async subscribe(userId: string, subscriptionId: string): Promise<boolean> {

@@ -1,3 +1,4 @@
+import { Payment } from '@modules/payments/entities/payment.entity';
 import { Subscription } from '@modules/subscriptions/entities/subscription.entity';
 import { UsageLog } from '@modules/usage-logs/entities/usage-log.entity';
 import { User } from '@modules/users/entities/user.entity';
@@ -13,6 +14,7 @@ import {
 } from 'typeorm';
 
 export enum SubscriptionStatus {
+  PENDING='pending',
   ACTIVE = 'active',
   EXPIRED = 'expired',
   CANCELED = 'canceled',
@@ -37,6 +39,9 @@ export class UserSubscriptions {
   @OneToMany(() => UsageLog, (usage_logs) => usage_logs.user)
   usage_logs: UsageLog[];
 
+  @OneToMany(() => Payment, (payment) => payment.user_subscriptions)
+  payments: Payment[];
+
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   start_date: Date;
 
@@ -46,7 +51,7 @@ export class UserSubscriptions {
   @Column({
     type: 'enum',
     enum: SubscriptionStatus,
-    default: SubscriptionStatus.ACTIVE,
+    default: SubscriptionStatus.PENDING,
   })
   status: SubscriptionStatus;
 

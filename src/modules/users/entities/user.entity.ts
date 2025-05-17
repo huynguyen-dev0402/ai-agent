@@ -21,6 +21,7 @@ import { ChatbotEmbedLog } from '@modules/chatbot-embed/entities/chatbot-embed-l
 import { Ticket } from '@modules/tickets/entities/ticket.entity';
 import { WorkspaceMember } from '@modules/workspace-members/entities/workspace-member.entity';
 import { Domain } from '@modules/domains/entities/domain.entity';
+import { Payment } from '@modules/payments/entities/payment.entity';
 
 export enum UserStatus {
   ACTIVE = 'active',
@@ -129,4 +130,7 @@ export class User {
 
   @OneToMany(() => Domain, (domains) => domains.user)
   domains: Domain[];
+
+  @OneToMany(() => Payment, (payments) => payments.user)
+  payments: Payment[];
 }

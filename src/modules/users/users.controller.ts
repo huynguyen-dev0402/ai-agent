@@ -62,6 +62,7 @@ import { CheckQuotaInterceptor } from '@common/interceptors/usage-logs.intercept
 import { QUANTITY_REDUCE } from '@common/constants/quantity.constant';
 import { ChatbotTokensService } from '@modules/chatbot-tokens/chatbot-tokens.service';
 import { DomainsService } from '@modules/domains/domains.service';
+import { Domain } from '@modules/domains/entities/domain.entity';
 
 @Controller('users')
 @UseGuards(AuthGuard)
@@ -842,7 +843,7 @@ export class UsersController {
   @ApiResponse({
     status: 200,
     description: 'Domains retrieved successfully',
-    type: Chatbot,
+    type: Domain,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async findDomains(

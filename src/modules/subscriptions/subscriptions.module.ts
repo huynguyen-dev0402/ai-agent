@@ -10,6 +10,7 @@ import { SuperAdminGuard } from '@modules/author/guards/super-admin.guard';
 import { AuthModule } from '@modules/auth/auth.module';
 import { UserSubscriptionsModule } from '@modules/user-subscriptions/user-subscriptions.module';
 import { UsageLogsModule } from '@modules/usage-logs/usage-logs.module';
+import { PaymentsModule } from '@modules/payments/payments.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([

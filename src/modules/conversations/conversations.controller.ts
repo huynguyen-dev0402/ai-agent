@@ -27,7 +27,7 @@ export class ConversationsController {
     return this.conversationsService.findAllByChatbotId(chatbotId);
   }
 
-  @Get(':/id')
+  @Get('/:id')
   findOne(@Param('id') id: string) {
     return this.conversationsService.findOne(id);
   }
