@@ -37,12 +37,10 @@ export class ChatbotsController {
   })
   async chatWithBot(
     @Param('chatbotId') chatbotId: string,
-    @Req() request: Request & { user: { [key: string]: string } },
     @Body() chatWithChatbotDto: ChatWithChatbotDto,
     @Res({ passthrough: false }) response: Response,
   ) {
     return await this.chatbotsService.chatWithBotStream(
-      request.user.external_user_id,
       chatbotId,
       chatWithChatbotDto,
       response,

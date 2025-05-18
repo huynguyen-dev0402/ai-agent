@@ -3,13 +3,6 @@ import { IsNotEmpty } from 'class-validator';
 
 export class ChatWithChatbotDto {
   @ApiProperty({
-    description: 'The API token required to authenticate the request.',
-    type: String,
-  })
-  @IsNotEmpty({ message: 'Api token required' })
-  api_token: string;
-
-  @ApiProperty({
     description: 'The message to be sent to the chatbot.',
     type: String,
   })

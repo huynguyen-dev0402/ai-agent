@@ -127,13 +127,29 @@ export class ChatbotsService {
   }
 
   async chatWithBotStream(
-    externalUserId: string,
     chatbotId: string,
     chatWithChatbotDto: ChatWithChatbotDto,
     res: Response,
   ) {
     const chatbot = await this.chatbotRepository.findOne({
       where: { id: chatbotId },
+      relations: {
+        user: {
+          api_token: true,
+        },
+      },
+      select: {
+        id: true,
+        external_bot_id: true,
+        user: {
+          id: true,
+          external_user_id: true,
+          api_token: {
+            id: true,
+            token: true,
+          },
+        },
+      },
     });
 
     if (!chatbot) {
@@ -164,11 +180,11 @@ export class ChatbotsService {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${chatWithChatbotDto.api_token}`,
+            Authorization: `Bearer ${chatbot.user.api_token}`,
           },
           body: JSON.stringify({
             bot_id: chatbot.external_bot_id,
-            user_id: externalUserId,
+            user_id: chatbot.user.external_user_id,
             stream: true,
             auto_save_history: true,
             additional_messages: [

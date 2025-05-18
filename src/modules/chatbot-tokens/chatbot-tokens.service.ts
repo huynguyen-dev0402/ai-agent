@@ -78,6 +78,10 @@ export class ChatbotTokensService {
         },
         status: ChatbotTokenStatus.ACTIVE,
       },
+      relations: {
+        chatbot: true,
+        user: true,
+      },
       select: {
         user: {
           id: true,
