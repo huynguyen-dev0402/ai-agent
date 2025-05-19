@@ -34,6 +34,7 @@ import { WorkspaceMembersModule } from './modules/workspace-members/workspace-me
 import { TicketsModule } from './modules/tickets/tickets.module';
 import { DomainsModule } from './modules/domains/domains.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { TransactionsModule } from '@modules/transactions/transactions.module';
 
 @Module({
   imports: [
@@ -80,6 +81,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
     TicketsModule,
     DomainsModule,
     PaymentsModule,
+    TransactionsModule
   ],
   controllers: [AppController],
   providers: [

@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -180,7 +181,7 @@ export class ChatbotsService {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${chatbot.user.api_token}`,
+            Authorization: `Bearer ${chatbot.user.api_token.token}`,
           },
           body: JSON.stringify({
             bot_id: chatbot.external_bot_id,
@@ -211,6 +212,10 @@ export class ChatbotsService {
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
+      const logger = new Logger('SSEPump');
+      let currentEvent = '';
+      let currentData = '';
+      let data: any;
 
       const pump = async () => {
         let fullMessage = ''; // Dùng để tích luỹ nội dung cuối cùng
@@ -219,32 +224,51 @@ export class ChatbotsService {
           if (done) break;
           if (value) {
             const chunk = decoder.decode(value);
+            data += decoder.decode(value);
             res.write(chunk);
-            // Lấy data từ chunk nếu là event message.delta hoặc message.completed
-            const matches = chunk.match(/data:(.*)/g);
-            if (matches) {
-              matches.forEach((line) => {
-                try {
-                  const dataStr = line.replace(/^data:\s*/, '');
-                  const parsed = JSON.parse(dataStr);
-                  if (
-                    parsed?.event === 'conversation.message.delta' ||
-                    parsed?.event === 'conversation.message.completed'
-                  ) {
-                    // Tích lũy content
-                    if (
-                      parsed.content_type === 'text' &&
-                      typeof parsed.content === 'string'
-                    ) {
-                      fullMessage += parsed.content;
-                    }
-                  }
-                } catch (err) {
-                  // Bỏ qua lỗi parse JSON không hợp lệ
-                }
-              });
+          }
+        }
+
+        // Split chunk into lines to process SSE format
+        const lines = data.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('event:')) {
+            // Start of a new event, process the previous one if complete
+            if (currentEvent && currentData) {
+              await this.processEvent(
+                currentEvent,
+                currentData,
+                logger,
+                (message) => {
+                  fullMessage = message;
+                },
+              );
+            }
+            currentEvent = line.replace(/^event:\s*/, '').trim();
+            currentData = '';
+          } else if (line.startsWith('data:')) {
+            // Accumulate data for the current event
+            currentData += line.replace(/^data:\s*/, '') + '\n';
+          } else if (line.trim() === '') {
+            // End of an event, process it
+            if (currentEvent && currentData) {
+              await this.processEvent(
+                currentEvent,
+                currentData,
+                logger,
+                (message) => {
+                  fullMessage = message;
+                },
+              );
+              currentEvent = '';
+              currentData = '';
             }
           }
+        }
+        if (currentEvent && currentData) {
+          await this.processEvent(currentEvent, currentData, logger, (message) => {
+            fullMessage = message;
+          });
         }
         res.end();
 
@@ -263,6 +287,31 @@ export class ChatbotsService {
     } catch (error) {
       console.error('Chatbot stream error:', error);
       res.status(500).json({ message: 'Failed to communicate with Coze API' });
+    }
+  }
+
+  async processEvent(
+    event: string,
+    data: string,
+    logger: Logger,
+    setFullMessage: (message: string) => void,
+  ) {
+    if (event === 'conversation.message.completed') {
+      try {
+        // Remove trailing newlines and parse JSON
+        const parsed = JSON.parse(data.trim());
+        if (
+          parsed.role === 'assistant' &&
+          parsed.type === 'answer' &&
+          parsed.content_type === 'text' &&
+          typeof parsed.content === 'string'
+        ) {
+          logger.log('Found final assistant answer');
+          setFullMessage(parsed.content);
+        }
+      } catch (err) {
+        logger.error(`Failed to parse event data: ${err.message}`);
+      }
     }
   }
 
@@ -413,6 +462,10 @@ export class ChatbotsService {
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
+      const logger = new Logger('SSEPump');
+      let currentEvent = '';
+      let currentData = '';
+      let data: any;
 
       const pump = async () => {
         let fullMessage = ''; // Dùng để tích luỹ nội dung cuối cùng
@@ -421,32 +474,56 @@ export class ChatbotsService {
           if (done) break;
           if (value) {
             const chunk = decoder.decode(value);
+            data += decoder.decode(value);
             res.write(chunk);
-            // Lấy data từ chunk nếu là event message.delta hoặc message.completed
-            const matches = chunk.match(/data:(.*)/g);
-            if (matches) {
-              matches.forEach((line) => {
-                try {
-                  const dataStr = line.replace(/^data:\s*/, '');
-                  const parsed = JSON.parse(dataStr);
-                  if (
-                    parsed?.event === 'conversation.message.delta' ||
-                    parsed?.event === 'conversation.message.completed'
-                  ) {
-                    // Tích lũy content
-                    if (
-                      parsed.content_type === 'text' &&
-                      typeof parsed.content === 'string'
-                    ) {
-                      fullMessage += parsed.content;
-                    }
-                  }
-                } catch (err) {
-                  // Bỏ qua lỗi parse JSON không hợp lệ
-                }
-              });
+          }
+        }
+
+        // Split chunk into lines to process SSE format
+        const lines = data.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('event:')) {
+            // Start of a new event, process the previous one if complete
+            if (currentEvent && currentData) {
+              await this.processEvent(
+                currentEvent,
+                currentData,
+                logger,
+                (message) => {
+                  fullMessage = message;
+                },
+              );
+            }
+            currentEvent = line.replace(/^event:\s*/, '').trim();
+            currentData = '';
+          } else if (line.startsWith('data:')) {
+            // Accumulate data for the current event
+            currentData += line.replace(/^data:\s*/, '') + '\n';
+          } else if (line.trim() === '') {
+            // End of an event, process it
+            if (currentEvent && currentData) {
+              await this.processEvent(
+                currentEvent,
+                currentData,
+                logger,
+                (message) => {
+                  fullMessage = message;
+                },
+              );
+              currentEvent = '';
+              currentData = '';
             }
           }
+        }
+        if (currentEvent && currentData) {
+          await this.processEvent(
+            currentEvent,
+            currentData,
+            logger,
+            (message) => {
+              fullMessage = message;
+            },
+          );
         }
         res.end();
 
