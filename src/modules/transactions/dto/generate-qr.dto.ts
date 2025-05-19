@@ -23,20 +23,20 @@ export class GenerateQRDto {
   subscription_id: string;
 
   @ApiProperty({
+    description: 'Id of the user',
+    example: 'uuid',
+  })
+  @IsNotEmpty({ message: 'User ID must not be empty.' })
+  @IsUUID(4, { message: 'User ID must be a valid UUID (v4).' })
+  user_id: string;
+
+  @ApiProperty({
     description: 'The amount of money to be paid (in VND)',
     example: 99000,
   })
   @IsNotEmpty({ message: 'Amount is required.' })
   @IsNumber({}, { message: 'Amount must be a valid number.' })
   amount: number;
-
-  @ApiProperty({
-    description: 'The description to show in the transaction content',
-    example: 'Subscription for Premium Plan',
-  })
-  @IsNotEmpty({ message: 'Description is required.' })
-  @IsString({ message: 'Description must be a string.' })
-  des: string;
 
   @ApiProperty({
     description: 'Template style of the QR code',

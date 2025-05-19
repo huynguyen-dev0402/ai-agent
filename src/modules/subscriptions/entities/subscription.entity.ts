@@ -17,6 +17,9 @@ export class Subscription {
   @Column({ type: 'varchar', length: 255 })
   name: string;
 
+  @Column({ type: 'int', unique: true })
+  subscription_code: number;
+
   @Column({ type: 'int' })
   message_limit: number;
 

@@ -127,6 +127,15 @@ export class SubscriptionsService {
     return subscription;
   }
 
+  async findOneByCode(code: number) {
+    const subscription = await this.subscriptionRepository.findOne({
+      where: {
+        subscription_code: code,
+      },
+    });
+    return subscription;
+  }
+
   update(id: number, updateSubscriptionDto: UpdateSubscriptionDto) {
     return `This action updates a #${id} subscription`;
   }

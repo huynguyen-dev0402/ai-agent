@@ -8,11 +8,12 @@ import { UserSubscriptionsController } from '@modules/user-subscriptions/user-su
 import { UsersModule } from '@modules/users/users.module';
 import { UsageLog } from '@modules/usage-logs/entities/usage-log.entity';
 import { PaymentsModule } from '@modules/payments/payments.module';
-import { SubscriptionsModule } from '@modules/subscriptions/subscriptions.module';
+import { TransactionsModule } from '@modules/transactions/transactions.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Subscription, UserSubscriptions, User, UsageLog]),
+    TransactionsModule,
     forwardRef(() => UsersModule),
     forwardRef(() => PaymentsModule),
   ],

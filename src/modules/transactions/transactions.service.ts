@@ -2,14 +2,24 @@ import {
   Injectable,
   InternalServerErrorException,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GenerateQRDto } from './dto/generate-qr.dto';
 import { SePayWebhookDto } from './dto/webhook.dto';
+import { SubscriptionsService } from '@modules/subscriptions/subscriptions.service';
+import { SubscriptionStatus, UserSubscriptions } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class TransactionsService {
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly subscriptionService: SubscriptionsService,
+    @InjectRepository(UserSubscriptions)
+    private readonly userSubRepository: Repository<UserSubscriptions>,
+  ) {}
 
   async generateQR(
     generateQrDto: GenerateQRDto,
@@ -34,9 +44,30 @@ export class TransactionsService {
       throw new BadRequestException('Amount must be greater than zero.');
     }
 
-    // Tạo mô tả chuyển khoản, ví dụ SUB-<subscription_id>-<nội dung>
+    const subsription = await this.subscriptionService.findOne(
+      generateQrDto.subscription_id,
+    );
+    if (!subsription) {
+      throw new NotFoundException('Subscription not found');
+    }
+
+    const userSub = await this.userSubRepository.findOne({
+      where: {
+        user: { id: generateQrDto.user_id },
+        subscription: { id: generateQrDto.subscription_id },
+        status: SubscriptionStatus.PENDING,
+      },
+    });
+    if (!userSub) {
+      throw new NotFoundException('User subscription not found');
+    }
+
+    if (userSub) {
+      throw new BadRequestException('User subscription not found');
+    }
+    // Tạo mô tả chuyển khoản, ví dụ SUB<subscription_code>
     const encodedDescription = encodeURIComponent(
-      `SEVQR-${generateQrDto.subscription_id}-${generateQrDto.des}`,
+      `SEVQR${subsription.subscription_code}`,
     );
 
     // Khởi tạo query params
@@ -58,7 +89,7 @@ export class TransactionsService {
   }
 
   async processSePayTransaction(sePayWebhookDto: SePayWebhookDto) {
-    console.log(sePayWebhookDto)
+    console.log(sePayWebhookDto);
     return sePayWebhookDto;
   }
 }

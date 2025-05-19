@@ -14,6 +14,7 @@ import { Subscription } from '@modules/subscriptions/entities/subscription.entit
 import { UsersService } from '@modules/users/users.service';
 import { UserStatus } from '@modules/users/entities/user.entity';
 import { PaymentsService } from '@modules/payments/payments.service';
+import { TransactionsService } from '@modules/transactions/transactions.service';
 
 @Injectable()
 export class UserSubscriptionsService {
@@ -26,6 +27,7 @@ export class UserSubscriptionsService {
     private readonly subscriptionRepository: Repository<Subscription>,
     private readonly userService: UsersService,
     private readonly paymentsService: PaymentsService,
+    private readonly transactionService: TransactionsService,
   ) {}
 
   async subscribe(userId: string, subscriptionId: string): Promise<boolean> {
@@ -82,7 +84,7 @@ export class UserSubscriptionsService {
         subscription: { id: subscription.id },
         start_date: startDate,
         end_date: endDate,
-        status: SubscriptionStatus.ACTIVE,
+        status: SubscriptionStatus.PENDING,
       });
 
       await manager.save(userSubscription);
@@ -360,6 +362,22 @@ export class UserSubscriptionsService {
         select: defaultSelect,
       });
     }
+
+    return subscription;
+  }
+
+  async findUserSubPendingForUser(
+    userId: string,
+    subscriptionId: string,
+  ): Promise<UserSubscriptions | null> {
+    // Truy vấn với select tối ưu
+    let subscription = await this.userSubRepository.findOne({
+      where: {
+        user: { id: userId },
+        subscription: { id: subscriptionId },
+        status: SubscriptionStatus.PENDING,
+      },
+    });
 
     return subscription;
   }
