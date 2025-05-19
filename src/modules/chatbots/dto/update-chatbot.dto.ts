@@ -8,13 +8,6 @@ import { ModelConfigDto } from './model-config.dto';
 
 export class UpdateChatbotDto extends PartialType(CreateChatbotDto) {
   @ApiProperty({
-    description: 'API token used for authorization.',
-    example: 'your-api-token-here',
-  })
-  @IsNotEmpty({ message: 'Api token required' })
-  api_token: string;
-
-  @ApiProperty({
     description: 'The updated name for the chatbot. Leave empty to not change.',
     example: 'Updated Chatbot Name',
     required: false,

@@ -266,9 +266,14 @@ export class ChatbotsService {
           }
         }
         if (currentEvent && currentData) {
-          await this.processEvent(currentEvent, currentData, logger, (message) => {
-            fullMessage = message;
-          });
+          await this.processEvent(
+            currentEvent,
+            currentData,
+            logger,
+            (message) => {
+              fullMessage = message;
+            },
+          );
         }
         res.end();
 
@@ -594,6 +599,11 @@ export class ChatbotsService {
       where: {
         id: chatbotId,
       },
+      relations: {
+        user: {
+          api_token: true,
+        },
+      },
     });
     if (!chatbot?.external_bot_id) {
       return false;
@@ -602,7 +612,7 @@ export class ChatbotsService {
       const response = await fetch('https://api.coze.com/v1/bot/publish', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${publishChatbotDto.api_token}`,
+          Authorization: `Bearer ${chatbot.user.api_token.token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -652,9 +662,19 @@ export class ChatbotsService {
         },
       },
       relations: {
+        user: {
+          api_token: true,
+        },
         model: true,
       },
       select: {
+        user: {
+          id: true,
+          api_token: {
+            id: true,
+            token: true,
+          },
+        },
         model: {
           id: true,
           model_name: true,
@@ -670,7 +690,7 @@ export class ChatbotsService {
       const response = await fetch('https://api.coze.com/v1/bot/create', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${updateChatbotDto.api_token}`,
+          Authorization: `Bearer ${chatbot.user.api_token.token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -703,10 +723,20 @@ export class ChatbotsService {
         id: true,
         external_bot_id: true,
         description: true,
+        user: {
+          id: true,
+          api_token: {
+            id: true,
+            token: true,
+          },
+        },
         model: { id: true },
       },
       relations: {
         model: true,
+        user: {
+          api_token: true,
+        },
       },
     });
 
@@ -717,7 +747,7 @@ export class ChatbotsService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${updateChatbotDto.api_token}`,
+          Authorization: `Bearer ${chatbot.user.api_token.token}`,
         },
         body: JSON.stringify({
           bot_id: chatbot.external_bot_id,
