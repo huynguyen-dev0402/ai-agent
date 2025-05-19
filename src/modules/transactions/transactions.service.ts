@@ -58,6 +58,7 @@ export class TransactionsService {
   }
 
   async processSePayTransaction(sePayWebhookDto: SePayWebhookDto) {
+    console.log(sePayWebhookDto)
     return sePayWebhookDto;
   }
 }

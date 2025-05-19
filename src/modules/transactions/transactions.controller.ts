@@ -24,6 +24,7 @@ import { GenerateQRDto } from './dto/generate-qr.dto';
 import { UserIdMatchGuard } from '@common/guards/user-id-match.guard';
 import { WebhookUtils } from '@common/utils/webhook/webhook.util';
 import { SePayWebhookDto } from './dto/webhook.dto';
+import { Public } from '@common/decorators/public-route.decorator';
 
 @ApiTags('transactions')
 @Controller('transactions')
@@ -72,6 +73,7 @@ export class TransactionsController {
   }
 
   @Post()
+  @Public()
   //@UseGuards(UserIdMatchGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Handle SePay payment webhook' })
