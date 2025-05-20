@@ -101,63 +101,63 @@ export class TransactionsService {
     const str = sePayWebhookDto.content;
     const regex = /^SEVQR(\d{4})\.(user\d+)$/;
     const match = str.match(regex);
+    console.log(match)
 
-    if (!match) {
-      throw new BadRequestException('Invalid transaction content format');
-    }
+    if (match) {
+      const subscriptionCode = match[1];
+      const username = match[2];
 
-    const subscriptionCode = match[1];
-    const username = match[2];
-
-    // Find user subscription
-    const userSub = await this.userSubRepository.findOne({
-      where: {
-        user: { username },
-        subscription: { subscription_code: Number(subscriptionCode) },
-        status: SubscriptionStatus.PENDING,
-      },
-      relations: {
-        subscription: true,
-      },
-      select: {
-        id: true,
-        subscription: {
-          id: true,
-          duration_months: true,
+      // Find user subscription
+      const userSub = await this.userSubRepository.findOne({
+        where: {
+          user: { username },
+          subscription: { subscription_code: Number(subscriptionCode) },
+          status: SubscriptionStatus.PENDING,
         },
-      },
-    });
+        relations: {
+          subscription: true,
+        },
+        select: {
+          id: true,
+          subscription: {
+            id: true,
+            duration_months: true,
+          },
+        },
+      });
 
-    if (!userSub) {
-      throw new NotFoundException('User subscription not found');
-    }
+      if (!userSub) {
+        throw new NotFoundException('User subscription not found');
+      }
 
-    // Calculate subscription dates
-    const startDate = new Date();
-    const endDate = new Date(startDate);
-    endDate.setMonth(
-      startDate.getMonth() + userSub.subscription.duration_months,
-    );
-
-    // Update subscription status
-    const response = await this.userSubRepository.update(userSub.id, {
-      start_date: startDate,
-      end_date: endDate,
-      status: SubscriptionStatus.ACTIVE,
-    });
-
-    // Check if update was successful
-    if (response.affected === 0) {
-      throw new BadRequestException(
-        'Failed to update user subscription status',
+      // Calculate subscription dates
+      const startDate = new Date();
+      const endDate = new Date(startDate);
+      endDate.setMonth(
+        startDate.getMonth() + userSub.subscription.duration_months,
       );
+
+      // Update subscription status
+      const response = await this.userSubRepository.update(userSub.id, {
+        start_date: startDate,
+        end_date: endDate,
+        status: SubscriptionStatus.ACTIVE,
+      });
+
+      // Check if update was successful
+      if (response.affected === 0) {
+        throw new BadRequestException(
+          'Failed to update user subscription status',
+        );
+      }
+
+      // Optionally log the successful transaction
+      // console.log(
+      //   `Successfully activated subscription for user ${username} with code ${subscriptionCode}`,
+      // );
+
+      return { message: 'Transaction processed successfully' };
     }
-
-    // Optionally log the successful transaction
-    // console.log(
-    //   `Successfully activated subscription for user ${username} with code ${subscriptionCode}`,
-    // );
-
-    return { message: 'Transaction processed successfully' };
+    throw new BadRequestException('Invalid transaction content format');
   }
 }
