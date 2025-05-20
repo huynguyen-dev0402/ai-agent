@@ -41,6 +41,12 @@ export class WorkspaceMember {
   @Column({ type: 'uuid' })
   user_manager_id: string;
 
+  @Column({ type: 'uuid', unique: true })
+  user_id: string;
+
+  @Column({ type: 'text', unique: true })
+  workspace_id: string;
+
   @CreateDateColumn({
     type: 'timestamp',
     nullable: true,

@@ -62,7 +62,7 @@ export class WorkspaceMembersController {
     @Body() addMemberDto: AddMemberDto,
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
-    const member = await this.workspaceMembersService.addMember(
+    await this.workspaceMembersService.addMember(
       request.user.id,
       workspaceId,
       addMemberDto,
@@ -70,7 +70,6 @@ export class WorkspaceMembersController {
     return {
       success: true,
       message: 'Add member success',
-      data: member,
     };
   }
 

@@ -5,9 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import {
-  WorkspaceMember,
-} from './entities/workspace-member.entity';
+import { WorkspaceMember } from './entities/workspace-member.entity';
 import { User } from '@modules/users/entities/user.entity';
 import { Workspace } from '@modules/workspaces/entities/workspace.entity';
 import { UserSubscriptions } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
@@ -65,18 +63,10 @@ export class WorkspaceMembersService {
     workspaceId: string,
     addMemberDto: AddMemberDto,
   ) {
-    // Kiểm tra workspace tồn tại
-    const workspace = await this.workspacesRepository.findOne({
-      where: { users: { id: userId } },
-    });
-    if (!workspace) {
-      throw new NotFoundException('Workspace not found');
-    }
-
-    // Kiểm tra user tồn tại
-    const user = await this.usersRepository.findOne({
-      where: { email: addMemberDto.email },
-    });
+    // 1. Lấy user theo email
+    const user = await this.usersRepository.findOneBy({
+      email: addMemberDto.email,
+    })
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -84,8 +74,8 @@ export class WorkspaceMembersService {
     // Kiểm tra xem user đã là thành viên chưa
     const existingMember = await this.workspaceMembersRepository.findOne({
       where: {
-        workspace: { id: workspaceId },
-        user: { email: addMemberDto.email },
+        workspace_id: workspaceId,
+        user_id: user.id,
         user_manager_id: userId,
       },
     });
@@ -95,17 +85,17 @@ export class WorkspaceMembersService {
       );
     }
 
-    // Thêm thành viên
-    const newMember = this.workspaceMembersRepository.create({
-      workspace: { id: workspaceId },
-      user: { id: user.id },
+    // 4. Tối ưu: sử dụng insert thay vì save
+    await this.workspaceMembersRepository.insert({
+      workspace_id: workspaceId,
+      user_id: user.id,
       role: addMemberDto.role,
       user_manager_id: userId,
       joined_at: new Date(),
       created_at: new Date(),
     });
 
-    return this.workspaceMembersRepository.save(newMember);
+    return true;
   }
 
   async updateMemberRole(

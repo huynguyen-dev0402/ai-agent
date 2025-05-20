@@ -1,4 +1,3 @@
-// ... existing code ...
 import {
   Injectable,
   NestInterceptor,
@@ -30,39 +29,27 @@ export class CheckQuotaInterceptor implements NestInterceptor {
     context: ExecutionContext,
     next: CallHandler,
   ): Promise<Observable<any>> {
+    const now = Date.now();
     const request = context.switchToHttp().getRequest();
     const user = request.user;
-    // 1. Lấy userId từ các nguồn khác nhau
-    let userId: string;
 
-    if (user?.id) {
-      userId = user.id;
-    }
-    // Nếu không, lấy từ body
-    else if (request.body?.user_id) {
-      userId = request.body.user_id;
-    }
-    // Nếu không, lấy từ params
-    else if (request.params?.user_id) {
-      userId = request.params.user_id;
-    }
-    // Nếu không, lấy từ query
-    else if (request.query?.user_id) {
-      userId = request.query.user_id;
-    }
-    // Nếu không tìm thấy userId từ bất kỳ nguồn nào
-    else {
-      throw new BadRequestException(
-        'User ID not found in request, params, query, or body',
-      );
+    // 1. Lấy userId nhanh gọn từ user hoặc fallback từ body/params/query
+    const userId =
+      user?.id ||
+      request.body?.user_id ||
+      request.params?.user_id ||
+      request.query?.user_id;
+
+    if (!userId) {
+      throw new BadRequestException('User ID not found in request');
     }
 
-    // Super admin không cần kiểm tra quota
+    // 2. Super admin bỏ qua kiểm tra
     if (user?.role === 'super_admin') {
       return next.handle();
     }
 
-    // 2. Lấy metadata từ decorator
+    // 3. Lấy metadata từ decorator
     const handler = context.getHandler();
     const options: CheckQuotaOptions = this.reflector.get(
       CHECK_QUOTA_KEY,
@@ -75,29 +62,33 @@ export class CheckQuotaInterceptor implements NestInterceptor {
     const { resourceType, action, quantity = 1 } = options;
     const source = UsageSource.API;
 
-    // 3. Kiểm tra quota và ghi log (đồng bộ, trả về usageLogId)
+    // 4. Gọi checkQuotaAndLog để kiểm tra quota và log trạng thái PENDING
     const usageLogId = await this.quotaService.checkQuotaAndLog(
       userId,
       resourceType,
       action,
       source,
       quantity,
-      request.body.details || {},
+      request.body?.details || {},
     );
 
-    // 4. Xử lý request và cập nhật trạng thái log (bất đồng bộ)
+    console.log(`⏱ checkQuotaInterceptor total: ${Date.now() - now} ms`);
+
+    // 5. Sau khi request xong, cập nhật log sang ACTIVE / CANCELED (không block pipe)
     return next.handle().pipe(
       tap(() => {
-        // Đẩy job update status sang ACTIVE vào queue
         this.quotaService
           .updateLogStatus(usageLogId, UsageStatus.ACTIVE)
-          .catch((err) => console.error('Update log status error:', err));
+          .catch((err) =>
+            console.error('❗ Update log status (ACTIVE) error:', err),
+          );
       }),
       catchError((err) => {
-        // Đẩy job update status sang CANCELED vào queue
         this.quotaService
           .updateLogStatus(usageLogId, UsageStatus.CANCELED)
-          .catch((e) => console.error('Update log status error:', e));
+          .catch((e) =>
+            console.error('❗ Update log status (CANCELED) error:', e),
+          );
         throw err;
       }),
     );
