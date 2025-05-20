@@ -101,7 +101,7 @@ export class TransactionsService {
     const str = sePayWebhookDto.content;
     const regex = /^SEVQR(\d{4})\.(user\d+)$/;
     const match = str.match(regex);
-    console.log(match)
+    console.log(match, str, sePayWebhookDto, sePayWebhookDto.content);
 
     if (match) {
       const subscriptionCode = match[1];
