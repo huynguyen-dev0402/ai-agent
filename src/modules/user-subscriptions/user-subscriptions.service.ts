@@ -83,7 +83,7 @@ export class UserSubscriptionsService {
         startDate,
         subscription.duration_months,
       );
-      const orderId = `SEVQR${subscription.subscription_code}.user${userId}.${Date.now()}`;
+      const orderId = `SEVQR${subscription.subscription_code}${user.username}`;
       const userSubscription = manager.create(UserSubscriptions, {
         user: { id: user.id },
         subscription: { id: subscription.id },
@@ -111,9 +111,10 @@ export class UserSubscriptionsService {
       }
 
       const { qrImageUrl } = await this.transactionService.generateQR({
-        user_id: userId,
-        subscription_id: subscriptionId,
-        amount: subscription.price,
+        username: user.username,
+        order_id: userSubscription.order_id,
+        subscription_code: subscription.subscription_code,
+        amount: userSubscription.amount,
         template: TransactionTemplate.COMPACT,
       });
 

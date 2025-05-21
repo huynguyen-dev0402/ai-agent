@@ -77,7 +77,7 @@ export class SubscriptionsController {
       throw new BadRequestException('Cannot subscribe subscription');
     }
 
-    return successResponse('Subscription assigned successfully.');
+    return successResponse('Subscription assigned successfully.', response);
   }
 
   @Post('upgrade')

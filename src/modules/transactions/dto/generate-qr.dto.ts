@@ -14,21 +14,23 @@ export enum TransactionTemplate {
 }
 
 export class GenerateQRDto {
-  @ApiProperty({
-    description: 'UUID of the subscription package',
-    example: 'e61b8ac5-823e-4b7f-9759-5d9de4dc5e55',
-  })
-  @IsNotEmpty({ message: 'Subscription ID must not be empty.' })
-  @IsUUID(4, { message: 'Subscription ID must be a valid UUID (v4).' })
-  subscription_id: string;
+  // @ApiProperty({
+  //   description: 'UUID of the subscription package',
+  //   example: 'e61b8ac5-823e-4b7f-9759-5d9de4dc5e55',
+  // })
+  // @IsNotEmpty({ message: 'Subscription ID must not be empty.' })
+  // @IsUUID(4, { message: 'Subscription ID must be a valid UUID (v4).' })
+  order_id: string;
 
-  @ApiProperty({
-    description: 'Id of the user',
-    example: 'uuid',
-  })
-  @IsNotEmpty({ message: 'User ID must not be empty.' })
-  @IsUUID(4, { message: 'User ID must be a valid UUID (v4).' })
-  user_id: string;
+  // @ApiProperty({
+  //   description: 'Id of the user',
+  //   example: 'uuid',
+  // })
+  // @IsNotEmpty({ message: 'User ID must not be empty.' })
+  // @IsUUID(4, { message: 'User ID must be a valid UUID (v4).' })
+  subscription_code: number;
+
+  username:string;
 
   @ApiProperty({
     description: 'The amount of money to be paid (in VND)',

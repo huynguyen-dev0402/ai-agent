@@ -36,7 +36,7 @@ export class TransactionsService {
     generateQrDto: GenerateQRDto,
   ): Promise<{ qrImageUrl: string; orderId: string }> {
     this.logger.log(
-      `Generating QR code for userId: ${generateQrDto.user_id}, subscriptionId: ${generateQrDto.subscription_id}`,
+      `Generating QR code for userId: ${generateQrDto.username}, subscriptionId: ${generateQrDto.subscription_code}`,
     );
 
     const acc = this.configService.get<string>('ACCOUNT');
@@ -60,47 +60,47 @@ export class TransactionsService {
       throw new BadRequestException('Amount must be greater than zero.');
     }
 
-    const subscription = await this.subscriptionService.findOne(
-      generateQrDto.subscription_id,
-    );
-    if (!subscription) {
-      this.logger.warn(
-        `Subscription not found: ${generateQrDto.subscription_id}`,
-      );
-      throw new NotFoundException('Subscription not found');
-    }
+    // const subscription = await this.subscriptionService.findOne(
+    //   generateQrDto.subscription_id,
+    // );
+    // if (!subscription) {
+    //   this.logger.warn(
+    //     `Subscription not found: ${generateQrDto.subscription_id}`,
+    //   );
+    //   throw new NotFoundException('Subscription not found');
+    // }
 
-    const userSub = await this.userSubRepository.findOne({
-      where: {
-        user: { id: generateQrDto.user_id },
-        subscription: { id: generateQrDto.subscription_id },
-        status: SubscriptionStatus.PENDING,
-      },
-      relations: {
-        user: true,
-      },
-      select: {
-        id: true,
-        user: {
-          id: true,
-          username: true,
-        },
-        order_id: true,
-      },
-    });
-    if (!userSub) {
-      this.logger.warn(
-        `User subscription not found for userId: ${generateQrDto.user_id}, subscriptionId: ${generateQrDto.subscription_id}`,
-      );
-      throw new NotFoundException('User subscription not found');
-    }
+    // const userSub = await this.userSubRepository.findOne({
+    //   where: {
+    //     user: { id: generateQrDto.user_id },
+    //     subscription: { id: generateQrDto.subscription_id },
+    //     status: SubscriptionStatus.PENDING,
+    //   },
+    //   relations: {
+    //     user: true,
+    //   },
+    //   select: {
+    //     id: true,
+    //     user: {
+    //       id: true,
+    //       username: true,
+    //     },
+    //     order_id: true,
+    //   },
+    // });
+    // if (!userSub) {
+    //   this.logger.warn(
+    //     `User subscription not found for userId: ${generateQrDto.user_id}, subscriptionId: ${generateQrDto.subscription_id}`,
+    //   );
+    //   throw new NotFoundException('User subscription not found');
+    // }
 
     const orderId =
-      userSub.order_id ||
-      `SEVQR${subscription.subscription_code}${userSub.user.username}`;
+      generateQrDto.order_id ||
+      `SEVQR${generateQrDto.subscription_code}${generateQrDto.username}`;
     this.logger.debug(`Generated orderId: ${orderId}`);
-    await this.userSubRepository.update(userSub.id, { order_id: orderId });
-    this.logger.debug(`Updated user subscription with orderId: ${orderId}`);
+    // await this.userSubRepository.update(userSub.id, { order_id: orderId });
+    // this.logger.debug(`Updated user subscription with orderId: ${orderId}`);
 
     const encodedDescription = encodeURIComponent(orderId);
 
