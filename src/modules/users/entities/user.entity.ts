@@ -131,6 +131,6 @@ export class User {
   @OneToMany(() => Domain, (domains) => domains.user)
   domains: Domain[];
 
-  @OneToMany(() => Payment, (payments) => payments.user)
-  payments: Payment[];
+  // @OneToMany(() => Payment, (payments) => payments.user)
+  // payments: Payment[];
 }

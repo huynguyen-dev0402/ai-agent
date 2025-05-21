@@ -1,40 +1,58 @@
-// import { Entity, PrimaryColumn, Column, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  OneToOne,
+  JoinColumn,
+} from 'typeorm';
+import { Payment } from '@modules/payments/entities/payment.entity';
 
-// @Entity('transactions')
-// export class TransactionEntity {
-//   @PrimaryColumn()
-//   id: number; // ID giao dịch trên SePay
+@Entity('transactions')
+export class TransactionEntity {
+  @PrimaryGeneratedColumn('uuid')
+  internal_id: string; // Internal primary key for flexibility
 
-//   @Column()
-//   gateway: string; // Brand name của ngân hàng
+  @Column({ unique: true })
+  id: number; // SePay transaction ID
 
-//   @Column({ type: 'timestamp' })
-//   transactionDate: Date; // Thời gian giao dịch tại ngân hàng
+  @Column()
+  gateway: string;
 
-//   @Column()
-//   accountNumber: string; // Số tài khoản ngân hàng
+  @Column({ type: 'timestamp' })
+  transactionDate: Date;
 
-//   @Column({ nullable: true })
-//   code: string | null; // Mã code thanh toán
+  @Column()
+  accountNumber: string;
 
-//   @Column()
-//   content: string; // Nội dung chuyển khoản
+  @Column({ nullable: true })
+  code: string;
 
-//   @Column()
-//   transferType: 'in' | 'out'; // Loại giao dịch
+  @Column()
+  content: string;
 
-//   @Column({ type: 'bigint' })
-//   transferAmount: number; // Số tiền giao dịch
+  @Column()
+  transferType: 'in' | 'out';
 
-//   @Column({ type: 'bigint' })
-//   accumulated: number; // Số dư tài khoản (lũy kế)
+  @Column({ type: 'bigint' })
+  transferAmount: number;
 
-//   @Column({ nullable: true })
-//   subAccount: string | null; // Tài khoản phụ (nếu có)
+  @Column({ type: 'bigint' })
+  accumulated: number;
 
-//   @Column()
-//   referenceCode: string; // Mã tham chiếu
+  @Column({ nullable: true })
+  subAccount: string;
 
-//   @Column({ type: 'text', nullable: true })
-//   description: string | null; // Mô tả từ ngân hàng (tin notify)
-// }
+  @Column()
+  referenceCode: string;
+
+  @Column({ type: 'text', nullable: true })
+  description: string;
+
+  @OneToOne(() => Payment, (payment) => payment.transaction)
+  @JoinColumn({ name: 'payment_id' })
+  payment: Payment;
+
+  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  created_at: Date;
+}

@@ -5,6 +5,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { GenerateQRDto } from './dto/generate-qr.dto';
 import { SePayWebhookDto } from './dto/webhook.dto';
 import { SubscriptionsService } from '@modules/subscriptions/subscriptions.service';
@@ -12,8 +14,9 @@ import {
   SubscriptionStatus,
   UserSubscriptions,
 } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class TransactionsService {
@@ -22,15 +25,16 @@ export class TransactionsService {
     private readonly subscriptionService: SubscriptionsService,
     @InjectRepository(UserSubscriptions)
     private readonly userSubRepository: Repository<UserSubscriptions>,
+    @InjectQueue('sepay-webhook') private readonly sepayQueue: Queue,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async generateQR(
     generateQrDto: GenerateQRDto,
-  ): Promise<{ qrImageUrl: string }> {
+  ): Promise<{ qrImageUrl: string; orderId: string }> {
     const acc = this.configService.get<string>('ACCOUNT');
     const bank = this.configService.get<string>('BANK');
 
-    // Kiểm tra ENV
     if (!acc) {
       throw new InternalServerErrorException(
         'Environment variable ACCOUNT is not set.',
@@ -42,15 +46,14 @@ export class TransactionsService {
       );
     }
 
-    // Validate dữ liệu nghiệp vụ nếu cần
     if (generateQrDto.amount <= 0) {
       throw new BadRequestException('Amount must be greater than zero.');
     }
 
-    const subsription = await this.subscriptionService.findOne(
+    const subscription = await this.subscriptionService.findOne(
       generateQrDto.subscription_id,
     );
-    if (!subsription) {
+    if (!subscription) {
       throw new NotFoundException('Subscription not found');
     }
 
@@ -69,23 +72,26 @@ export class TransactionsService {
           id: true,
           username: true,
         },
+        order_id: true,
       },
     });
     if (!userSub) {
       throw new NotFoundException('User subscription not found');
     }
-    // Tạo mô tả chuyển khoản, ví dụ SUB<subscription_code>
-    const encodedDescription = encodeURIComponent(
-      `SEVQR${subsription.subscription_code}.${userSub.user.username}`,
-    );
 
-    // Khởi tạo query params
+    const orderId =
+      userSub.order_id ||
+      `SEVQR${subscription.subscription_code}.${userSub.user.username}`;
+    await this.userSubRepository.update(userSub.id, { order_id: orderId });
+
+    const encodedDescription = encodeURIComponent(orderId);
+
     const params = new URLSearchParams({
       acc,
       bank,
       amount: generateQrDto.amount.toString(),
       des: encodedDescription,
-      template: generateQrDto.template,
+      template: generateQrDto.template || 'compact',
     });
 
     if (generateQrDto?.download) {
@@ -94,14 +100,21 @@ export class TransactionsService {
 
     const qrImageUrl = `https://qr.sepay.vn/img?${params.toString()}`;
 
-    return { qrImageUrl };
+    return { qrImageUrl, orderId };
+  }
+
+  async queueSePayWebhook(sePayWebhookDto: SePayWebhookDto) {
+    await this.sepayQueue.add('process-webhook', sePayWebhookDto, {
+      attempts: 3,
+      backoff: 5000,
+    });
+    return { success: true, message: 'Webhook queued for processing' };
   }
 
   async processSePayTransaction(sePayWebhookDto: SePayWebhookDto) {
     const str = sePayWebhookDto.content;
     const regex = /SEVQR(\d{4})(user\d+)/;
     const match = str.match(regex);
-    console.log(match, str);
 
     if (!match) {
       throw new BadRequestException('Invalid transaction content format');
@@ -110,21 +123,26 @@ export class TransactionsService {
     const subscriptionCode = match[1];
     const username = match[2];
 
-    // Find user subscription
     const userSub = await this.userSubRepository.findOne({
       where: {
         user: { username },
         subscription: { subscription_code: Number(subscriptionCode) },
         status: SubscriptionStatus.PENDING,
+        amount: sePayWebhookDto.transferAmount,
       },
       relations: {
         subscription: true,
+        user: true,
       },
       select: {
         id: true,
+        order_id: true,
         subscription: {
           id: true,
           duration_months: true,
+        },
+        user: {
+          id: true,
         },
       },
     });
@@ -133,31 +151,41 @@ export class TransactionsService {
       throw new NotFoundException('User subscription not found');
     }
 
-    // Calculate subscription dates
+    // Prevent duplicate transactions
+    const existingTransaction = await this.userSubRepository.findOne({
+      where: { sepay_transaction_id: sePayWebhookDto.id },
+    });
+    if (existingTransaction) {
+      throw new BadRequestException('Duplicate transaction');
+    }
+
     const startDate = new Date();
     const endDate = new Date(startDate);
     endDate.setMonth(
       startDate.getMonth() + userSub.subscription.duration_months,
     );
 
-    // Update subscription status
     const response = await this.userSubRepository.update(userSub.id, {
       start_date: startDate,
       end_date: endDate,
       status: SubscriptionStatus.ACTIVE,
+      sepay_transaction_id: sePayWebhookDto.id,
+      amount: sePayWebhookDto.transferAmount,
     });
 
-    // Check if update was successful
     if (response.affected === 0) {
       throw new BadRequestException(
         'Failed to update user subscription status',
       );
     }
 
-    // Optionally log the successful transaction
-    // console.log(
-    //   `Successfully activated subscription for user ${username} with code ${subscriptionCode}`,
-    // );
+    // Emit event for SSE
+    this.eventEmitter.emit('payment.status', {
+      userId: userSub.user.id,
+      subscriptionId: userSub.id,
+      status: SubscriptionStatus.ACTIVE,
+      orderId: userSub.order_id,
+    });
 
     return { message: 'Transaction processed successfully' };
   }

@@ -15,6 +15,7 @@ import { UsersService } from '@modules/users/users.service';
 import { UserStatus } from '@modules/users/entities/user.entity';
 import { PaymentsService } from '@modules/payments/payments.service';
 import { TransactionsService } from '@modules/transactions/transactions.service';
+import { TransactionTemplate } from '@modules/transactions/dto/generate-qr.dto';
 
 @Injectable()
 export class UserSubscriptionsService {
@@ -30,17 +31,23 @@ export class UserSubscriptionsService {
     private readonly transactionService: TransactionsService,
   ) {}
 
-  async subscribe(userId: string, subscriptionId: string): Promise<boolean> {
-    const user = await this.userService.findOne(userId);
-    if (!user) {
-      throw new NotFoundException('User not found.');
-    }
+  async subscribe(userId: string, subscriptionId: string) {
+    return this.userSubRepository.manager.transaction(async (manager) => {
+      this.logger.log(
+        `Initiating subscription for user ${userId} with subscription ${subscriptionId}`,
+      );
 
-    return await this.userSubRepository.manager.transaction(async (manager) => {
+      const user = await this.userService.findOne(userId);
+      if (!user) {
+        throw new NotFoundException('User not found.');
+      }
+      if (user.status === UserStatus.INACTIVE) {
+        throw new BadRequestException('User is inactive and cannot subscribe.');
+      }
+
       const subscription = await manager.findOne(Subscription, {
         where: { id: subscriptionId },
       });
-
       if (!subscription) {
         throw new NotFoundException('Subscription not found');
       }
@@ -48,23 +55,19 @@ export class UserSubscriptionsService {
       const userSubscriptions = await manager.find(UserSubscriptions, {
         where: { user: { id: userId } },
       });
-
       const activeSubscription = userSubscriptions.find(
         (s) => s.status === SubscriptionStatus.ACTIVE,
       );
-
       const expiredSubscription = userSubscriptions.find(
         (s) => s.status === SubscriptionStatus.EXPIRED,
       );
 
-      // Đã có gói active
       if (activeSubscription) {
         throw new BadRequestException(
           'You are currently on a different plan. Please cancel before subscribing to a new plan.',
         );
       }
 
-      // Nếu gói miễn phí và đã dùng rồi
       if (
         subscription.price === 0 &&
         expiredSubscription &&
@@ -76,20 +79,49 @@ export class UserSubscriptionsService {
       }
 
       const startDate = new Date();
-      const endDate = new Date(startDate);
-      endDate.setMonth(startDate.getMonth() + subscription.duration_months);
-
+      const endDate = this.addMonthsManually(
+        startDate,
+        subscription.duration_months,
+      );
+      const orderId = `SEVQR${subscription.subscription_code}.user${userId}.${Date.now()}`;
       const userSubscription = manager.create(UserSubscriptions, {
         user: { id: user.id },
         subscription: { id: subscription.id },
         start_date: startDate,
         end_date: endDate,
         status: SubscriptionStatus.PENDING,
+        order_id: orderId,
+        amount: subscription.price,
       });
-
       await manager.save(userSubscription);
 
-      return true;
+      if (subscription.price === 0) {
+        await manager.update(
+          UserSubscriptions,
+          { id: userSubscription.id },
+          {
+            status: SubscriptionStatus.ACTIVE,
+          },
+        );
+        return {
+          paymentUrl: null,
+          userSubscriptionId: userSubscription.id,
+          orderId,
+        };
+      }
+
+      const { qrImageUrl } = await this.transactionService.generateQR({
+        user_id: userId,
+        subscription_id: subscriptionId,
+        amount: subscription.price,
+        template: TransactionTemplate.COMPACT,
+      });
+
+      return {
+        paymentUrl: qrImageUrl,
+        userSubscriptionId: userSubscription.id,
+        orderId,
+      };
     });
   }
 

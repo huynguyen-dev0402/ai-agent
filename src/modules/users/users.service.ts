@@ -8,7 +8,7 @@ import { UpdateUserDto } from '@modules/users/dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User, UserStatus } from '@modules/users/entities/user.entity';
 import { In, Repository } from 'typeorm';
-import { hashPassword } from '@common/utils/hash-password/hashing.util';
+import { comparePassword, hashPassword } from '@common/utils/hash-password/hashing.util';
 import { generateUniqueString } from '@common/utils/generate-random/generate-username.util';
 import { plainToInstance } from 'class-transformer';
 import { Workspace } from '@modules/workspaces/entities/workspace.entity';
@@ -55,7 +55,7 @@ export class UsersService {
     createUserDto.password = hashPassword(password);
     const newUser = this.userRepository.create({
       ...createUserDto,
-      workspace:{id:workspaceId},
+      workspace: { id: workspaceId },
     });
     await this.userRepository.save(newUser);
     return plainToInstance(User, newUser);
@@ -183,22 +183,39 @@ export class UsersService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
-    if(updateUserDto?.password){
+    // Nếu có yêu cầu đổi mật khẩu (có oldPassword và newPassword)
+    if (updateUserDto.oldPassword && updateUserDto.password) {
+      // Lấy user hiện tại để lấy mật khẩu hash trong DB
+      const user = await this.userRepository.findOne({ where: { id } });
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      // So sánh mật khẩu cũ nhập vào với mật khẩu hash trong DB
+      const isMatch = comparePassword(updateUserDto.oldPassword, user.password);
+      if (!isMatch) {
+        throw new BadRequestException('Old password is incorrect');
+      }
+
+      // Hash mật khẩu mới và gán cho DTO
       updateUserDto.password = hashPassword(updateUserDto.password);
+
+      // Xóa 2 trường oldPassword và newPassword khỏi DTO để tránh lưu vào DB
+      delete updateUserDto.oldPassword;
     }
-    const response = await this.userRepository.update(id, updateUserDto);
-    if (response.affected === 0) {
+
+    const result = await this.userRepository.update(id, updateUserDto);
+
+    if (result.affected === 0) {
       throw new NotFoundException('User not found or no changes made');
     }
-    const user = await this.userRepository.findOne({
-      where: {
-        id,
-      },
+
+    // Lấy lại user mới nhất sau khi update
+    const updatedUser = await this.userRepository.findOneOrFail({
+      where: { id },
     });
-    if (!user) {
-      throw new NotFoundException('User not found after update');
-    }
-    return plainToInstance(User, user);
+
+    return plainToInstance(User, updatedUser);
   }
 
   async remove(id: string) {

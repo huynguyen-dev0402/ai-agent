@@ -1,32 +1,28 @@
 import {
-  Body,
   Controller,
+  Post,
+  Body,
   HttpCode,
-  HttpException,
   HttpStatus,
   InternalServerErrorException,
-  Logger,
-  Post,
+  HttpException,
   Req,
-  UseGuards,
-  ValidationPipe,
+  Sse,
+  Logger,
+  Param,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
 import { Request } from 'express';
+import { ValidationPipe } from '@nestjs/common';
+import { ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { TransactionsService } from './transactions.service';
 import { GenerateQRDto } from './dto/generate-qr.dto';
-import { UserIdMatchGuard } from '@common/guards/user-id-match.guard';
-import { WebhookUtils } from '@common/utils/webhook/webhook.util';
 import { SePayWebhookDto } from './dto/webhook.dto';
+import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Observable, fromEvent } from 'rxjs';
+import { filter, map } from 'rxjs/operators';
 import { Public } from '@common/decorators/public-route.decorator';
 
-@ApiTags('transactions')
 @Controller('transactions')
 export class TransactionsController {
   private readonly logger = new Logger(TransactionsController.name);
@@ -34,18 +30,10 @@ export class TransactionsController {
   constructor(
     private readonly transactionsService: TransactionsService,
     private readonly configService: ConfigService,
-    private readonly webhookUtils: WebhookUtils,
-  ) {
-    // Fail fast if API key is not configured
-    const apiKey = this.configService.get<string>('SEPAY_WEBHOOK_API_KEY');
-    if (!apiKey) {
-      this.logger.error('SEPAY_WEBHOOK_API_KEY is not configured');
-      throw new Error('SEPAY_WEBHOOK_API_KEY is not configured');
-    }
-  }
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   @Post('/generate-qr')
-  //@UseGuards(UserIdMatchGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Generate QR code for payment' })
   @ApiResponse({
@@ -74,13 +62,12 @@ export class TransactionsController {
 
   @Post()
   @Public()
-  //@UseGuards(UserIdMatchGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Handle SePay payment webhook' })
   @ApiBearerAuth()
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Webhook processed successfully',
+    description: 'Webhook queued successfully',
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
@@ -90,38 +77,56 @@ export class TransactionsController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Invalid or missing authorization',
   })
-  @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Invalid API key' })
   async payment(
     @Body(new ValidationPipe()) sePayWebhookDto: SePayWebhookDto,
     @Req() req: Request,
   ) {
     try {
-      // Validate webhook payload
       if (!sePayWebhookDto || Object.keys(sePayWebhookDto).length === 0) {
         this.logger.warn('Empty webhook payload received');
         throw new HttpException('Invalid payload', HttpStatus.BAD_REQUEST);
       }
 
-      // Validate and process webhook
-      const authHeader = req.headers[
-        this.webhookUtils.API_KEY_HEADER.toLowerCase()
-      ] as string;
-      const apiKey = this.configService.get<string>('SEPAY_WEBHOOK_API_KEY')!;
-      await this.webhookUtils.validateWebhookAuth(authHeader, apiKey);
+      const authHeader = req.headers['authorization'] as string;
+      const apiKey = this.configService.get<string>('SEPAY_WEBHOOK_API_KEY');
+      if (!authHeader || authHeader !== `Bearer ${apiKey}`) {
+        throw new HttpException('Invalid API key', HttpStatus.UNAUTHORIZED);
+      }
 
-      // Process payment
-      this.logger.log('Processing SePay payment webhook');
+      this.logger.log('Queuing SePay payment webhook');
       const result =
-        await this.transactionsService.processSePayTransaction(sePayWebhookDto);
-      return {
-        success: true,
-        data: result,
-      };
+        await this.transactionsService.queueSePayWebhook(sePayWebhookDto);
+      return result;
     } catch (error) {
-      this.logger.error(`Webhook processing failed: ${error.message}`);
+      this.logger.error(`Webhook queuing failed: ${error.message}`);
       throw error instanceof HttpException
         ? error
-        : new InternalServerErrorException('Failed to process webhook');
+        : new InternalServerErrorException('Failed to queue webhook');
     }
+  }
+
+  @Sse('payment-status/:userId')
+  @Public()
+  @ApiOperation({ summary: 'Subscribe to payment status updates' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'SSE stream for payment status updates',
+  })
+  ssePaymentStatus(@Param('userId') userId: string): Observable<any> {
+    return fromEvent(this.eventEmitter, 'payment.status').pipe(
+      map((data: any) => {
+        if (data.userId === userId) {
+          return {
+            data: {
+              subscriptionId: data.subscriptionId,
+              status: data.status,
+              orderId: data.orderId,
+            },
+          };
+        }
+        return null;
+      }),
+      filter((data) => data !== null),
+    );
   }
 }

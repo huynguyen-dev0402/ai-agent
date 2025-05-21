@@ -81,7 +81,7 @@ import { TransactionsModule } from '@modules/transactions/transactions.module';
     TicketsModule,
     DomainsModule,
     PaymentsModule,
-    TransactionsModule
+    TransactionsModule,
   ],
   controllers: [AppController],
   providers: [

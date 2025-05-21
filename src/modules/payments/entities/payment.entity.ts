@@ -1,65 +1,52 @@
-import { UserSubscriptions } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
-import { User } from '@modules/users/entities/user.entity';
 import {
   Entity,
-  Column,
   PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
   ManyToOne,
   JoinColumn,
-  OneToMany,
+  Column,
+  CreateDateColumn,
 } from 'typeorm';
-import { PaymentLogs } from './payment-log.entity';
+import { UserSubscriptions } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
+import { TransactionEntity } from '@modules/transactions/entities/transaction.entity';
+
+export enum PaymentStatus {
+  PENDING = 'pending',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+  REFUNDED = 'refunded',
+}
 
 @Entity('payments')
 export class Payment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => User, (user) => user.payments)
-  @JoinColumn({ name: 'user_id' })
-  user: User;
-
   @ManyToOne(
     () => UserSubscriptions,
-    (user_subscriptions) => user_subscriptions.payments,
+    (userSubscription) => userSubscription.payments,
   )
   @JoinColumn({ name: 'user_subscription_id' })
   user_subscriptions: UserSubscriptions;
 
-  @OneToMany(() => PaymentLogs, (payment_logs) => payment_logs.payment)
-  payment_logs: PaymentLogs[];
+  @ManyToOne(() => TransactionEntity, (transaction) => transaction.payment, {
+    nullable: true,
+  })
+  @JoinColumn({ name: 'transaction_id' })
+  transaction: TransactionEntity;
 
-  @Column({ type: 'float', nullable: false })
+  @Column({ type: 'decimal', precision: 20, scale: 2 })
   amount: number;
 
-  @Column({ type: 'varchar', length: 10, nullable: false, default: 'VND' })
-  currency: string;
-
   @Column({
     type: 'enum',
-    enum: ['bank_card', 'momo', 'zalo_pay', 'paypal', 'sepay'],
-    nullable: false,
+    enum: PaymentStatus,
+    default: PaymentStatus.PENDING,
   })
-  payment_method: 'bank_card' | 'momo' | 'zalo_pay' | 'paypal' | 'sepay';
+  status: PaymentStatus;
 
-  @Column({
-    type: 'enum',
-    enum: ['pending', 'completed', 'failed'],
-    default: 'pending',
-  })
-  status: 'pending' | 'completed' | 'failed';
-
-  @Column({ type: 'varchar', length: 255, nullable: false, unique: true })
-  transaction_id: string;
-
-  @Column({ type: 'timestamp', nullable: true })
-  paid_at: Date;
+  @Column({ nullable: true })
+  order_id: string; // Matches UserSubscriptions.order_id
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;
-
-  @UpdateDateColumn({ type: 'timestamp', nullable: true })
-  updated_at: Date;
 }

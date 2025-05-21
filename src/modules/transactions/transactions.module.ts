@@ -6,14 +6,27 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Subscription } from '@modules/subscriptions/entities/subscription.entity';
 import { SubscriptionsModule } from '@modules/subscriptions/subscriptions.module';
 import { UserSubscriptions } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
+import { BullModule } from '@nestjs/bullmq';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { SepayWebhookProcessor } from './transaction.processor';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Subscription, UserSubscriptions]),
     forwardRef(() => SubscriptionsModule),
+    EventEmitterModule.forRoot(),
+    BullModule.forRoot({
+      connection: {
+        host: 'localhost',
+        port: 6379,
+      },
+    }),
+    BullModule.registerQueue({
+      name: 'sepay-webhook',
+    }),
   ],
   controllers: [TransactionsController],
-  providers: [TransactionsService, WebhookUtils],
+  providers: [TransactionsService, WebhookUtils, SepayWebhookProcessor],
   exports: [TransactionsService],
 })
 export class TransactionsModule {}
