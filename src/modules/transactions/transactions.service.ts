@@ -81,7 +81,7 @@ export class TransactionsService {
 
     const orderId =
       userSub.order_id ||
-      `SEVQR${subscription.subscription_code}.${userSub.user.username}`;
+      `SEVQR${subscription.subscription_code}${userSub.user.username}`;
     await this.userSubRepository.update(userSub.id, { order_id: orderId });
 
     const encodedDescription = encodeURIComponent(orderId);
