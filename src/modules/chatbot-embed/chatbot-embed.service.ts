@@ -81,7 +81,6 @@ export class ChatbotEmbedService {
     });
 
     if (!chatbot) {
-      await this.logEmbedAttempt(chatbotId, userId, false, 'Chatbot not found');
       throw new ForbiddenException('Chatbot not found');
     }
 

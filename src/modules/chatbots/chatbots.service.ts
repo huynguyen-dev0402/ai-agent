@@ -132,35 +132,27 @@ export class ChatbotsService {
     chatWithChatbotDto: ChatWithChatbotDto,
     res: Response,
   ) {
-    const chatbot = await this.chatbotRepository.findOne({
-      where: { id: chatbotId },
-      relations: {
-        user: {
-          api_token: true,
-        },
-      },
-      select: {
-        id: true,
-        external_bot_id: true,
-        user: {
-          id: true,
-          external_user_id: true,
-          api_token: {
-            id: true,
-            token: true,
-          },
-        },
-      },
-    });
+    const chatbot = await this.chatbotRepository
+      .createQueryBuilder('chatbot')
+      .leftJoinAndSelect('chatbot.user', 'user')
+      .leftJoinAndSelect('user.api_token', 'api_token')
+      .select([
+        'chatbot.id',
+        'chatbot.external_bot_id',
+        'user.id',
+        'user.external_user_id',
+        'api_token.id',
+        'api_token.token',
+      ])
+      .where('chatbot.id = :chatbotId', { chatbotId })
+      .getOne();
 
     if (!chatbot) {
       throw new NotFoundException('Chatbot not found');
     }
 
-    const conversation = await this.conversationRepository.findOne({
-      where: {
-        id: chatWithChatbotDto.conversation_id,
-      },
+    const conversation = await this.conversationRepository.findOneBy({
+      id: chatWithChatbotDto.conversation_id,
     });
 
     if (!conversation) {
@@ -336,18 +328,6 @@ export class ChatbotsService {
       throw new UnauthorizedException('Invalid token');
     }
 
-    // Bước 2: Kiểm tra trạng thái token
-    const tokenRecord = await this.chatbotTokenRepository.findOne({
-      where: {
-        token: chatEmbedChatbot.token,
-        status: ChatbotTokenStatus.ACTIVE,
-      },
-    });
-    if (!tokenRecord) {
-      throw new UnauthorizedException('Token is revoked or inactive');
-    }
-
-    // Bước 4: Truy vấn user, chatbot, conversation
     const [user, chatbot, conversation] = await Promise.all([
       // Truy vấn user: Chỉ lấy các trường cần thiết
       this.userRepository.findOne({
@@ -368,28 +348,17 @@ export class ChatbotsService {
       // Truy vấn chatbot: Chỉ lấy id và user.id để kiểm tra quyền sở hữu
       this.chatbotRepository.findOne({
         where: { id: payload.chatbotId },
-        relations: ['user'],
         select: {
           id: true,
           external_bot_id: true,
-          user: {
-            id: true,
-          },
         },
       }),
       // Truy vấn conversation: Chỉ lấy id, external_conversation_id, và chatbot.user.id
       this.conversationRepository.findOne({
         where: { id: chatEmbedChatbot.conversation_id },
-        relations: ['chatbot', 'chatbot.user'],
         select: {
           id: true,
           external_conversation_id: true,
-          chatbot: {
-            id: true,
-            user: {
-              id: true,
-            },
-          },
         },
       }),
     ]);
@@ -405,23 +374,8 @@ export class ChatbotsService {
       throw new NotFoundException('Conversation not found');
     }
 
-    // Bước 4: Kiểm tra quyền sở hữu
-    if (chatbot.user.id !== payload.userId) {
-      throw new ForbiddenException(
-        'You do not have permission to use this chatbot',
-      );
-    }
-    if (conversation.chatbot.id !== payload.chatbotId) {
-      throw new ForbiddenException(
-        'Conversation does not belong to this chatbot',
-      );
-    }
-    if (conversation.chatbot.user.id !== payload.userId) {
-      throw new ForbiddenException('Conversation does not belong to this user');
-    }
-
     await this.messageService.saveMessageUser({
-      conversation_id: conversation.id,
+      conversation_id: chatEmbedChatbot.conversation_id,
       sender_type: SenderType.USER,
       message_content: chatEmbedChatbot.message,
       send_at: new Date(),
@@ -451,8 +405,6 @@ export class ChatbotsService {
           }),
         },
       );
-      // const text = await response.text();
-      // console.log(text);
 
       if (!response.ok || !response.body) {
         throw new InternalServerErrorException(
@@ -533,7 +485,7 @@ export class ChatbotsService {
         res.end();
 
         await this.messageService.saveMessageUser({
-          conversation_id: conversation.id,
+          conversation_id: chatEmbedChatbot.conversation_id,
           sender_type: SenderType.CHATBOT,
           message_content: fullMessage,
           send_at: new Date(),
