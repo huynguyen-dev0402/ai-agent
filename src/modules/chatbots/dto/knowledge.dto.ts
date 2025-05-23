@@ -8,12 +8,6 @@ import {
 } from 'class-validator';
 
 export class KnowledgeDto {
-  @ApiProperty({
-    description: 'The API token used for authorization.',
-    example: 'your-api-token-here',
-  })
-  @IsNotEmpty({ message: 'Api token required' })
-  api_token: string;
 
   @ApiProperty({
     description: 'List of dataset IDs to be used.',

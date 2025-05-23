@@ -38,9 +38,7 @@ export class UserSubscriptionsService {
       );
 
       const user = await this.userService.findOne(userId);
-      if (!user) {
-        throw new NotFoundException('User not found.');
-      }
+      if (!user) throw new NotFoundException('User not found.');
       if (user.status === UserStatus.INACTIVE) {
         throw new BadRequestException('User is inactive and cannot subscribe.');
       }
@@ -48,13 +46,12 @@ export class UserSubscriptionsService {
       const subscription = await manager.findOne(Subscription, {
         where: { id: subscriptionId },
       });
-      if (!subscription) {
-        throw new NotFoundException('Subscription not found');
-      }
+      if (!subscription) throw new NotFoundException('Subscription not found');
 
       const userSubscriptions = await manager.find(UserSubscriptions, {
         where: { user: { id: userId } },
       });
+
       const activeSubscription = userSubscriptions.find(
         (s) => s.status === SubscriptionStatus.ACTIVE,
       );
@@ -83,30 +80,29 @@ export class UserSubscriptionsService {
         startDate,
         subscription.duration_months,
       );
-      const orderId = `SEVQR${subscription.subscription_code}${user.username}`;
+      const isFree = subscription.price === 0;
+
       const userSubscription = manager.create(UserSubscriptions, {
         user: { id: user.id },
         subscription: { id: subscription.id },
         start_date: startDate,
         end_date: endDate,
-        status: SubscriptionStatus.PENDING,
-        order_id: orderId,
+        status: isFree ? SubscriptionStatus.ACTIVE : SubscriptionStatus.PENDING,
         amount: subscription.price,
+        ...(isFree
+          ? {}
+          : {
+              order_id: `SEVQR${subscription.subscription_code}${user.username}`,
+            }),
       });
+
       await manager.save(userSubscription);
 
-      if (subscription.price === 0) {
-        await manager.update(
-          UserSubscriptions,
-          { id: userSubscription.id },
-          {
-            status: SubscriptionStatus.ACTIVE,
-          },
-        );
+      if (isFree) {
         return {
           paymentUrl: null,
           userSubscriptionId: userSubscription.id,
-          orderId,
+          orderId: null,
         };
       }
 
@@ -121,7 +117,7 @@ export class UserSubscriptionsService {
       return {
         paymentUrl: qrImageUrl,
         userSubscriptionId: userSubscription.id,
-        orderId,
+        orderId: userSubscription.order_id,
       };
     });
   }

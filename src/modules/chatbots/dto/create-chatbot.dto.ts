@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import { IsNotEmpty, IsOptional } from 'class-validator';
+import { ModelConfigDto } from './model-config.dto';
 
 export class CreateChatbotDto {
   @ApiProperty({
@@ -9,6 +11,15 @@ export class CreateChatbotDto {
   })
   @IsNotEmpty({ message: 'Name chatbot required' })
   chatbot_name: string;
+
+  @ApiProperty({
+    description: 'Model configuration information for the chatbot.',
+    required: false,
+    type: ModelConfigDto,
+  })
+  @IsOptional()
+  @Type(() => ModelConfigDto)
+  model_info_config?: ModelConfigDto;
 
   @ApiProperty({
     example: 'Description of the chatbot',

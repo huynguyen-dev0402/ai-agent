@@ -168,10 +168,12 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'Basic info updated successfully.' })
   @ApiResponse({ status: 400, description: 'Failed to update basic info.' })
   async configChatbotByUser(
+    @Param('userId') userId: string,
     @Param('chatbotId') chatbotId: string,
     @Body(new ValidationPipe()) updateChatbotDto: UpdateChatbotDto,
   ) {
     const updatedChatbot = await this.chatbotService.updateBasicInfoChatbot(
+      userId,
       chatbotId,
       updateChatbotDto,
     );
@@ -197,10 +199,12 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'Prompt imported successfully.' })
   @ApiResponse({ status: 400, description: 'Failed to import prompt.' })
   async importPrompt(
+    @Param('userId') userId: string,
     @Param('chatbotId') chatbotId: string,
     @Body(new ValidationPipe()) promptInfoDto: PromptInfoDto,
   ) {
     const updatedChatbot = await this.chatbotService.importPrompt(
+      userId,
       chatbotId,
       promptInfoDto,
     );
@@ -229,10 +233,12 @@ export class UsersController {
   })
   @ApiResponse({ status: 400, description: 'Failed to import knowledge.' })
   async importKnowledge(
+    @Param('userId') userId: string,
     @Param('chatbotId') chatbotId: string,
     @Body(new ValidationPipe()) knowledgeDto: KnowledgeDto,
   ) {
     const updatedChatbot = await this.chatbotService.importKnowledge(
+      userId,
       chatbotId,
       knowledgeDto,
     );
@@ -258,11 +264,13 @@ export class UsersController {
   })
   @ApiResponse({ status: 400, description: 'Failed to create onboarding.' })
   async createOnboarding(
+    @Param('userId') userId: string,
     @Param('chatbotId') chatbotId: string,
     @Body(new ValidationPipe())
     createChatbotOnboardingDto: CreateChatbotOnboardingDto,
   ) {
     const updatedChatbot = await this.chatbotService.createOnboarding(
+      userId,
       chatbotId,
       createChatbotOnboardingDto,
     );
@@ -296,12 +304,14 @@ export class UsersController {
   })
   @ApiResponse({ status: 400, description: 'Failed to update onboarding.' })
   async updateOnboarding(
+    @Param('userId') userId: string,
     @Param('chatbotId') chatbotId: string,
     @Param('onboardingId') onboardingId: string,
     @Body(new ValidationPipe())
     updateChatbotOnboardingDto: UpdateChatbotOnboardingDto,
   ) {
     const updatedChatbot = await this.chatbotService.updateChatbotOnboarding(
+      userId,
       chatbotId,
       onboardingId,
       updateChatbotOnboardingDto,
@@ -332,10 +342,12 @@ export class UsersController {
   })
   @ApiResponse({ status: 400, description: 'Failed to publish chatbot.' })
   async publishChatbotByUser(
+    @Param('userId') userId: string,
     @Param('chatbotId') chatbotId: string,
     @Body(new ValidationPipe()) publishChatbotDto: PublishChatbotDto,
   ) {
     const publishedChatbot = await this.chatbotService.publishChatbotByUser(
+      userId,
       chatbotId,
       publishChatbotDto,
     );

@@ -525,42 +525,109 @@ export class ChatbotsService {
     userId: string,
     createChatbotDto: CreateChatbotDto,
   ) {
-    const [model] = await Promise.all([
-      this.chatbotModelsService.findOne('1722479058'),
-      this.userService.findOne(userId),
-    ]);
-
+    // Lấy model (sử dụng ID cố định hoặc từ DTO nếu có)
+    const model = await this.chatbotModelsService.findOne('113');
     if (!model) {
       throw new NotFoundException('Model not found');
     }
 
-    const chatbot = this.chatbotRepository.create({
-      ...createChatbotDto,
-      user: { id: userId },
-      model: { id: model.id },
-    });
+    // Lấy user với quan hệ tối ưu
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.api_token', 'api_token')
+      .leftJoinAndSelect('user.workspace', 'workspace')
+      .where('user.id = :userId')
+      .setParameter('userId', userId)
+      .select([
+        'user.id AS user_id',
+        'api_token.id AS api_token_id',
+        'api_token.token AS api_token_token',
+        'workspace.id AS workspace_id',
+        'workspace.external_space_id AS workspace_external_space_id',
+      ])
+      .getRawOne();
 
-    return this.chatbotRepository.save(chatbot);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    try {
+      // Gọi API Coze để tạo chatbot
+      const response = await fetch('https://api.coze.com/v1/bot/create', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${user.api_token_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          space_id: user.workspace_external_space_id,
+          name: createChatbotDto.chatbot_name,
+          description: createChatbotDto.description || null,
+          model_info_config: createChatbotDto.model_info_config,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          `API call failed: ${errorData?.message || response.statusText}`,
+        );
+      }
+
+      const data = await response.json();
+      if (!data?.data?.bot_id) {
+        throw new Error('API did not return a bot_id');
+      }
+
+      // Tạo và lưu chatbot
+      const chatbot = this.chatbotRepository.create({
+        chatbot_name: createChatbotDto.chatbot_name,
+        user: { id: userId },
+        model: { id: model.id },
+        external_bot_id: data.data.bot_id,
+        status: ChatbotStatus.DRAFT,
+        description: createChatbotDto.description,
+      });
+
+      const savedChatbot = await this.chatbotRepository.save(chatbot);
+      return savedChatbot;
+    } catch (error) {
+      console.error('Error creating chatbot:', error.message);
+      throw new InternalServerErrorException(
+        'Failed to create chatbot: ' + error.message,
+      );
+    }
   }
 
   async publishChatbotByUser(
+    userId: string,
     chatbotId: string,
     publishChatbotDto: PublishChatbotDto,
   ) {
-    const chatbot = await this.chatbotRepository.findOne({
-      where: {
-        id: chatbotId,
-      },
-      relations: {
-        user: {
-          api_token: true,
-        },
-      },
-    });
-    if (!chatbot?.external_bot_id) {
-      return false;
+    // Lấy chatbot với quan hệ và kiểm tra quyền sở hữu
+    const chatbot = await this.chatbotRepository
+      .createQueryBuilder('chatbot')
+      .leftJoinAndSelect('chatbot.user', 'user')
+      .leftJoinAndSelect('user.api_token', 'api_token')
+      .where('chatbot.id = :chatbotId')
+      .andWhere('user.id = :userId')
+      .setParameters({ chatbotId, userId })
+      .getOne();
+
+    if (!chatbot) {
+      throw new NotFoundException('Chatbot not found');
     }
+
+    if (!chatbot.external_bot_id) {
+      throw new BadRequestException('Chatbot does not have an external bot ID');
+    }
+
+    if (!chatbot.user?.api_token?.token) {
+      throw new BadRequestException('User API token is missing');
+    }
+
     try {
+      // Gọi API Coze để xuất bản chatbot
       const response = await fetch('https://api.coze.com/v1/bot/publish', {
         method: 'POST',
         headers: {
@@ -573,15 +640,27 @@ export class ChatbotsService {
         }),
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          `API call failed: ${errorData?.message || response.statusText}`,
+        );
+      }
+
       const data = await response.json();
-      if (!data?.data?.bot_id) return false;
+      if (!data?.data?.bot_id) {
+        throw new Error('API did not return a bot_id');
+      }
 
       await this.chatbotRepository.update(chatbot.id, {
         status: ChatbotStatus.PUBLISHED,
       });
       return data;
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error publishing chatbot:', error.message);
+      throw new InternalServerErrorException(
+        'Failed to publish chatbot: ' + error.message,
+      );
     }
   }
 
@@ -602,37 +681,22 @@ export class ChatbotsService {
     chatbotId: string,
     updateChatbotDto: UpdateChatbotDto,
   ) {
+    // Kiểm tra workspace
     const workspace = await this.workspaceService.findWorkspaceByUserId(userId);
     if (!workspace) {
       throw new NotFoundException('Workspace not found');
     }
-    const chatbot = await this.chatbotRepository.findOne({
-      where: {
-        id: chatbotId,
-        user: {
-          id: userId,
-        },
-      },
-      relations: {
-        user: {
-          api_token: true,
-        },
-        model: true,
-      },
-      select: {
-        user: {
-          id: true,
-          api_token: {
-            id: true,
-            token: true,
-          },
-        },
-        model: {
-          id: true,
-          model_name: true,
-        },
-      },
-    });
+
+    // Lấy chatbot với quan hệ
+    const chatbot = await this.chatbotRepository
+      .createQueryBuilder('chatbot')
+      .leftJoinAndSelect('chatbot.user', 'user')
+      .leftJoinAndSelect('user.api_token', 'api_token')
+      .leftJoinAndSelect('chatbot.model', 'model')
+      .where('chatbot.id = :chatbotId')
+      .andWhere('user.id = :userId')
+      .setParameters({ chatbotId, userId })
+      .getOne();
 
     if (!chatbot) {
       return false;
@@ -653,48 +717,54 @@ export class ChatbotsService {
       });
 
       const data = await response.json();
-      if (!data?.data?.bot_id) return false;
+      if (!response.ok || !data?.data?.bot_id) {
+        throw new Error(
+          `API call failed: ${data?.message || 'No bot_id returned'}`,
+        );
+      }
 
+      // Cập nhật chatbot
       chatbot.external_bot_id = data.data.bot_id;
       chatbot.description = updateChatbotDto.description ?? chatbot.description;
       const updatedChatbot = await this.chatbotRepository.save(chatbot);
 
       return updatedChatbot;
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error updating chatbot:', error.message);
+      throw new InternalServerErrorException('Failed to update chatbot');
     }
   }
 
   async updateBasicInfoChatbot(
+    userId: string,
     chatbotId: string,
     updateChatbotDto: UpdateChatbotDto,
   ) {
-    const chatbot = await this.chatbotRepository.findOne({
-      where: { id: chatbotId },
-      select: {
-        id: true,
-        external_bot_id: true,
-        description: true,
-        user: {
-          id: true,
-          api_token: {
-            id: true,
-            token: true,
-          },
-        },
-        model: { id: true },
-      },
-      relations: {
-        model: true,
-        user: {
-          api_token: true,
-        },
-      },
-    });
+    // Lấy chatbot với quan hệ và kiểm tra quyền sở hữu
+    const chatbot = await this.chatbotRepository
+      .createQueryBuilder('chatbot')
+      .leftJoinAndSelect('chatbot.user', 'user')
+      .leftJoinAndSelect('user.api_token', 'api_token')
+      .leftJoinAndSelect('chatbot.model', 'model')
+      .where('chatbot.id = :chatbotId')
+      .andWhere('user.id = :userId')
+      .setParameters({ chatbotId, userId })
+      .getOne();
 
-    if (!chatbot) return false;
+    if (!chatbot) {
+      throw new NotFoundException('Chatbot not found');
+    }
+
+    if (!chatbot.external_bot_id) {
+      throw new BadRequestException('Chatbot does not have an external bot ID');
+    }
+
+    if (!chatbot.user?.api_token?.token) {
+      throw new BadRequestException('User API token is missing');
+    }
 
     try {
+      // Gọi API Coze để cập nhật chatbot
       const response = await fetch('https://api.coze.com/v1/bot/update', {
         method: 'POST',
         headers: {
@@ -710,59 +780,73 @@ export class ChatbotsService {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(
+          `HTTP error! Status: ${response.status}, Message: ${errorData?.message || 'Unknown error'}`,
+        );
       }
 
       const data = await response.json();
       if (data.code != 0) {
-        throw new BadRequestException('Cannot update external bot');
+        throw new BadRequestException(
+          `Cannot update external bot: ${data.message || 'Unknown error'}`,
+        );
       }
 
-      await this.chatbotRepository.update(chatbot.id, {
-        chatbot_name: updateChatbotDto.chatbot_name,
-        description: updateChatbotDto.description || chatbot.description,
-        model: {
-          id: updateChatbotDto.model_info_config?.model_id || chatbot.model.id,
-        },
-      });
+      // Cập nhật chatbot
+      chatbot.chatbot_name = updateChatbotDto.chatbot_name;
+      chatbot.description = updateChatbotDto.description || chatbot.description;
+      if (updateChatbotDto.model_info_config?.model_id) {
+        chatbot.model = {
+          id: updateChatbotDto.model_info_config.model_id,
+        } as any;
+      }
 
-      return this.chatbotRepository.findOne({
-        where: {
-          id: chatbotId,
-        },
-        select: {
-          model: {
-            id: true,
-            model_name: true,
-          },
-        },
-        relations: {
-          model: true,
-        },
-      });
+      const updatedChatbot = await this.chatbotRepository.save(chatbot);
+
+      return updatedChatbot;
     } catch (error) {
       console.error('Error updating bot:', error.message);
-      throw new InternalServerErrorException('Failed to update chatbot.');
+      throw new InternalServerErrorException(
+        `Failed to update chatbot: ${error.message}`,
+      );
     }
   }
 
-  async importKnowledge(chatbotId: string, knowledgeDto: KnowledgeDto) {
-    const chatbot = await this.chatbotRepository.findOne({
-      where: { id: chatbotId },
-      select: {
-        id: true,
-        external_bot_id: true,
-      },
-    });
+  async importKnowledge(
+    userId: string,
+    chatbotId: string,
+    knowledgeDto: KnowledgeDto,
+  ) {
+    // Lấy chatbot với quan hệ và kiểm tra quyền sở hữu
+    const chatbot = await this.chatbotRepository
+      .createQueryBuilder('chatbot')
+      .leftJoinAndSelect('chatbot.user', 'user')
+      .leftJoinAndSelect('user.api_token', 'api_token')
+      .where('chatbot.id = :chatbotId')
+      .andWhere('user.id = :userId')
+      .setParameters({ chatbotId, userId })
+      .getOne();
 
-    if (!chatbot) return false;
+    if (!chatbot) {
+      throw new NotFoundException('Chatbot not found');
+    }
+
+    if (!chatbot.external_bot_id) {
+      throw new BadRequestException('Chatbot does not have an external bot ID');
+    }
+
+    if (!chatbot.user?.api_token?.token) {
+      throw new BadRequestException('User API token is missing');
+    }
 
     try {
+      // Gọi API Coze để cập nhật knowledge
       const response = await fetch('https://api.coze.com/v1/bot/update', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${knowledgeDto.api_token}`,
+          Authorization: `Bearer ${chatbot.user.api_token.token}`,
         },
         body: JSON.stringify({
           bot_id: chatbot.external_bot_id,
@@ -771,38 +855,53 @@ export class ChatbotsService {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(
+          `HTTP error! Status: ${response.status}, Message: ${errorData?.message || 'Unknown error'}`,
+        );
       }
 
       const data = await response.json();
       if (data.code != 0) {
-        throw new BadRequestException('Cannot update external bot');
+        throw new BadRequestException(
+          `Cannot update external bot: ${data.message || 'Unknown error'}`,
+        );
       }
 
       const externalResourceIds = knowledgeDto.dataset_ids;
 
-      if (
-        Array.isArray(externalResourceIds) &&
-        externalResourceIds.length > 0
-      ) {
+      if (externalResourceIds.length > 0) {
+        // Lấy resources tương ứng với external_resource_ids
         const matchedResources = await this.resourceRepository.find({
           where: { external_resource_id: In(externalResourceIds) },
           select: ['id', 'external_resource_id'],
         });
 
+        if (matchedResources.length === 0) {
+          throw new BadRequestException(
+            'No matching resources found for the provided dataset IDs',
+          );
+        }
+
         const resourceIdMap = new Map(
           matchedResources.map((r) => [r.external_resource_id, r.id]),
         );
 
-        const existingRelations = await this.chatbotResourceRepository.find({
-          where: { chatbot: { id: chatbot.id } },
-          relations: ['resource'],
-        });
+        // Lấy existing relations tối ưu bằng Query Builder
+        const existingRelations = await this.chatbotResourceRepository
+          .createQueryBuilder('chatbotResource')
+          .leftJoinAndSelect('chatbotResource.resource', 'resource')
+          .where('chatbotResource.chatbotId = :chatbotId', {
+            chatbotId: chatbot.id,
+          })
+          .select(['chatbotResource.id', 'resource.id'])
+          .getMany();
 
         const existingResourceIds = new Set(
           existingRelations.map((r) => r.resource.id),
         );
 
+        // Tạo quan hệ mới
         const toInsert = externalResourceIds
           .map((externalId) => resourceIdMap.get(externalId))
           .filter((id) => id && !existingResourceIds.has(id))
@@ -820,27 +919,46 @@ export class ChatbotsService {
       return true;
     } catch (error) {
       console.error('Error updating bot:', error.message);
-      throw new InternalServerErrorException('Failed to update chatbot.');
+      throw new InternalServerErrorException(
+        `Failed to update chatbot: ${error.message}`,
+      );
     }
   }
 
-  async importPrompt(chatbotId: string, promptInfoDto: PromptInfoDto) {
-    const chatbot = await this.chatbotRepository.findOne({
-      where: { id: chatbotId },
-      select: {
-        id: true,
-        external_bot_id: true,
-      },
-    });
+  async importPrompt(
+    userId: string,
+    chatbotId: string,
+    promptInfoDto: PromptInfoDto,
+  ) {
+    // Lấy chatbot với quan hệ và kiểm tra quyền sở hữu
+    const chatbot = await this.chatbotRepository
+      .createQueryBuilder('chatbot')
+      .leftJoinAndSelect('chatbot.user', 'user')
+      .leftJoinAndSelect('user.api_token', 'api_token')
+      .where('chatbot.id = :chatbotId')
+      .andWhere('user.id = :userId')
+      .setParameters({ chatbotId, userId })
+      .getOne();
 
-    if (!chatbot) return false;
+    if (!chatbot) {
+      throw new NotFoundException('Chatbot not found');
+    }
+
+    if (!chatbot.external_bot_id) {
+      throw new BadRequestException('Chatbot does not have an external bot ID');
+    }
+
+    if (!chatbot.user?.api_token?.token) {
+      throw new BadRequestException('User API token is missing');
+    }
 
     try {
+      // Gọi API Coze để cập nhật prompt
       const response = await fetch('https://api.coze.com/v1/bot/update', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${promptInfoDto.api_token}`,
+          Authorization: `Bearer ${chatbot.user.api_token.token}`,
         },
         body: JSON.stringify({
           bot_id: chatbot.external_bot_id,
@@ -851,43 +969,60 @@ export class ChatbotsService {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(
+          `HTTP error! Status: ${response.status}, Message: ${errorData?.message || 'Unknown error'}`,
+        );
       }
 
       const data = await response.json();
       if (data.code != 0) {
-        throw new BadRequestException('Cannot update external bot');
+        throw new BadRequestException(
+          `Cannot update external bot: ${data.message || 'Unknown error'}`,
+        );
       }
 
-      await this.chatbotRepository.update(chatbot.id, {
-        prompt_info: promptInfoDto.prompt_info,
-      });
+      // Cập nhật chatbot
+      chatbot.prompt_info = promptInfoDto.prompt_info;
+      const updatedChatbot = await this.chatbotRepository.save(chatbot);
 
-      return this.chatbotRepository.findOne({
-        where: {
-          id: chatbotId,
-        },
-      });
+      return updatedChatbot;
     } catch (error) {
       console.error('Error updating bot:', error.message);
-      throw new InternalServerErrorException('Failed to update chatbot.');
+      throw new InternalServerErrorException(
+        `Failed to update chatbot: ${error.message}`,
+      );
     }
   }
 
   async createOnboarding(
+    userId: string,
     chatbotId: string,
     createChatbotOnboardingDto: CreateChatbotOnboardingDto,
   ) {
-    const chatbot = await this.chatbotRepository.findOne({
-      where: { id: chatbotId },
-      select: {
-        id: true,
-        external_bot_id: true,
-      },
-    });
+    // Lấy chatbot với quan hệ và kiểm tra quyền sở hữu
+    const chatbot = await this.chatbotRepository
+      .createQueryBuilder('chatbot')
+      .leftJoinAndSelect('chatbot.user', 'user')
+      .leftJoinAndSelect('user.api_token', 'api_token')
+      .where('chatbot.id = :chatbotId')
+      .andWhere('user.id = :userId')
+      .setParameters({ chatbotId, userId })
+      .getOne();
 
-    if (!chatbot) return false;
+    if (!chatbot) {
+      throw new NotFoundException('Chatbot not found');
+    }
 
+    if (!chatbot.external_bot_id) {
+      throw new BadRequestException('Chatbot does not have an external bot ID');
+    }
+
+    if (!chatbot.user?.api_token?.token) {
+      throw new BadRequestException('User API token is missing');
+    }
+
+    // Tạo onboardingInfo
     const onboardingInfo: Record<string, any> = {
       prologue: createChatbotOnboardingDto.prologue,
     };
@@ -896,16 +1031,28 @@ export class ChatbotsService {
       Array.isArray(createChatbotOnboardingDto.suggested_questions) &&
       createChatbotOnboardingDto.suggested_questions.length > 0
     ) {
-      onboardingInfo.suggested_questions =
-        createChatbotOnboardingDto.suggested_questions.map((q) => q.question);
+      const questions = createChatbotOnboardingDto.suggested_questions;
+      if (
+        questions.some((q) => !q.question || typeof q.position !== 'number')
+      ) {
+        throw new BadRequestException(
+          'Suggested questions must have valid question and position',
+        );
+      }
+      onboardingInfo.suggested_questions = questions.map((q) => q.question);
     }
 
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
+      // Gọi API Coze để cập nhật onboarding_info
       const response = await fetch('https://api.coze.com/v1/bot/update', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${createChatbotOnboardingDto.api_token}`,
+          Authorization: `Bearer ${chatbot.user.api_token.token}`,
         },
         body: JSON.stringify({
           bot_id: chatbot.external_bot_id,
@@ -914,20 +1061,27 @@ export class ChatbotsService {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(
+          `HTTP error! Status: ${response.status}, Message: ${errorData?.message || 'Unknown error'}`,
+        );
       }
 
       const data = await response.json();
-      if (data.code != 0) {
-        throw new BadRequestException('Cannot update external bot');
+      if (data.code !== 0) {
+        throw new BadRequestException(
+          `Cannot update external bot: ${data.message || 'Unknown error'}`,
+        );
       }
 
+      // Lưu ChatbotOnboarding
       const newOnboarding = this.chatbotOnboardingRepository.create({
         ...createChatbotOnboardingDto,
         chatbot,
       });
-      await this.chatbotOnboardingRepository.save(newOnboarding);
+      await queryRunner.manager.save(newOnboarding);
 
+      // Lưu suggested_questions nếu có
       if (
         Array.isArray(createChatbotOnboardingDto.suggested_questions) &&
         createChatbotOnboardingDto.suggested_questions.length > 0
@@ -940,44 +1094,52 @@ export class ChatbotsService {
               position: q.position,
             }),
           );
-
-        await this.suggestRepository.save(questionsToSave);
+        await queryRunner.manager.save(questionsToSave);
       }
 
-      return newOnboarding;
+      await queryRunner.commitTransaction();
+      return { success: true, data: newOnboarding };
     } catch (error) {
-      console.error('Error updating bot:', error.message);
-      throw new InternalServerErrorException('Failed to update chatbot.');
+      await queryRunner.rollbackTransaction();
+      console.error('Error creating onboarding:', error.message);
+      throw new InternalServerErrorException(
+        `Failed to create onboarding: ${error.message}`,
+      );
+    } finally {
+      await queryRunner.release();
     }
   }
 
   async updateChatbotOnboarding(
+    userId: string,
     chatbotId: string,
     onboardingId: string,
     updateChatbotOnboardingDto: UpdateChatbotOnboardingDto,
   ) {
-    const {
-      prologue,
-      suggested_questions = [],
-      api_token,
-    } = updateChatbotOnboardingDto;
+    const { prologue, suggested_questions = [] } = updateChatbotOnboardingDto;
 
-    const chatbot = await this.chatbotRepository.findOne({
-      where: {
-        id: chatbotId,
-        onboarding: {
-          id: onboardingId,
-        },
-      },
-      select: {
-        id: true,
-        external_bot_id: true,
-      },
-    });
+    // Lấy chatbot với quan hệ và kiểm tra quyền sở hữu
+    const chatbot = await this.chatbotRepository
+      .createQueryBuilder('chatbot')
+      .leftJoinAndSelect('chatbot.user', 'user')
+      .leftJoinAndSelect('user.api_token', 'api_token')
+      .leftJoinAndSelect('chatbot.onboarding', 'onboarding')
+      .where('chatbot.id = :chatbotId')
+      .andWhere('user.id = :userId')
+      .andWhere('onboarding.id = :onboardingId')
+      .setParameters({ chatbotId, userId, onboardingId })
+      .getOne();
 
-    if (!chatbot) return false;
+    if (!chatbot || !chatbot.onboarding) {
+      throw new NotFoundException('Chatbot or onboarding not found');
+    }
+
     if (!chatbot.external_bot_id) {
       throw new BadRequestException('External bot ID is missing');
+    }
+
+    if (!chatbot.user?.api_token?.token) {
+      throw new BadRequestException('User API token is missing');
     }
 
     const onboardingInfo: Record<string, any> = {};
@@ -987,91 +1149,88 @@ export class ChatbotsService {
     await queryRunner.startTransaction();
 
     try {
-      // Update prologue in database
+      // Cập nhật prologue nếu có
       if (prologue !== undefined) {
-        await queryRunner.manager.update(
-          this.chatbotOnboardingRepository.target,
-          onboardingId,
-          {
-            prologue,
-          },
-        );
+        await queryRunner.manager.update(ChatbotOnboarding, onboardingId, {
+          prologue,
+        });
         onboardingInfo.prologue = prologue;
       }
 
-      // Always delete old suggested questions
+      // Xóa suggested questions cũ
       await queryRunner.manager.delete(OnboardingSuggestedQuestion, {
         chatbot_onboarding: { id: onboardingId },
       });
 
-      // If client sent suggested_questions, insert them
+      // Thêm suggested questions mới nếu có
       if (
         Array.isArray(suggested_questions) &&
         suggested_questions.length > 0
       ) {
+        const newQuestions = suggested_questions.map((q) => ({
+          position: q.position,
+          question: q.question,
+          chatbot_onboarding: { id: onboardingId },
+        }));
         await queryRunner.manager.insert(
           OnboardingSuggestedQuestion,
-          suggested_questions.map((q) => ({
-            position: q.position,
-            question: q.question,
-            chatbot_onboarding: { id: onboardingId },
-          })),
+          newQuestions,
         );
-
         onboardingInfo.suggested_questions = suggested_questions.map(
           (q) => q.question,
         );
       }
 
+      // Gọi API Coze nếu có thay đổi
+      if (Object.keys(onboardingInfo).length > 0) {
+        const response = await fetch('https://api.coze.com/v1/bot/update', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${chatbot.user.api_token.token}`,
+          },
+          body: JSON.stringify({
+            bot_id: chatbot.external_bot_id,
+            onboarding_info: onboardingInfo,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            `HTTP error! Status: ${response.status}, Message: ${errorData?.message || 'Unknown error'}`,
+          );
+        }
+
+        const data = await response.json();
+        if (data.code !== 0) {
+          throw new BadRequestException(
+            `Cannot update external bot: ${data.message || 'Unknown error'}`,
+          );
+        }
+      }
+
       await queryRunner.commitTransaction();
-    } catch (err) {
+
+      // Lấy thông tin onboarding đã cập nhật
+      const updatedOnboarding = await this.chatbotOnboardingRepository
+        .createQueryBuilder('onboarding')
+        .leftJoinAndSelect(
+          'onboarding.suggested_questions',
+          'suggested_questions',
+        )
+        .where('onboarding.id = :id', { id: onboardingId })
+        .getOne();
+
+      return updatedOnboarding;
+    } catch (error) {
       await queryRunner.rollbackTransaction();
-      console.error('DB transaction error:', err);
+      console.error('Error updating onboarding:', error.message);
       throw new InternalServerErrorException(
-        'Failed to update onboarding data',
+        `Failed to update onboarding: ${error.message}`,
       );
     } finally {
       await queryRunner.release();
-    }
-
-    // Call Coze API
-    try {
-      const response = await fetch('https://api.coze.com/v1/bot/update', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${api_token}`,
-        },
-        body: JSON.stringify({
-          bot_id: chatbot.external_bot_id,
-          onboarding_info: onboardingInfo,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      if (data.code != 0) {
-        throw new BadRequestException('Cannot update external bot');
-      }
-
-      return this.chatbotOnboardingRepository
-        .createQueryBuilder('onboarding')
-        .leftJoinAndSelect('onboarding.suggested_questions', 'sq')
-        .select([
-          'onboarding.id',
-          'onboarding.prologue',
-          'sq.id',
-          'sq.position',
-          'sq.question',
-        ])
-        .where('onboarding.id = :id', { id: onboardingId })
-        .getOne();
-    } catch (error) {
-      console.error('Error updating bot:', error.message);
-      throw new InternalServerErrorException('Failed to update chatbot');
     }
   }
 

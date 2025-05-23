@@ -3,9 +3,6 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { CreateOnboardingSuggestedQuestionDto } from '@modules/onboarding-suggested-questions/dto/create-onboarding-suggested-question.dto';
 export class CreateChatbotOnboardingDto {
-  @IsNotEmpty({ message: 'Api token required' })
-  api_token: string;
-
   @IsString()
   @ApiProperty({ example: 'Welcome to the chatbot!' })
   @IsNotEmpty({ message: 'Must have prologue' })

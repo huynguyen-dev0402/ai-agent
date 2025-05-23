@@ -3,13 +3,6 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class PromptInfoDto {
   @ApiProperty({
-    description: 'The API token used for authorization.',
-    example: 'your-api-token-here',
-  })
-  @IsNotEmpty({ message: 'Api token required' })
-  api_token: string;
-
-  @ApiProperty({
     description: 'The name of the prompt (optional).',
     example: 'Prompt Name',
     required: false,
