@@ -365,6 +365,8 @@ export class UserSubscriptionsService {
     const defaultSelect = {
       id: true,
       status: true,
+      start_date: true,
+      end_date: true,
       subscription: {
         name: true,
         message_limit: true,

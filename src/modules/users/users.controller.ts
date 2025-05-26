@@ -129,33 +129,6 @@ export class UsersController {
     return successResponse('Chatbot created successfully.', newChatbot);
   }
 
-  @Patch('/:userId/chatbots/:chatbotId')
-  @UseGuards(UserIdMatchGuard)
-  @ApiOperation({ summary: 'Update a chatbot' })
-  @ApiParam({ name: 'userId', required: true, description: 'ID of the user' })
-  @ApiParam({
-    name: 'chatbotId',
-    required: true,
-    description: 'ID of the chatbot',
-  })
-  @ApiResponse({ status: 200, description: 'Chatbot updated successfully.' })
-  @ApiResponse({ status: 400, description: 'Failed to update chatbot.' })
-  async updateChatbotByUser(
-    @Param('userId') id: string,
-    @Param('chatbotId') chatbotId: string,
-    @Body(new ValidationPipe()) updateChatbotDto: UpdateChatbotDto,
-  ) {
-    const updatedChatbot = await this.chatbotService.updateChatbotByUser(
-      id,
-      chatbotId,
-      updateChatbotDto,
-    );
-    if (!updatedChatbot) {
-      throw new BadRequestException('Failed to update chatbot.');
-    }
-    return successResponse('Chatbot updated successfully.', updatedChatbot);
-  }
-
   @Patch('/:userId/chatbots/:chatbotId/config-basic')
   @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Update basic configuration of chatbot' })

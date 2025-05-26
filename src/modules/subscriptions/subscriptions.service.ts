@@ -13,6 +13,7 @@ import {
   UsageAction,
 } from '@modules/usage-logs/entities/usage-log.entity';
 import { UsageLogsService } from '@modules/usage-logs/usage-logs.service';
+import { SubscriptionStatus } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
 @Injectable()
 export class SubscriptionsService {
   constructor(
@@ -112,6 +113,7 @@ export class SubscriptionsService {
           user: {
             id: userId,
           },
+          status: SubscriptionStatus.ACTIVE,
         },
       },
     });

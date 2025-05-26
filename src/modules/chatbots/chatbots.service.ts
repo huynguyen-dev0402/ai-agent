@@ -676,65 +676,6 @@ export class ChatbotsService {
     return chatbot;
   }
 
-  async updateChatbotByUser(
-    userId: string,
-    chatbotId: string,
-    updateChatbotDto: UpdateChatbotDto,
-  ) {
-    // Kiểm tra workspace
-    const workspace = await this.workspaceService.findWorkspaceByUserId(userId);
-    if (!workspace) {
-      throw new NotFoundException('Workspace not found');
-    }
-
-    // Lấy chatbot với quan hệ
-    const chatbot = await this.chatbotRepository
-      .createQueryBuilder('chatbot')
-      .leftJoinAndSelect('chatbot.user', 'user')
-      .leftJoinAndSelect('user.api_token', 'api_token')
-      .leftJoinAndSelect('chatbot.model', 'model')
-      .where('chatbot.id = :chatbotId')
-      .andWhere('user.id = :userId')
-      .setParameters({ chatbotId, userId })
-      .getOne();
-
-    if (!chatbot) {
-      return false;
-    }
-
-    try {
-      const response = await fetch('https://api.coze.com/v1/bot/create', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${chatbot.user.api_token.token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          space_id: workspace.external_space_id,
-          name: chatbot.chatbot_name,
-          description: updateChatbotDto.description || null,
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok || !data?.data?.bot_id) {
-        throw new Error(
-          `API call failed: ${data?.message || 'No bot_id returned'}`,
-        );
-      }
-
-      // Cập nhật chatbot
-      chatbot.external_bot_id = data.data.bot_id;
-      chatbot.description = updateChatbotDto.description ?? chatbot.description;
-      const updatedChatbot = await this.chatbotRepository.save(chatbot);
-
-      return updatedChatbot;
-    } catch (error) {
-      console.error('Error updating chatbot:', error.message);
-      throw new InternalServerErrorException('Failed to update chatbot');
-    }
-  }
-
   async updateBasicInfoChatbot(
     userId: string,
     chatbotId: string,
