@@ -132,28 +132,39 @@ export class ChatbotsService {
     chatWithChatbotDto: ChatWithChatbotDto,
     res: Response,
   ) {
-    const chatbot = await this.chatbotRepository
-      .createQueryBuilder('chatbot')
-      .leftJoinAndSelect('chatbot.user', 'user')
-      .leftJoinAndSelect('user.api_token', 'api_token')
-      .select([
-        'chatbot.id',
-        'chatbot.external_bot_id',
-        'user.id',
-        'user.external_user_id',
-        'api_token.id',
-        'api_token.token',
-      ])
-      .where('chatbot.id = :chatbotId', { chatbotId })
-      .getOne();
-
+    const [chatbot, conversation] = await Promise.all([
+      this.chatbotRepository.findOne({
+        where: { id: chatbotId },
+        relations: {
+          user: { api_token: true },
+        },
+        select: {
+          id: true,
+          external_bot_id: true,
+          status: true,
+          user: {
+            id: true,
+            external_user_id: true,
+            api_token: {
+              id: true,
+              token: true,
+            },
+          },
+        },
+      }),
+      this.conversationRepository.findOne({
+        where: { id: chatWithChatbotDto.conversation_id },
+        select: { id: true },
+      }),
+    ]);
     if (!chatbot) {
       throw new NotFoundException('Chatbot not found');
     }
 
-    const conversation = await this.conversationRepository.findOneBy({
-      id: chatWithChatbotDto.conversation_id,
-    });
+    const { status } = chatbot;
+    if (status === ChatbotStatus.DRAFT || status === ChatbotStatus.INACTIVE) {
+      throw new NotFoundException('Chatbot is not active or published');
+    }
 
     if (!conversation) {
       throw new NotFoundException('Conversation not found');
@@ -372,6 +383,12 @@ export class ChatbotsService {
     }
     if (!conversation) {
       throw new NotFoundException('Conversation not found');
+    }
+
+    // Kiểm tra chatbot active
+    const { status } = chatbot;
+    if (status === ChatbotStatus.DRAFT || status === ChatbotStatus.INACTIVE) {
+      throw new NotFoundException('Chatbot is not active or published');
     }
 
     await this.messageService.saveMessageUser({
@@ -618,12 +635,16 @@ export class ChatbotsService {
       throw new NotFoundException('Chatbot not found');
     }
 
-    if (!chatbot.external_bot_id) {
-      throw new BadRequestException('Chatbot does not have an external bot ID');
+    const { status } = chatbot;
+    if (
+      status === ChatbotStatus.PUBLISHED ||
+      status === ChatbotStatus.INACTIVE
+    ) {
+      throw new NotFoundException('Chatbot is not active or published');
     }
 
-    if (!chatbot.user?.api_token?.token) {
-      throw new BadRequestException('User API token is missing');
+    if (!chatbot.external_bot_id) {
+      throw new BadRequestException('Chatbot does not have an external bot ID');
     }
 
     try {
@@ -696,12 +717,12 @@ export class ChatbotsService {
       throw new NotFoundException('Chatbot not found');
     }
 
-    if (!chatbot.external_bot_id) {
-      throw new BadRequestException('Chatbot does not have an external bot ID');
+    if (chatbot.status === ChatbotStatus.INACTIVE) {
+      throw new NotFoundException('Chatbot is not active');
     }
 
-    if (!chatbot.user?.api_token?.token) {
-      throw new BadRequestException('User API token is missing');
+    if (!chatbot.external_bot_id) {
+      throw new BadRequestException('Chatbot does not have an external bot ID');
     }
 
     try {
@@ -777,8 +798,8 @@ export class ChatbotsService {
       throw new BadRequestException('Chatbot does not have an external bot ID');
     }
 
-    if (!chatbot.user?.api_token?.token) {
-      throw new BadRequestException('User API token is missing');
+    if (chatbot.status === ChatbotStatus.INACTIVE) {
+      throw new NotFoundException('Chatbot is not active');
     }
 
     try {
@@ -889,8 +910,8 @@ export class ChatbotsService {
       throw new BadRequestException('Chatbot does not have an external bot ID');
     }
 
-    if (!chatbot.user?.api_token?.token) {
-      throw new BadRequestException('User API token is missing');
+    if (chatbot.status === ChatbotStatus.INACTIVE) {
+      throw new NotFoundException('Chatbot is not active');
     }
 
     try {
@@ -959,8 +980,8 @@ export class ChatbotsService {
       throw new BadRequestException('Chatbot does not have an external bot ID');
     }
 
-    if (!chatbot.user?.api_token?.token) {
-      throw new BadRequestException('User API token is missing');
+    if (chatbot.status === ChatbotStatus.INACTIVE) {
+      throw new NotFoundException('Chatbot is not active');
     }
 
     // Tạo onboardingInfo
@@ -1079,8 +1100,8 @@ export class ChatbotsService {
       throw new BadRequestException('External bot ID is missing');
     }
 
-    if (!chatbot.user?.api_token?.token) {
-      throw new BadRequestException('User API token is missing');
+    if (chatbot.status === ChatbotStatus.INACTIVE) {
+      throw new NotFoundException('Chatbot is not active');
     }
 
     const onboardingInfo: Record<string, any> = {};

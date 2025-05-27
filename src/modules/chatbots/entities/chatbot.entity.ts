@@ -20,6 +20,7 @@ import { ChatbotEmbedLog } from '@modules/chatbot-embed/entities/chatbot-embed-l
 export enum ChatbotStatus {
   DRAFT = 'draft',
   PUBLISHED = 'published',
+  INACTIVE = 'inactive',
 }
 
 @Entity('chatbots')

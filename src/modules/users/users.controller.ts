@@ -658,9 +658,6 @@ export class UsersController {
     const userSubscription = await this.userSubscriptionService.findOneForUser(
       request.user.id,
     );
-    if (!userSubscription) {
-      throw new NotFoundException('No active subscription found for this user');
-    }
     return {
       success: true,
       message: 'Subscriptions retrieved successfully',

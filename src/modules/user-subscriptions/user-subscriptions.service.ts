@@ -4,7 +4,7 @@ import {
   NotFoundException,
   Logger,
 } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { Between, In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   UserSubscriptions,
@@ -16,6 +16,10 @@ import { UserStatus } from '@modules/users/entities/user.entity';
 import { PaymentsService } from '@modules/payments/payments.service';
 import { TransactionsService } from '@modules/transactions/transactions.service';
 import { TransactionTemplate } from '@modules/transactions/dto/generate-qr.dto';
+import {
+  Chatbot,
+  ChatbotStatus,
+} from '@modules/chatbots/entities/chatbot.entity';
 
 @Injectable()
 export class UserSubscriptionsService {
@@ -24,6 +28,8 @@ export class UserSubscriptionsService {
   constructor(
     @InjectRepository(UserSubscriptions)
     private readonly userSubRepository: Repository<UserSubscriptions>,
+    @InjectRepository(Chatbot)
+    private readonly chatbotRepository: Repository<Chatbot>,
     @InjectRepository(Subscription)
     private readonly subscriptionRepository: Repository<Subscription>,
     private readonly userService: UsersService,
@@ -32,58 +38,60 @@ export class UserSubscriptionsService {
   ) {}
 
   async subscribe(userId: string, subscriptionId: string) {
-    return this.userSubRepository.manager.transaction(async (manager) => {
-      this.logger.log(
-        `Initiating subscription for user ${userId} with subscription ${subscriptionId}`,
-      );
-
-      const user = await this.userService.findOne(userId);
-      if (!user) throw new NotFoundException('User not found.');
-      if (user.status === UserStatus.INACTIVE) {
-        throw new BadRequestException('User is inactive and cannot subscribe.');
-      }
-
-      const subscription = await manager.findOne(Subscription, {
+    this.logger.log(
+      `Initiating subscription for user ${userId} with subscription ${subscriptionId}`,
+    );
+    const [user, subscription, userSubscriptions] = await Promise.all([
+      this.userService.findOne(userId),
+      this.subscriptionRepository.findOne({
         where: { id: subscriptionId },
-      });
-      if (!subscription) throw new NotFoundException('Subscription not found');
+      }),
+      this.userSubRepository.find({
+        where: {
+          user: { id: userId },
+          status: In([SubscriptionStatus.ACTIVE, SubscriptionStatus.EXPIRED]),
+        },
+        relations: ['subscription'], // Eager loading để lấy thông tin subscription
+      }),
+    ]);
 
-      const userSubscriptions = await manager.find(UserSubscriptions, {
-        where: { user: { id: userId } },
-      });
+    // Kiểm tra lỗi
+    if (!user) throw new NotFoundException('User not found.');
+    if (user.status === UserStatus.INACTIVE) {
+      throw new BadRequestException('User is inactive and cannot subscribe.');
+    }
+    if (!subscription) throw new NotFoundException('Subscription not found');
 
-      const activeSubscription = userSubscriptions.find(
-        (s) => s.status === SubscriptionStatus.ACTIVE,
+    // Kiểm tra active và expired subscription trực tiếp từ dữ liệu
+    const activeSubscription = userSubscriptions.find(
+      (s) => s.status === SubscriptionStatus.ACTIVE,
+    );
+    const expiredFreeSubscription = userSubscriptions.find(
+      (s) =>
+        s.status === SubscriptionStatus.EXPIRED &&
+        s.subscription.id === subscriptionId &&
+        s.subscription.price === 0,
+    );
+
+    if (activeSubscription) {
+      throw new BadRequestException(
+        'You are currently on a different plan. Please cancel before subscribing to a new plan.',
       );
-      const expiredSubscription = userSubscriptions.find(
-        (s) => s.status === SubscriptionStatus.EXPIRED,
+    }
+    if (subscription.price === 0 && expiredFreeSubscription) {
+      throw new BadRequestException(
+        'You have already used this free plan. You cannot re-subscribe.',
       );
-
-      if (activeSubscription) {
-        throw new BadRequestException(
-          'You are currently on a different plan. Please cancel before subscribing to a new plan.',
-        );
-      }
-
-      if (
-        subscription.price === 0 &&
-        expiredSubscription &&
-        expiredSubscription.subscription.id === subscription.id
-      ) {
-        throw new BadRequestException(
-          'You have already used this free plan. You cannot re-subscribe.',
-        );
-      }
-
-      const startDate = new Date();
-      const endDate = this.addMonthsManually(
-        startDate,
-        subscription.duration_months,
-      );
-      const isFree = subscription.price === 0;
-
+    }
+    const startDate = new Date();
+    const endDate = this.addMonthsManually(
+      startDate,
+      subscription.duration_months,
+    );
+    const isFree = subscription.price === 0;
+    return this.userSubRepository.manager.transaction(async (manager) => {
       const userSubscription = manager.create(UserSubscriptions, {
-        user: { id: user.id },
+        user: { id: userId },
         subscription: { id: subscription.id },
         start_date: startDate,
         end_date: endDate,
@@ -92,7 +100,7 @@ export class UserSubscriptionsService {
         ...(isFree
           ? {}
           : {
-              order_id: `SEVQR${subscription.subscription_code}${user.username}`,
+              order_id: `SEVQR${subscription.subscription_code}${user.username}TS${Date.now()}`,
             }),
       });
 
@@ -131,23 +139,10 @@ export class UserSubscriptionsService {
         `Upgrading subscription for user ${userId} to ${newSubscriptionId}`,
       );
 
-      const [user, newSubscription] = await Promise.all([
-        this.userService.findOne(userId),
-        manager.findOne(Subscription, {
-          where: { id: newSubscriptionId },
-          cache: true,
-        }),
-      ]);
-
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-
-      if (user.status === UserStatus.INACTIVE) {
-        throw new BadRequestException(
-          'User is inactive and cannot upgrade subscription.',
-        );
-      }
+      const newSubscription = await manager.findOne(Subscription, {
+        where: { id: newSubscriptionId },
+        cache: true,
+      });
 
       if (!newSubscription) {
         throw new NotFoundException('New subscription not found');
@@ -188,7 +183,7 @@ export class UserSubscriptionsService {
       );
 
       const newUserSubscription = manager.create(UserSubscriptions, {
-        user: { id: user.id },
+        user: { id: userId },
         subscription: { id: newSubscriptionId },
         start_date: startDate,
         end_date: endDate,
@@ -202,17 +197,6 @@ export class UserSubscriptionsService {
 
   async extendSubscription(userId: string): Promise<UserSubscriptions> {
     this.logger.log(`Extending subscription for user ${userId}`);
-
-    const user = await this.userService.findOne(userId);
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    if (user.status === UserStatus.INACTIVE) {
-      throw new BadRequestException(
-        'User is inactive and cannot extend subscription.',
-      );
-    }
 
     const currentSubscription = await this.userSubRepository.findOne({
       where: { user: { id: userId }, status: SubscriptionStatus.ACTIVE },
@@ -248,17 +232,6 @@ export class UserSubscriptionsService {
   async renewSubscription(userId: string): Promise<boolean> {
     return this.userSubRepository.manager.transaction(async (manager) => {
       this.logger.log(`Renewing subscription for user ${userId}`);
-
-      const user = await this.userService.findOne(userId);
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-
-      if (user.status === UserStatus.INACTIVE) {
-        throw new BadRequestException(
-          'User is inactive and cannot renew subscription.',
-        );
-      }
 
       const expiredSubscription = await manager.findOne(UserSubscriptions, {
         where: {
@@ -312,36 +285,52 @@ export class UserSubscriptionsService {
   async cancelSubscription(userId: string): Promise<boolean> {
     this.logger.log(`Canceling subscription for user ${userId}`);
 
-    const user = await this.userService.findOne(userId);
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
+    return this.userSubRepository.manager.transaction(async (manager) => {
+      // Tìm gói đăng ký đang hoạt động
+      const currentSubscription = await manager.findOne(UserSubscriptions, {
+        where: {
+          user: { id: userId },
+          status: SubscriptionStatus.ACTIVE,
+        },
+        select: ['id', 'start_date', 'end_date'],
+      });
 
-    if (user.status === UserStatus.INACTIVE) {
-      throw new BadRequestException(
-        'User is inactive and cannot cancel subscription.',
+      if (!currentSubscription) {
+        throw new BadRequestException(
+          'User does not have an active subscription to cancel',
+        );
+      }
+
+      // Tìm tất cả chatbot được tạo trong khoảng thời gian start_date -> end_date
+      const chatbots = await manager.find(Chatbot, {
+        where: {
+          user: { id: userId },
+          created_at: Between(
+            currentSubscription.start_date,
+            currentSubscription.end_date,
+          ),
+        },
+        select: ['id'],
+      });
+
+      // Cập nhật trạng thái gói đăng ký thành CANCELED
+      await manager.update(
+        UserSubscriptions,
+        { id: currentSubscription.id },
+        { status: SubscriptionStatus.CANCELED },
       );
-    }
 
-    const currentSubscription = await this.userSubRepository.findOne({
-      where: {
-        user: { id: userId },
-        status: SubscriptionStatus.ACTIVE,
-      },
-      select: ['id'], // giảm payload nếu không cần thông tin khác
+      // Cập nhật trạng thái của tất cả chatbot thành inactive
+      if (chatbots.length > 0) {
+        await manager.update(
+          Chatbot,
+          { id: In(chatbots.map((chatbot) => chatbot.id)) },
+          { status: ChatbotStatus.INACTIVE },
+        );
+      }
+
+      return true;
     });
-
-    if (!currentSubscription) {
-      throw new BadRequestException(
-        'User does not have an active subscription to cancel',
-      );
-    }
-
-    await this.userSubRepository.update(currentSubscription.id, {
-      status: SubscriptionStatus.CANCELED,
-    });
-
-    return true;
   }
 
   async findOneForUser(

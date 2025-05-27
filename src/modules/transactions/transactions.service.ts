@@ -18,6 +18,7 @@ import {
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { UserStatus } from '@modules/users/entities/user.entity';
 
 @Injectable()
 export class TransactionsService {
@@ -31,6 +32,34 @@ export class TransactionsService {
     @InjectQueue('sepay-webhook') private readonly sepayQueue: Queue,
     private readonly eventEmitter: EventEmitter2,
   ) {}
+
+  async cancelPayment(userId: string) {
+    const payment = await this.getPaymentPending(userId);
+    if (!payment) {
+      throw new NotFoundException('Payment pending not found');
+    }
+    const result = await this.userSubRepository.delete({
+      id: payment.id,
+    });
+    return result;
+  }
+
+  async getPaymentPending(userId: string) {
+    const result = await this.userSubRepository.findOne({
+      where: {
+        user: {
+          id: userId,
+          status: UserStatus.ACTIVE,
+        },
+        status: SubscriptionStatus.PENDING,
+      },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+    return result;
+  }
 
   async generateQR(
     generateQrDto: GenerateQRDto,
@@ -60,44 +89,9 @@ export class TransactionsService {
       throw new BadRequestException('Amount must be greater than zero.');
     }
 
-    // const subscription = await this.subscriptionService.findOne(
-    //   generateQrDto.subscription_id,
-    // );
-    // if (!subscription) {
-    //   this.logger.warn(
-    //     `Subscription not found: ${generateQrDto.subscription_id}`,
-    //   );
-    //   throw new NotFoundException('Subscription not found');
-    // }
-
-    // const userSub = await this.userSubRepository.findOne({
-    //   where: {
-    //     user: { id: generateQrDto.user_id },
-    //     subscription: { id: generateQrDto.subscription_id },
-    //     status: SubscriptionStatus.PENDING,
-    //   },
-    //   relations: {
-    //     user: true,
-    //   },
-    //   select: {
-    //     id: true,
-    //     user: {
-    //       id: true,
-    //       username: true,
-    //     },
-    //     order_id: true,
-    //   },
-    // });
-    // if (!userSub) {
-    //   this.logger.warn(
-    //     `User subscription not found for userId: ${generateQrDto.user_id}, subscriptionId: ${generateQrDto.subscription_id}`,
-    //   );
-    //   throw new NotFoundException('User subscription not found');
-    // }
-
     const orderId =
       generateQrDto.order_id ||
-      `SEVQR${generateQrDto.subscription_code}${generateQrDto.username}`;
+      `SEVQR${generateQrDto.subscription_code}${generateQrDto.username}TS${Date.now()}`;
     this.logger.debug(`Generated orderId: ${orderId}`);
     // await this.userSubRepository.update(userSub.id, { order_id: orderId });
     // this.logger.debug(`Updated user subscription with orderId: ${orderId}`);
@@ -138,7 +132,7 @@ export class TransactionsService {
     });
 
     const str = sePayWebhookDto.content;
-    const regex = /SEVQR(\d{4})(user\d+)/;
+    const regex = /^SEVQR(\d+)(user\d+)TS\d+$/;
     const match = str.match(regex);
 
     if (!match) {

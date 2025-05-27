@@ -9,10 +9,17 @@ import { UsersModule } from '@modules/users/users.module';
 import { UsageLog } from '@modules/usage-logs/entities/usage-log.entity';
 import { PaymentsModule } from '@modules/payments/payments.module';
 import { TransactionsModule } from '@modules/transactions/transactions.module';
+import { Chatbot } from '@modules/chatbots/entities/chatbot.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Subscription, UserSubscriptions, User, UsageLog]),
+    TypeOrmModule.forFeature([
+      Subscription,
+      UserSubscriptions,
+      User,
+      UsageLog,
+      Chatbot,
+    ]),
     TransactionsModule,
     forwardRef(() => UsersModule),
     forwardRef(() => PaymentsModule),

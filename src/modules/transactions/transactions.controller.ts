@@ -10,6 +10,8 @@ import {
   Sse,
   Logger,
   Param,
+  Get,
+  Query,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { ValidationPipe } from '@nestjs/common';
@@ -57,6 +59,69 @@ export class TransactionsController {
       throw error instanceof HttpException
         ? error
         : new InternalServerErrorException('Failed to generate QR code');
+    }
+  }
+
+  @Post('/cancel-payment')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Cancel a payment' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Payment canceled successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid input data',
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Failed to cancel payment',
+  })
+  async cancelPayment(
+    @Req() request: Request & { user: { [key: string]: string } },
+  ) {
+    try {
+      this.logger.log(`Canceling payment for user ${request.user.id}`);
+
+      const result = await this.transactionsService.cancelPayment(
+        request.user.id,
+      );
+
+      return {
+        success: true,
+        data: result,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to cancel payment: ${error.message}`);
+      throw error instanceof HttpException
+        ? error
+        : new InternalServerErrorException('Failed to cancel payment');
+    }
+  }
+
+  @Get('')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get payment with status is pending' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Find payment with status is pending',
+  })
+  async findPaymentPending(
+    @Req() request: Request & { user: { [key: string]: string } },
+  ) {
+    try {
+      const result = await this.transactionsService.getPaymentPending(
+        request.user.id,
+      );
+      return {
+        success: true,
+        data: result,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to find payment: ${error.message}`);
+      throw error instanceof HttpException
+        ? error
+        : new InternalServerErrorException('Failed to find payment');
     }
   }
 
