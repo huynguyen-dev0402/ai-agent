@@ -548,6 +548,62 @@ export class UsersController {
     );
   }
 
+  @Patch('/:userId/chatbots/:chatbotId/restore')
+  @UseGuards(UserIdMatchGuard)
+  @ApiOperation({ summary: 'Restore an inactive chatbot for user' })
+  @ApiParam({ name: 'userId', required: true, description: 'ID of the user' })
+  @ApiParam({
+    name: 'chatbotId',
+    required: true,
+    description: 'ID of the chatbot',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Chatbot restored successfully.',
+  })
+  @ApiResponse({ status: 400, description: 'Failed to restore chatbot.' })
+  async restoreChatbotByUser(
+    @Param('userId') userId: string,
+    @Param('chatbotId') chatbotId: string,
+  ) {
+    const restoredChatbot = await this.chatbotService.restoreChatbotByUser(
+      userId,
+      chatbotId,
+    );
+    if (!restoredChatbot) {
+      throw new BadRequestException('Failed to restore chatbot.');
+    }
+    return successResponse('Chatbot restored successfully.', restoredChatbot);
+  }
+
+  @Delete('/:userId/chatbots/:chatbotId')
+  @UseGuards(UserIdMatchGuard)
+  @ApiOperation({ summary: 'Delete a chatbot (set status to DELETED)' })
+  @ApiParam({ name: 'userId', required: true, description: 'ID of the user' })
+  @ApiParam({
+    name: 'chatbotId',
+    required: true,
+    description: 'ID of the chatbot',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Chatbot deleted successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'Chatbot not found' })
+  async removeChatbotByUser(
+    @Param('userId') userId: string,
+    @Param('chatbotId') chatbotId: string,
+  ) {
+    const deletedChatbot = await this.chatbotService.removeChatbotByUser(
+      userId,
+      chatbotId,
+    );
+    if (!deletedChatbot) {
+      throw new NotFoundException('Chatbot not found or already deleted');
+    }
+    return successResponse('Chatbot deleted successfully.', deletedChatbot);
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create a new user' })
   @ApiResponse({

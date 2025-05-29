@@ -12,6 +12,7 @@ import { User } from '@modules/users/entities/user.entity';
 import { Subscription } from '@modules/subscriptions/entities/subscription.entity';
 import { UsageLog } from '@modules/usage-logs/entities/usage-log.entity';
 import { Payment } from '@modules/payments/entities/payment.entity';
+import { Chatbot } from '@modules/chatbots/entities/chatbot.entity';
 
 export enum SubscriptionStatus {
   PENDING = 'pending',
@@ -33,6 +34,9 @@ export class UserSubscriptions {
   )
   @JoinColumn({ name: 'subscription_id' })
   subscription: Subscription;
+
+  @ManyToOne(() => Chatbot, (chatbot) => chatbot.user_subscriptions)
+  chatbots?: Chatbot[];
 
   @ManyToOne(() => User, (user) => user.user_subscriptions)
   @JoinColumn({ name: 'user_id' })

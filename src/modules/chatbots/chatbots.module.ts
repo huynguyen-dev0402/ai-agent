@@ -1,6 +1,4 @@
-import {
-  Module,
-} from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ChatbotsService } from '@modules/chatbots/chatbots.service';
 import { ChatbotsController } from '@modules/chatbots/chatbots.controller';
 import { Chatbot } from './entities/chatbot.entity';
@@ -26,6 +24,7 @@ import { Conversation } from '@modules/conversations/entities/conversation.entit
 import { ChatbotToken } from '@modules/chatbot-tokens/entities/chatbot-token.entity';
 import { ChatbotTokensModule } from '@modules/chatbot-tokens/chatbot-tokens.module';
 import { Domain } from '@modules/domains/entities/domain.entity';
+import { UserSubscriptions } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
 
 @Module({
   imports: [
@@ -40,7 +39,8 @@ import { Domain } from '@modules/domains/entities/domain.entity';
       Message,
       Conversation,
       ChatbotToken,
-      Domain
+      Domain,
+      UserSubscriptions,
     ]),
     AuthModule,
     WorkspacesModule,
@@ -49,7 +49,7 @@ import { Domain } from '@modules/domains/entities/domain.entity';
     UserSubscriptionsModule,
     UsageLogsModule,
     MessagesModule,
-    ChatbotTokensModule
+    ChatbotTokensModule,
   ],
   controllers: [ChatbotsController],
   providers: [ChatbotsService, CheckQuotaInterceptor, Reflector, QuotaService],

@@ -15,16 +15,38 @@ export class SepayWebhookProcessor extends WorkerHost {
   async process(job: Job<SePayWebhookDto>): Promise<void> {
     this.logger.log(`Processing webhook job ${job.id} with name ${job.name}`);
 
-    if (job.name === 'process-webhook') {
-      try {
-        await this.transactionsService.processSePayTransaction(job.data);
-        this.logger.log(`Webhook job ${job.id} processed successfully`);
-      } catch (error) {
-        this.logger.error(`Webhook job ${job.id} failed: ${error.message}`);
-        throw error;
+    try {
+      switch (job.name) {
+        case 'process-webhook-subscribe':
+          await this.transactionsService.processSubscribeSePayTransaction(
+            job.data,
+          );
+          break;
+        case 'process-webhook-extend':
+          await this.transactionsService.processExtendSePayTransaction(
+            job.data,
+          );
+          break;
+        case 'process-webhook-upgrade':
+          await this.transactionsService.processUpgradeSePayTransaction(
+            job.data,
+          );
+          break;
+        default:
+          this.logger.warn(`Unhandled job name: ${job.name}`);
+          return;
       }
-    } else {
-      this.logger.warn(`Unhandled job name: ${job.name}`);
+      this.logger.log(
+        `Webhook job ${job.id} (${job.name}) processed successfully`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Webhook job ${job.id} (${job.name}) failed: ${error.message}`,
+        error.stack,
+      );
+      throw error;
     }
   }
 }
+// This processor handles the processing of SePay webhook jobs.
+// It uses the TransactionsService to process different types of transactions

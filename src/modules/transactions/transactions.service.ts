@@ -5,6 +5,7 @@ import {
   NotFoundException,
   Logger,
 } from '@nestjs/common';
+import { DataSource, EntityManager } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -19,6 +20,10 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { UserStatus } from '@modules/users/entities/user.entity';
+import {
+  calcEndDate,
+  parseTransactionContent,
+} from '@common/utils/transaction/transaction.util';
 
 @Injectable()
 export class TransactionsService {
@@ -31,21 +36,26 @@ export class TransactionsService {
     private readonly userSubRepository: Repository<UserSubscriptions>,
     @InjectQueue('sepay-webhook') private readonly sepayQueue: Queue,
     private readonly eventEmitter: EventEmitter2,
+    private dataSource: DataSource,
   ) {}
 
   async cancelPayment(userId: string) {
+    this.logger.log(`Cancel payment requested for userId: ${userId}`);
     const payment = await this.getPaymentPending(userId);
     if (!payment) {
+      this.logger.warn(`No pending payment found for userId: ${userId}`);
       throw new NotFoundException('Payment pending not found');
     }
-    const result = await this.userSubRepository.delete({
-      id: payment.id,
-    });
+    const result = await this.userSubRepository.delete({ id: payment.id });
+    this.logger.log(
+      `Canceled payment for userId: ${userId}, result: ${JSON.stringify(result)}`,
+    );
     return result;
   }
 
   async getPaymentPending(userId: string) {
-    const result = await this.userSubRepository.findOne({
+    this.logger.debug(`Fetching pending payment for userId: ${userId}`);
+    return this.userSubRepository.findOne({
       where: {
         user: {
           id: userId,
@@ -53,19 +63,19 @@ export class TransactionsService {
         },
         status: SubscriptionStatus.PENDING,
       },
+      relations: ['subscription'],
       select: {
         id: true,
         status: true,
       },
     });
-    return result;
   }
 
   async generateQR(
     generateQrDto: GenerateQRDto,
   ): Promise<{ qrImageUrl: string; orderId: string }> {
     this.logger.log(
-      `Generating QR code for userId: ${generateQrDto.username}, subscriptionId: ${generateQrDto.subscription_code}`,
+      `Generating QR for user: ${generateQrDto.username}, subscription: ${generateQrDto.subscription_code}, amount: ${generateQrDto.amount}`,
     );
 
     const acc = this.configService.get<string>('ACCOUNT');
@@ -83,7 +93,6 @@ export class TransactionsService {
         'Environment variable BANK is not set.',
       );
     }
-
     if (generateQrDto.amount <= 0) {
       this.logger.warn(`Invalid amount: ${generateQrDto.amount}`);
       throw new BadRequestException('Amount must be greater than zero.');
@@ -93,8 +102,6 @@ export class TransactionsService {
       generateQrDto.order_id ||
       `SEVQR${generateQrDto.subscription_code}${generateQrDto.username}TS${Date.now()}`;
     this.logger.debug(`Generated orderId: ${orderId}`);
-    // await this.userSubRepository.update(userSub.id, { order_id: orderId });
-    // this.logger.debug(`Updated user subscription with orderId: ${orderId}`);
 
     const encodedDescription = encodeURIComponent(orderId);
 
@@ -116,42 +123,354 @@ export class TransactionsService {
     return { qrImageUrl, orderId };
   }
 
-  async queueSePayWebhook(sePayWebhookDto: SePayWebhookDto) {
-    this.logger.log(`Queuing SePay webhook`, { payload: sePayWebhookDto });
-    await this.sepayQueue.add('process-webhook', sePayWebhookDto, {
+  async queueSubscribeSePayWebhook(sePayWebhookDto: SePayWebhookDto) {
+    this.logger.log(
+      `Queuing subscribe webhook: ${JSON.stringify(sePayWebhookDto)}`,
+    );
+    await this.sepayQueue.add('process-webhook-subscribe', sePayWebhookDto, {
       attempts: 3,
       backoff: 5000,
     });
     this.logger.debug('Webhook successfully queued');
-    return { success: true, message: 'Webhook queued for processing' };
+    return {
+      success: true,
+      message: 'Webhook subscribe queued for processing',
+    };
   }
 
-  async processSePayTransaction(sePayWebhookDto: SePayWebhookDto) {
-    this.logger.log(`Processing SePay transaction`, {
-      transactionId: sePayWebhookDto.id,
+  async queueExtendSePayWebhook(sePayWebhookDto: SePayWebhookDto) {
+    this.logger.log(
+      `Queuing extend webhook: ${JSON.stringify(sePayWebhookDto)}`,
+    );
+    await this.sepayQueue.add('process-webhook-extend', sePayWebhookDto, {
+      attempts: 3,
+      backoff: 5000,
     });
+    this.logger.debug('Webhook extend successfully queued');
+    return { success: true, message: 'Webhook extend queued for processing' };
+  }
 
-    const str = sePayWebhookDto.content;
-    const regex = /^SEVQR(\d+)(user\d+)TS\d+$/;
-    const match = str.match(regex);
+  async queueUpgradeSePayWebhook(sePayWebhookDto: SePayWebhookDto) {
+    this.logger.log(
+      `Queuing upgrade webhook: ${JSON.stringify(sePayWebhookDto)}`,
+    );
+    await this.sepayQueue.add('process-webhook-upgrade', sePayWebhookDto, {
+      attempts: 3,
+      backoff: 5000,
+    });
+    this.logger.debug('Webhook upgrade successfully queued');
+    return { success: true, message: 'Webhook upgrade queued for processing' };
+  }
 
-    if (!match) {
-      this.logger.warn(`Invalid transaction content format: ${str}`);
-      throw new BadRequestException('Invalid transaction content format');
-    }
+  async processSubscribeSePayTransaction(sePayWebhookDto: SePayWebhookDto) {
+    this.logger.log(
+      `Processing subscribe transaction: ${JSON.stringify(sePayWebhookDto)}`,
+    );
+    const { subscriptionCode, username } = parseTransactionContent(
+      sePayWebhookDto.content,
+    );
+    return await this.dataSource.transaction(async (manager) => {
+      // Tìm subscription đang pending của user
+      const userSub = await this.findUserSubscription(manager, {
+        username,
+        subscriptionCode,
+        status: SubscriptionStatus.PENDING,
+        amount: sePayWebhookDto.transferAmount,
+      });
 
-    const subscriptionCode = match[1];
-    const username = match[2];
+      if (!userSub) {
+        this.logger.warn(
+          `User subscription not found for username: ${username}, subscriptionCode: ${subscriptionCode}`,
+        );
+        throw new NotFoundException('User subscription not found');
+      }
+
+      // Kiểm tra duplicate transaction trong transaction context
+      const existingTransaction = await manager.findOne(UserSubscriptions, {
+        where: { sepay_transaction_id: sePayWebhookDto.id },
+      });
+      if (existingTransaction) {
+        this.logger.warn(
+          `Duplicate transaction detected: ${sePayWebhookDto.id}`,
+        );
+        throw new BadRequestException('Duplicate transaction');
+      }
+
+      const startDate = new Date();
+      const endDate = calcEndDate(
+        startDate,
+        userSub.subscription.duration_months,
+      );
+
+      await manager.update(UserSubscriptions, userSub.id, {
+        start_date: startDate,
+        end_date: endDate,
+        status: SubscriptionStatus.ACTIVE,
+        sepay_transaction_id: sePayWebhookDto.id,
+        amount: sePayWebhookDto.transferAmount,
+      });
+
+      this.emitPaymentStatus(
+        userSub.user.id,
+        userSub.id,
+        SubscriptionStatus.ACTIVE,
+        userSub.order_id,
+        endDate,
+      );
+
+      this.logger.log(
+        `Subscribe transaction processed successfully for transactionId: ${sePayWebhookDto.id}`,
+      );
+      return { message: 'Transaction processed successfully' };
+    });
+  }
+
+  async processExtendSePayTransaction(sePayWebhookDto: SePayWebhookDto) {
+    this.logger.log(
+      `Processing extend transaction: ${JSON.stringify(sePayWebhookDto)}`,
+    );
+    const { subscriptionCode, username } = parseTransactionContent(
+      sePayWebhookDto.content,
+    );
     this.logger.debug(
-      `Extracted subscriptionCode: ${subscriptionCode}, username: ${username}`,
+      `Parsed transaction content: subscriptionCode=${subscriptionCode}, username=${username}`,
+    );
+    return await this.dataSource.transaction(async (manager) => {
+      // Tìm subscription đang active của user
+      const userSub = await this.findUserSubscription(manager, {
+        username,
+        subscriptionCode,
+        status: SubscriptionStatus.ACTIVE,
+        amount: sePayWebhookDto.transferAmount,
+      });
+
+      if (!userSub) {
+        this.logger.warn(
+          `User subscription not found for username: ${username}, subscriptionCode: ${subscriptionCode}`,
+        );
+        throw new NotFoundException('User subscription not found');
+      }
+
+      // Kiểm tra duplicate transaction trong transaction context
+      const existingTransaction = await manager.findOne(UserSubscriptions, {
+        where: { sepay_transaction_id: sePayWebhookDto.id },
+      });
+      if (existingTransaction) {
+        this.logger.warn(
+          `Duplicate transaction detected: ${sePayWebhookDto.id}`,
+        );
+        throw new BadRequestException('Duplicate transaction');
+      }
+
+      const startDate = new Date(userSub.start_date);
+      const endDate = calcEndDate(
+        startDate,
+        userSub.subscription?.duration_months,
+      );
+
+      await manager.update(UserSubscriptions, userSub.id, {
+        end_date: endDate,
+        sepay_transaction_id: sePayWebhookDto.id,
+        amount: sePayWebhookDto.transferAmount,
+      });
+
+      this.emitPaymentStatus(
+        userSub.user.id,
+        userSub.id,
+        SubscriptionStatus.ACTIVE,
+        userSub.order_id,
+        endDate,
+      );
+
+      this.logger.log(
+        `Extend transaction processed successfully for transactionId: ${sePayWebhookDto.id}`,
+      );
+      return { message: 'Transaction processed successfully' };
+    });
+  }
+
+  async processUpgradeSePayTransaction(sePayWebhookDto: SePayWebhookDto) {
+    this.logger.log(
+      `Processing upgrade transaction: ${JSON.stringify(sePayWebhookDto)}`,
+    );
+    const { subscriptionCode, username } = parseTransactionContent(
+      sePayWebhookDto.content,
     );
 
-    const userSub = await this.userSubRepository.findOne({
+    return await this.dataSource.transaction(async (manager) => {
+      // Tìm gói mới (pending)
+      const newUserSub = await this.findUserSubscription(manager, {
+        username,
+        subscriptionCode,
+        status: SubscriptionStatus.PENDING,
+        amount: sePayWebhookDto.transferAmount,
+      });
+
+      if (!newUserSub) {
+        this.logger.warn(
+          `User subscription not found for username: ${username}, subscriptionCode: ${subscriptionCode}`,
+        );
+        throw new NotFoundException('User subscription not found');
+      }
+
+      // Kiểm tra duplicate transaction trong transaction context
+      await this.ensureNoDuplicateTransaction(manager, sePayWebhookDto.id);
+
+      // Cancel old active subscription if exists
+      const oldUserSub = await manager.findOne(UserSubscriptions, {
+        where: {
+          user: { username },
+          status: SubscriptionStatus.ACTIVE,
+        },
+        relations: ['subscription'],
+        select: {
+          id: true,
+          order_id: true,
+          start_date: true,
+          end_date: true,
+          subscription: {
+            id: true,
+            duration_months: true,
+          },
+        },
+      });
+
+      if (oldUserSub) {
+        await manager.update(UserSubscriptions, oldUserSub.id, {
+          status: SubscriptionStatus.CANCELED,
+          end_date: new Date(),
+        });
+        this.logger.log(
+          `Canceled old active subscription for user: ${username}, oldSubId: ${oldUserSub.id}`,
+        );
+      }
+
+      try {
+        await manager.update(UserSubscriptions, newUserSub.id, {
+          start_date: new Date(),
+          status: SubscriptionStatus.ACTIVE,
+          sepay_transaction_id: sePayWebhookDto.id,
+          amount: sePayWebhookDto.transferAmount,
+        });
+
+        this.emitPaymentStatus(
+          newUserSub.user.id,
+          newUserSub.id,
+          SubscriptionStatus.ACTIVE,
+          newUserSub.order_id,
+          newUserSub.end_date,
+        );
+
+        this.logger.log(
+          `Upgrade transaction processed successfully for transactionId: ${sePayWebhookDto.id}`,
+        );
+        return { message: 'Transaction processed successfully' };
+      } catch (error) {
+        // Nếu lỗi, khôi phục lại trạng thái gói cũ về ACTIVE
+        if (oldUserSub) {
+          await manager.update(UserSubscriptions, oldUserSub.id, {
+            status: SubscriptionStatus.ACTIVE,
+            end_date: calcEndDate(
+              oldUserSub.start_date,
+              oldUserSub.subscription.duration_months,
+            ),
+          });
+          this.logger.warn(
+            `Upgrade failed, restored old subscription ${oldUserSub.id} to ACTIVE`,
+          );
+        }
+        this.logger.error(
+          `Upgrade transaction failed for transactionId: ${sePayWebhookDto.id}: ${error.message}`,
+        );
+        throw error;
+      }
+    });
+  }
+
+  // --- PRIVATE HELPERS ---
+
+  private async ensureNoDuplicateTransaction(
+    repoOrManager: Repository<UserSubscriptions> | EntityManager,
+    sepayTransactionId: number,
+  ) {
+    const existingTransaction = await repoOrManager.findOne(UserSubscriptions, {
+      where: { sepay_transaction_id: sepayTransactionId },
+    });
+    if (existingTransaction) {
+      this.logger.warn(`Duplicate transaction detected: ${sepayTransactionId}`);
+      throw new BadRequestException('Duplicate transaction');
+    }
+    this.logger.debug(
+      `No duplicate transaction found for id: ${sepayTransactionId}`,
+    );
+  }
+
+  private async updateUserSubscription(
+    repoOrManager: Repository<UserSubscriptions> | any,
+    id: string,
+    updateData: Partial<UserSubscriptions>,
+  ) {
+    this.logger.debug(
+      `Updating user subscription id: ${id} with data: ${JSON.stringify(updateData)}`,
+    );
+    const response = await repoOrManager.update(
+      UserSubscriptions,
+      id,
+      updateData,
+    );
+    if (response.affected === 0) {
+      this.logger.error(
+        `Failed to update user subscription status for id: ${id}`,
+      );
+      throw new BadRequestException(
+        'Failed to update user subscription status',
+      );
+    }
+    this.logger.debug(`Updated user subscription status for id: ${id}`);
+  }
+
+  private emitPaymentStatus(
+    userId: string,
+    subscriptionId: string,
+    status: SubscriptionStatus,
+    orderId?: string,
+    endDate?: Date,
+  ) {
+    this.logger.debug(
+      `Emitting payment.status event: userId=${userId}, subscriptionId=${subscriptionId}, status=${status}, orderId=${orderId}, endDate=${endDate}`,
+    );
+    this.eventEmitter.emit('payment.status', {
+      userId,
+      subscriptionId,
+      status,
+      endDate,
+      orderId,
+    });
+  }
+
+  private async findUserSubscription(
+    repoOrManager: Repository<UserSubscriptions> | EntityManager,
+    {
+      username,
+      subscriptionCode,
+      status,
+      amount,
+    }: {
+      username: string;
+      subscriptionCode: string;
+      status: SubscriptionStatus;
+      amount: number;
+    },
+  ) {
+    this.logger.debug(
+      `Finding user subscription: username=${username}, subscriptionCode=${subscriptionCode}, status=${status}, amount=${amount}`,
+    );
+    return repoOrManager.findOne(UserSubscriptions, {
       where: {
         user: { username },
         subscription: { subscription_code: Number(subscriptionCode) },
-        status: SubscriptionStatus.PENDING,
-        amount: sePayWebhookDto.transferAmount,
+        status,
+        amount,
       },
       relations: {
         subscription: true,
@@ -160,6 +479,7 @@ export class TransactionsService {
       select: {
         id: true,
         order_id: true,
+        start_date: true,
         subscription: {
           id: true,
           duration_months: true,
@@ -169,64 +489,5 @@ export class TransactionsService {
         },
       },
     });
-
-    if (!userSub) {
-      this.logger.warn(
-        `User subscription not found for username: ${username}, subscriptionCode: ${subscriptionCode}`,
-      );
-      throw new NotFoundException('User subscription not found');
-    }
-
-    // Prevent duplicate transactions
-    const existingTransaction = await this.userSubRepository.findOne({
-      where: { sepay_transaction_id: sePayWebhookDto.id },
-    });
-    if (existingTransaction) {
-      this.logger.warn(`Duplicate transaction detected: ${sePayWebhookDto.id}`);
-      throw new BadRequestException('Duplicate transaction');
-    }
-
-    const startDate = new Date();
-    const endDate = new Date(startDate);
-    endDate.setMonth(
-      startDate.getMonth() + userSub.subscription.duration_months,
-    );
-
-    const response = await this.userSubRepository.update(userSub.id, {
-      start_date: startDate,
-      end_date: endDate,
-      status: SubscriptionStatus.ACTIVE,
-      sepay_transaction_id: sePayWebhookDto.id,
-      amount: sePayWebhookDto.transferAmount,
-    });
-
-    if (response.affected === 0) {
-      this.logger.error(
-        `Failed to update user subscription status for id: ${userSub.id}`,
-      );
-      throw new BadRequestException(
-        'Failed to update user subscription status',
-      );
-    }
-
-    this.logger.debug(
-      `Updated user subscription status to ACTIVE for id: ${userSub.id}`,
-    );
-
-    // Emit event for SSE
-    this.eventEmitter.emit('payment.status', {
-      userId: userSub.user.id,
-      subscriptionId: userSub.id,
-      status: SubscriptionStatus.ACTIVE,
-      orderId: userSub.order_id,
-    });
-    this.logger.debug(
-      `Emitted payment.status event for userId: ${userSub.user.id}`,
-    );
-
-    this.logger.log(
-      `Transaction processed successfully for transactionId: ${sePayWebhookDto.id}`,
-    );
-    return { message: 'Transaction processed successfully' };
   }
 }

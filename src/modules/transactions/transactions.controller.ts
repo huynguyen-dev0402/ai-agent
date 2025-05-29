@@ -11,7 +11,6 @@ import {
   Logger,
   Param,
   Get,
-  Query,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { ValidationPipe } from '@nestjs/common';
@@ -47,15 +46,13 @@ export class TransactionsController {
     description: 'Invalid input data',
   })
   async generateQR(@Body(new ValidationPipe()) generateQrDto: GenerateQRDto) {
+    this.logger.log(`[generateQR] Start generating QR`);
     try {
-      this.logger.log('Generating QR code');
       const qr = await this.transactionsService.generateQR(generateQrDto);
-      return {
-        success: true,
-        data: qr,
-      };
+      this.logger.log(`[generateQR] QR generated successfully`);
+      return { success: true, data: qr };
     } catch (error) {
-      this.logger.error(`Failed to generate QR code: ${error.message}`);
+      this.logger.error(`[generateQR] Failed: ${error.message}`);
       throw error instanceof HttpException
         ? error
         : new InternalServerErrorException('Failed to generate QR code');
@@ -80,19 +77,19 @@ export class TransactionsController {
   async cancelPayment(
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
+    this.logger.log(
+      `[cancelPayment] Canceling payment for user ${request.user.id}`,
+    );
     try {
-      this.logger.log(`Canceling payment for user ${request.user.id}`);
-
       const result = await this.transactionsService.cancelPayment(
         request.user.id,
       );
-
-      return {
-        success: true,
-        data: result,
-      };
+      this.logger.log(
+        `[cancelPayment] Payment canceled for user ${request.user.id}`,
+      );
+      return { success: true, data: result };
     } catch (error) {
-      this.logger.error(`Failed to cancel payment: ${error.message}`);
+      this.logger.error(`[cancelPayment] Failed: ${error.message}`);
       throw error instanceof HttpException
         ? error
         : new InternalServerErrorException('Failed to cancel payment');
@@ -109,26 +106,26 @@ export class TransactionsController {
   async findPaymentPending(
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
+    this.logger.log(
+      `[findPaymentPending] Getting pending payment for user ${request.user.id}`,
+    );
     try {
       const result = await this.transactionsService.getPaymentPending(
         request.user.id,
       );
-      return {
-        success: true,
-        data: result,
-      };
+      return { success: true, data: result };
     } catch (error) {
-      this.logger.error(`Failed to find payment: ${error.message}`);
+      this.logger.error(`[findPaymentPending] Failed: ${error.message}`);
       throw error instanceof HttpException
         ? error
         : new InternalServerErrorException('Failed to find payment');
     }
   }
 
-  @Post()
+  @Post('/subscribe-webhook')
   @Public()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Handle SePay payment webhook' })
+  @ApiOperation({ summary: 'Handle SePay payment webhook (subscribe)' })
   @ApiBearerAuth()
   @ApiResponse({
     status: HttpStatus.OK,
@@ -142,43 +139,128 @@ export class TransactionsController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Invalid or missing authorization',
   })
-  async payment(
+  async paymentSubscribe(
     @Body(new ValidationPipe()) sePayWebhookDto: SePayWebhookDto,
     @Req() req: Request,
   ) {
+    this.logger.log(`[paymentSubscribe] Received webhook`);
     try {
-      this.logger.log(
-        `Received SePay payment webhook request at ${new Date().toISOString()}`,
-      );
-
       if (!sePayWebhookDto || Object.keys(sePayWebhookDto).length === 0) {
-        this.logger.warn('Empty webhook payload received', {
-          payload: sePayWebhookDto,
-        });
+        this.logger.warn(`[paymentSubscribe] Empty webhook payload`);
         throw new HttpException('Invalid payload', HttpStatus.BAD_REQUEST);
       }
 
       const authHeader = req.headers['authorization'] as string;
-      const apiKey = this.configService.get<string>('SEPAY_WEBHOOK_API_KEY');
-      this.logger.debug('Validating API key', {
-        authHeader: authHeader ? 'Present' : 'Missing',
-      });
+      const apiKey = this.configService.get<string>(
+        'SUBSCRIBE_WEBHOOK_API_KEY',
+      );
       if (!authHeader || authHeader !== `Apikey ${apiKey}`) {
-        this.logger.warn('Invalid or missing API key', { authHeader });
+        this.logger.warn(`[paymentSubscribe] Invalid or missing API key`);
         throw new HttpException('Invalid API key', HttpStatus.UNAUTHORIZED);
       }
 
-      this.logger.log('Queuing SePay payment webhook', {
-        payload: sePayWebhookDto,
-      });
       const result =
-        await this.transactionsService.queueSePayWebhook(sePayWebhookDto);
-      this.logger.debug('Webhook queued successfully', { result });
+        await this.transactionsService.queueSubscribeSePayWebhook(
+          sePayWebhookDto,
+        );
+      this.logger.log(`[paymentSubscribe] Webhook queued successfully`);
       return result;
     } catch (error) {
-      this.logger.error(`Webhook queuing failed: ${error.message}`, {
-        stack: error.stack,
-      });
+      this.logger.error(`[paymentSubscribe] Failed: ${error.message}`);
+      throw error instanceof HttpException
+        ? error
+        : new InternalServerErrorException('Failed to queue webhook');
+    }
+  }
+
+  @Post('/extend-webhook')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Handle SePay extend payment webhook' })
+  @ApiBearerAuth()
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Webhook queued successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid payload',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Invalid or missing authorization',
+  })
+  async paymentExtend(
+    @Body(new ValidationPipe()) sePayWebhookDto: SePayWebhookDto,
+    @Req() req: Request,
+  ) {
+    this.logger.log(`[paymentExtend] Received webhook`);
+    try {
+      if (!sePayWebhookDto || Object.keys(sePayWebhookDto).length === 0) {
+        this.logger.warn(`[paymentExtend] Empty webhook payload`);
+        throw new HttpException('Invalid payload', HttpStatus.BAD_REQUEST);
+      }
+
+      const authHeader = req.headers['authorization'] as string;
+      const apiKey = this.configService.get<string>('EXTEND_WEBHOOK_API_KEY');
+      if (!authHeader || authHeader !== `Apikey ${apiKey}`) {
+        this.logger.warn(`[paymentExtend] Invalid or missing API key`);
+        throw new HttpException('Invalid API key', HttpStatus.UNAUTHORIZED);
+      }
+
+      const result =
+        await this.transactionsService.queueExtendSePayWebhook(sePayWebhookDto);
+      this.logger.log(`[paymentExtend] Webhook queued successfully`);
+      return result;
+    } catch (error) {
+      this.logger.error(`[paymentExtend] Failed: ${error.message}`);
+      throw error instanceof HttpException
+        ? error
+        : new InternalServerErrorException('Failed to queue webhook');
+    }
+  }
+
+  @Post('/upgrade-webhook')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Handle SePay upgrade payment webhook' })
+  @ApiBearerAuth()
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Webhook queued successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid payload',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Invalid or missing authorization',
+  })
+  async paymentUpgrade(
+    @Body(new ValidationPipe()) sePayWebhookDto: SePayWebhookDto,
+    @Req() req: Request,
+  ) {
+    this.logger.log(`[paymentUpgrade] Received webhook`);
+    try {
+      if (!sePayWebhookDto || Object.keys(sePayWebhookDto).length === 0) {
+        this.logger.warn(`[paymentUpgrade] Empty webhook payload`);
+        throw new HttpException('Invalid payload', HttpStatus.BAD_REQUEST);
+      }
+
+      const authHeader = req.headers['authorization'] as string;
+      const apiKey = this.configService.get<string>('EXTEND_WEBHOOK_API_KEY');
+      if (!authHeader || authHeader !== `Apikey ${apiKey}`) {
+        this.logger.warn(`[paymentUpgrade] Invalid or missing API key`);
+        throw new HttpException('Invalid API key', HttpStatus.UNAUTHORIZED);
+      }
+
+      const result =
+        await this.transactionsService.queueUpgradeSePayWebhook(sePayWebhookDto);
+      this.logger.log(`[paymentUpgrade] Webhook queued successfully`);
+      return result;
+    } catch (error) {
+      this.logger.error(`[paymentUpgrade] Failed: ${error.message}`);
       throw error instanceof HttpException
         ? error
         : new InternalServerErrorException('Failed to queue webhook');
@@ -193,13 +275,12 @@ export class TransactionsController {
     description: 'SSE stream for payment status updates',
   })
   ssePaymentStatus(@Param('userId') userId: string): Observable<any> {
-    this.logger.log(`Starting SSE stream for userId: ${userId}`);
+    this.logger.log(
+      `[ssePaymentStatus] Start SSE stream for userId: ${userId}`,
+    );
 
     return fromEvent(this.eventEmitter, 'payment.status').pipe(
       map((data: any) => {
-        this.logger.debug(
-          `Processing payment status event for userId: ${userId}, data: ${JSON.stringify(data)}`,
-        );
         if (data.userId === userId) {
           const response = {
             data: {
@@ -209,7 +290,7 @@ export class TransactionsController {
             },
           };
           this.logger.debug(
-            `Returning payment status for userId: ${userId}, response: ${JSON.stringify(response)}`,
+            `[ssePaymentStatus] Emit status for userId: ${userId}, status: ${data.status}`,
           );
           return response;
         }
@@ -217,9 +298,7 @@ export class TransactionsController {
       }),
       filter((data) => data !== null),
       catchError((error) => {
-        this.logger.error(
-          `Error in SSE stream for userId: ${userId}, error: ${error.message}`,
-        );
+        this.logger.error(`[ssePaymentStatus] Error: ${error.message}`);
         return throwError(
           () =>
             new InternalServerErrorException('Failed to stream payment status'),
@@ -228,3 +307,5 @@ export class TransactionsController {
     );
   }
 }
+// This controller handles payment-related operations such as generating QR codes,
+// canceling payments, and handling webhooks from SePay. It also provides an SSE endpoint

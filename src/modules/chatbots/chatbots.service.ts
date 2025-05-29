@@ -15,7 +15,7 @@ import {
   Chatbot,
   ChatbotStatus,
 } from '@modules/chatbots/entities/chatbot.entity';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, In, Not, Repository } from 'typeorm';
 import { UsersService } from '@modules/users/users.service';
 import { PublishChatbotDto } from '@modules/chatbots/dto/publish-chatbot.dto';
 import { ChatbotModelsService } from '@modules/chatbot-models/chatbot-models.service';
@@ -41,6 +41,7 @@ import {
   ChatbotToken,
   ChatbotTokenStatus,
 } from '@modules/chatbot-tokens/entities/chatbot-token.entity';
+import { SubscriptionStatus, UserSubscriptions } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
 
 @Injectable()
 export class ChatbotsService {
@@ -66,6 +67,8 @@ export class ChatbotsService {
     private conversationRepository: Repository<Conversation>,
     @InjectRepository(Domain)
     private readonly domainRepository: Repository<Domain>,
+    @InjectRepository(UserSubscriptions)
+    private readonly userSubRepository: Repository<UserSubscriptions>,
     @InjectRepository(ChatbotToken)
     private readonly chatbotTokenRepository: Repository<ChatbotToken>,
     private dataSource: DataSource,
@@ -553,6 +556,12 @@ export class ChatbotsService {
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.api_token', 'api_token')
       .leftJoinAndSelect('user.workspace', 'workspace')
+      .leftJoin(
+        'user_subscriptions',
+        'us',
+        'us.user_id = user.id AND us.status = :activeStatus',
+        { activeStatus: 'active' },
+      )
       .where('user.id = :userId')
       .setParameter('userId', userId)
       .select([
@@ -561,6 +570,7 @@ export class ChatbotsService {
         'api_token.token AS api_token_token',
         'workspace.id AS workspace_id',
         'workspace.external_space_id AS workspace_external_space_id',
+        'us.id AS user_subscription_id',
       ])
       .getRawOne();
 
@@ -604,6 +614,7 @@ export class ChatbotsService {
         external_bot_id: data.data.bot_id,
         status: ChatbotStatus.DRAFT,
         description: createChatbotDto.description,
+        user_subscriptions_id: user.user_subscription_id,
       });
 
       const savedChatbot = await this.chatbotRepository.save(chatbot);
@@ -1228,7 +1239,105 @@ export class ChatbotsService {
     }
   }
 
-  remove(id: string) {
-    return `This action removes a #${id} chatbot`;
+  async restoreChatbotByUser(userId: string, chatbotId: string) {
+    // 1. Lấy chatbot cần restore (chỉ lấy trường cần thiết)
+    const chatbot = await this.chatbotRepository.findOne({
+      where: {
+        id: chatbotId,
+        user: { id: userId },
+        status: ChatbotStatus.INACTIVE,
+      },
+      select: ['id', 'user_subscriptions_id'],
+    });
+    if (!chatbot) {
+      throw new NotFoundException('Chatbot not found or not inactive');
+    }
+
+    // 2. Lấy user_subscription hiện tại (gói mới) và gói cũ của chatbot (gộp 2 truy vấn)
+    const [userSub, oldUserSub] = await Promise.all([
+      this.userSubRepository.findOne({
+        where: { user: { id: userId }, status: SubscriptionStatus.ACTIVE },
+        relations: { subscription: true },
+        select: {
+          id: true,
+          subscription: { agent_limit: true },
+        },
+      }),
+      this.userSubRepository.findOne({
+        where: { id: chatbot.user_subscriptions_id },
+        relations: { subscription: true },
+        select: {
+          id: true,
+          subscription: { agent_limit: true },
+        },
+      }),
+    ]);
+
+    if (!userSub || !userSub.subscription) {
+      throw new BadRequestException(
+        'User does not have an active subscription',
+      );
+    }
+    if (!oldUserSub || !oldUserSub.subscription) {
+      throw new BadRequestException('Cannot find old subscription of chatbot');
+    }
+
+    // 3. So sánh limit giữa gói mới và gói cũ
+    if (
+      userSub.subscription.agent_limit < oldUserSub.subscription.agent_limit
+    ) {
+      throw new ForbiddenException(
+        'Your current subscription does not allow restoring this chatbot (limit too low)',
+      );
+    }
+
+    // 4. Kiểm tra quota gói mới (đếm số chatbot đang active thuộc gói mới)
+    const activeCount = await this.chatbotRepository.count({
+      where: {
+        user: { id: userId },
+        user_subscriptions_id: userSub.id,
+        status: ChatbotStatus.PUBLISHED,
+      },
+    });
+    if (activeCount >= userSub.subscription.agent_limit) {
+      throw new BadRequestException(
+        'You have reached the chatbot limit for your current subscription',
+      );
+    }
+
+    // 5. Restore: cập nhật user_subscriptions_id và status
+    await this.chatbotRepository.update(chatbot.id, {
+      user_subscriptions_id: userSub.id,
+      status: ChatbotStatus.PUBLISHED,
+    });
+
+    // Trả về thông tin đã cập nhật (nếu cần)
+    return {
+      id: chatbot.id,
+      user_subscriptions_id: userSub.id,
+      status: ChatbotStatus.PUBLISHED,
+    };
+  }
+
+  async removeChatbotByUser(userId: string, chatbotId: string) {
+    // Lấy chatbot thuộc user và chưa bị xóa
+    const chatbot = await this.chatbotRepository.findOne({
+      where: {
+        id: chatbotId,
+        user: { id: userId },
+        status: Not(ChatbotStatus.DELETED),
+      },
+      select: ['id', 'status'],
+    });
+    if (!chatbot) {
+      throw new NotFoundException('Chatbot not found or already deleted');
+    }
+
+    // Cập nhật trạng thái về DELETED
+    await this.chatbotRepository.update(chatbot.id, {
+      status: ChatbotStatus.DELETED,
+    });
+
+    return { id: chatbot.id, status: ChatbotStatus.DELETED };
   }
 }

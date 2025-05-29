@@ -5,12 +5,16 @@ import { ApiToken } from '@modules/api-tokens/entities/api-token.entity';
 import { ApiTokensService } from '@modules/api-tokens/api-tokens.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PasswordReset } from '@modules/password-reset/entities/password-reset.entity';
+import { Chatbot, ChatbotStatus } from '@modules/chatbots/entities/chatbot.entity';
+import { SubscriptionStatus } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
 
 @Injectable()
 export class CronJobsService {
   constructor(
     @InjectRepository(ApiToken)
     private readonly apiTokenRepository: Repository<ApiToken>,
+    @InjectRepository(Chatbot)
+    private readonly chatbotRepository: Repository<Chatbot>,
     @InjectRepository(PasswordReset)
     private readonly resetRepository: Repository<PasswordReset>,
     private readonly apiTokenService: ApiTokensService,
@@ -69,5 +73,31 @@ export class CronJobsService {
         `Deleted ${result.affected} expired password reset entries`,
       );
     }
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async handleChatbotInactiveWhenSubscriptionExpired() {
+    const now = new Date();
+
+    await this.chatbotRepository
+      .createQueryBuilder()
+      .update('chatbots')
+      .set({ status: ChatbotStatus.INACTIVE })
+      .where(
+        `status != :inactive
+      AND user_subscription_id IN (
+        SELECT us.id FROM user_subscriptions us
+        WHERE us.status = :expired
+        AND us.end_date < :now
+      )`,
+        {
+          inactive: ChatbotStatus.INACTIVE,
+          expired: SubscriptionStatus.EXPIRED,
+          now,
+        },
+      )
+      .execute();
+
+    this.logger.log('Inactivated chatbots for expired subscriptions');
   }
 }

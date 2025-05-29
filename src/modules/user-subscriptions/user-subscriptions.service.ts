@@ -130,10 +130,7 @@ export class UserSubscriptionsService {
     });
   }
 
-  async upgradeSubscription(
-    userId: string,
-    newSubscriptionId: string,
-  ): Promise<boolean> {
+  async upgradeSubscription(userId: string, newSubscriptionId: string) {
     return this.userSubRepository.manager.transaction(async (manager) => {
       this.logger.log(
         `Upgrading subscription for user ${userId} to ${newSubscriptionId}`,
@@ -156,7 +153,7 @@ export class UserSubscriptionsService {
 
       const currentSubscription = await manager.findOne(UserSubscriptions, {
         where: { user: { id: userId }, status: SubscriptionStatus.ACTIVE },
-        relations: ['subscription'],
+        relations: ['subscription', 'user'],
       });
 
       if (!currentSubscription) {
@@ -171,11 +168,7 @@ export class UserSubscriptionsService {
         );
       }
 
-      // Hủy gói hiện tại
-      currentSubscription.status = SubscriptionStatus.CANCELED;
-      await manager.save(currentSubscription);
-
-      // Tạo gói mới
+      // Tạo gói mới với trạng thái pending
       const startDate = new Date();
       const endDate = this.addMonthsManually(
         startDate,
@@ -185,48 +178,80 @@ export class UserSubscriptionsService {
       const newUserSubscription = manager.create(UserSubscriptions, {
         user: { id: userId },
         subscription: { id: newSubscriptionId },
-        start_date: startDate,
-        end_date: endDate,
-        status: SubscriptionStatus.ACTIVE,
+        amount: newSubscription.price,
+        order_id: `SEVQR${newSubscription.subscription_code}${currentSubscription.user.username}TS${Date.now()}`,
+        status: SubscriptionStatus.PENDING,
       });
 
       await manager.save(newUserSubscription);
-      return true;
+
+      // Generate QR code for payment
+      const { qrImageUrl } = await this.transactionService.generateQR({
+        username: currentSubscription.user.username,
+        order_id: newUserSubscription.order_id,
+        subscription_code: newSubscription.subscription_code,
+        amount: newSubscription.price,
+        template: TransactionTemplate.COMPACT,
+      });
+
+      // Return only necessary response data
+      return {
+        paymentUrl: qrImageUrl,
+        userSubscriptionId: newUserSubscription.id,
+        orderId: newUserSubscription.order_id,
+      };
     });
   }
 
-  async extendSubscription(userId: string): Promise<UserSubscriptions> {
+  async extendSubscription(userId: string) {
     this.logger.log(`Extending subscription for user ${userId}`);
 
+    // Fetch active subscription with relations in one query
     const currentSubscription = await this.userSubRepository.findOne({
       where: { user: { id: userId }, status: SubscriptionStatus.ACTIVE },
-      relations: ['subscription'],
+      relations: ['subscription', 'user'],
     });
 
+    // Validate subscription existence and properties
     if (!currentSubscription) {
-      throw new BadRequestException(
-        'User does not have an active subscription to extend',
-      );
+      throw new BadRequestException('No active subscription found for user');
     }
 
-    const subscription = currentSubscription.subscription;
+    const { subscription, user } = currentSubscription;
     if (!subscription) {
-      throw new NotFoundException('Subscription not found');
+      throw new NotFoundException('Subscription details not found');
     }
 
     if (subscription.duration_months <= 0) {
-      throw new BadRequestException(
-        'Subscription duration must be greater than 0.',
-      );
+      throw new BadRequestException('Invalid subscription duration');
     }
 
-    const newEndDate = this.addMonthsManually(
-      currentSubscription.end_date,
-      subscription.duration_months,
-    );
-    currentSubscription.end_date = newEndDate;
+    // Update subscription details
+    const updatedSubscription = {
+      ...currentSubscription,
+      amount: subscription.price,
+      order_id: `SEVQR${subscription.subscription_code}${user.username}TS${Date.now()}`,
+    };
 
-    return this.userSubRepository.save(currentSubscription);
+    // Save updated subscription
+    const savedSubscription =
+      await this.userSubRepository.save(updatedSubscription);
+
+    // Generate QR code for payment
+    const { qrImageUrl } = await this.transactionService.generateQR({
+      username: user.username,
+      order_id: savedSubscription.order_id,
+      subscription_code: subscription.subscription_code,
+      amount: savedSubscription.amount,
+      template: TransactionTemplate.COMPACT,
+    });
+
+    // Return only necessary response data
+    return {
+      paymentUrl: qrImageUrl,
+      userSubscriptionId: savedSubscription.id,
+      orderId: savedSubscription.order_id,
+    };
   }
 
   async renewSubscription(userId: string): Promise<boolean> {

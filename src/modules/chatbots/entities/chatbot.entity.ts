@@ -16,11 +16,15 @@ import { ChatbotResource } from '@modules/chatbots/entities/chatbot-resources.en
 import { Conversation } from '@modules/conversations/entities/conversation.entity';
 import { ChatbotToken } from '@modules/chatbot-tokens/entities/chatbot-token.entity';
 import { ChatbotEmbedLog } from '@modules/chatbot-embed/entities/chatbot-embed-log.entity';
+import { Subscription } from '@modules/subscriptions/entities/subscription.entity';
+import { UserSubscriptions } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
 
 export enum ChatbotStatus {
   DRAFT = 'draft',
   PUBLISHED = 'published',
   INACTIVE = 'inactive',
+  DELETED= 'deleted',
+  ARCHIVED = 'archived',
 }
 
 @Entity('chatbots')
@@ -78,6 +82,16 @@ export class Chatbot {
   })
   @JoinColumn({ name: 'model_id' })
   model: ChatbotModel;
+
+  @Column({ type: 'uuid', nullable: true })
+  user_subscriptions_id?: string;
+
+  @ManyToOne(
+    () => UserSubscriptions,
+    (user_subscriptions) => user_subscriptions.chatbots,
+  )
+  @JoinColumn({ name: 'user_subscription_id' })
+  user_subscriptions: UserSubscriptions;
 
   @OneToOne(() => ChatbotOnboarding, (onboarding) => onboarding.chatbot)
   onboarding: ChatbotOnboarding;
