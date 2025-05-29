@@ -249,7 +249,7 @@ export class TransactionsController {
       }
 
       const authHeader = req.headers['authorization'] as string;
-      const apiKey = this.configService.get<string>('EXTEND_WEBHOOK_API_KEY');
+      const apiKey = this.configService.get<string>('UPGRADE_WEBHOOK_API_KEY');
       if (!authHeader || authHeader !== `Apikey ${apiKey}`) {
         this.logger.warn(`[paymentUpgrade] Invalid or missing API key`);
         throw new HttpException('Invalid API key', HttpStatus.UNAUTHORIZED);
