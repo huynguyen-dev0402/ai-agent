@@ -1,19 +1,37 @@
-import { TRANSACTION_CONTENT_REGEX } from '@common/constants/transaction.constant';
+import { ACTION_MAP, TRANSACTION_CONTENT_REGEX } from '@common/constants/transaction.constant';
 import { BadRequestException } from '@nestjs/common';
 
 export function parseTransactionContent(content: string): {
+  action: string;
   subscriptionCode: string;
   username: string;
 } {
   const match = content.match(TRANSACTION_CONTENT_REGEX);
   if (!match) {
-    this.logger.warn(`Invalid transaction content format: ${content}`);
+    console.warn(`Invalid transaction content format: ${content}`);
     throw new BadRequestException('Invalid transaction content format');
   }
-  this.logger.debug(
-    `Parsed transaction content: subscriptionCode=${match[1]}, username=${match[2]}`,
+
+  const rawAction = match[1]; 
+  const subscriptionCode = match[2]; 
+  const username = match[3]; 
+
+  const action = ACTION_MAP[rawAction];
+
+  if (!action) {
+    console.warn(`Unknown action type: ${rawAction}`);
+    throw new BadRequestException('Unknown action type in transaction content');
+  }
+
+  console.debug(
+    `Parsed transaction content: action=${action}, subscriptionCode=${subscriptionCode}, username=${username}`,
   );
-  return { subscriptionCode: match[1], username: match[2] };
+
+  return {
+    action,
+    subscriptionCode,
+    username,
+  };
 }
 
 export function calcEndDate(startDate: Date, durationMonths?: number) {

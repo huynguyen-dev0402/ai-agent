@@ -11,6 +11,7 @@ import { Workspace } from '@modules/workspaces/entities/workspace.entity';
 import { UserSubscriptions } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
 import { AddMemberDto } from './dto/add-member.dto';
 import { EditMemberDto } from './dto/edit-member.dto';
+import { hashPassword } from '@common/utils/hash-password/hashing.util';
 
 @Injectable()
 export class WorkspaceMembersService {
@@ -58,6 +59,43 @@ export class WorkspaceMembersService {
     return members;
   }
 
+  async addSubMember(
+    currentUserId: string,
+    workspaceId: string,
+    addMemberDto: AddMemberDto,
+  ) {
+    const { email, password } = addMemberDto;
+    // 1. Kiểm tra workspace có tồn tại và currentUserId có quyền không
+    const workspace = await this.workspacesRepository.findOne({
+      where: { id: workspaceId },
+    });
+    if (!workspace) throw new NotFoundException('Workspace không tồn tại');
+
+    // 2. Kiểm tra email đã tồn tại chưa
+    const user = await this.usersRepository.findOneBy({ email });
+    if (user) {
+      throw new BadRequestException('User đã là thành viên của workspace');
+    }
+    // Nếu user chưa tồn tại, tạo mới
+    const newUser = this.usersRepository.create({
+      email,
+      password: hashPassword(password),
+    });
+    await this.usersRepository.save(newUser);
+
+    // 3. Thêm vào workspace_members
+    await this.workspaceMembersRepository.insert({
+      workspace_id: workspaceId,
+      user_id: newUser.id,
+      role: addMemberDto.role,
+      user_manager_id: currentUserId,
+      joined_at: new Date(),
+      created_at: new Date(),
+    });
+
+    return { message: 'Thêm member thành công' };
+  }
+
   async addMember(
     userId: string,
     workspaceId: string,
@@ -66,7 +104,7 @@ export class WorkspaceMembersService {
     // 1. Lấy user theo email
     const user = await this.usersRepository.findOneBy({
       email: addMemberDto.email,
-    })
+    });
     if (!user) {
       throw new NotFoundException('User not found');
     }

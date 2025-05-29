@@ -67,6 +67,12 @@ export class TransactionsService {
       select: {
         id: true,
         status: true,
+        subscription: {
+          id: true,
+          name: true,
+          price: true,
+          duration_months: true,
+        },
       },
     });
   }
@@ -100,7 +106,7 @@ export class TransactionsService {
 
     const orderId =
       generateQrDto.order_id ||
-      `SEVQR${generateQrDto.subscription_code}${generateQrDto.username}TS${Date.now()}`;
+      `SEVQR${generateQrDto.action}${generateQrDto.subscription_code}${generateQrDto.username}TS${Date.now()}`;
     this.logger.debug(`Generated orderId: ${orderId}`);
 
     const encodedDescription = encodeURIComponent(orderId);
@@ -135,6 +141,21 @@ export class TransactionsService {
     return {
       success: true,
       message: 'Webhook subscribe queued for processing',
+    };
+  }
+
+  async queueSePayWebhook(sePayWebhookDto: SePayWebhookDto) {
+    this.logger.log(
+      `Queuing generic webhook: ${JSON.stringify(sePayWebhookDto)}`,
+    );
+    await this.sepayQueue.add('process-webhook', sePayWebhookDto, {
+      attempts: 3,
+      backoff: 5000,
+    });
+    this.logger.debug('Webhook successfully queued');
+    return {
+      success: true,
+      message: 'Webhook queued for processing',
     };
   }
 

@@ -13,6 +13,12 @@ export enum TransactionTemplate {
   QRONLY = 'qronly',
 }
 
+export enum ActionTemplate {
+  SUBSCRIBE = 'SC',
+  EXTEND = 'ET',
+  UPGRADE = 'UG',
+}
+
 export class GenerateQRDto {
   // @ApiProperty({
   //   description: 'UUID of the subscription package',
@@ -30,7 +36,9 @@ export class GenerateQRDto {
   // @IsUUID(4, { message: 'User ID must be a valid UUID (v4).' })
   subscription_code: number;
 
-  username:string;
+  action: ActionTemplate;
+
+  username: string;
 
   @ApiProperty({
     description: 'The amount of money to be paid (in VND)',

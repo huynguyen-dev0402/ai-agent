@@ -23,6 +23,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Observable, fromEvent, throwError } from 'rxjs';
 import { catchError, filter, map } from 'rxjs/operators';
 import { Public } from '@common/decorators/public-route.decorator';
+import { parseTransactionContent } from '@common/utils/transaction/transaction.util';
 
 @Controller('transactions')
 export class TransactionsController {
@@ -122,10 +123,12 @@ export class TransactionsController {
     }
   }
 
-  @Post('/subscribe-webhook')
+  @Post('/payment-webhook')
   @Public()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Handle SePay payment webhook (subscribe)' })
+  @ApiOperation({
+    summary: 'Handle SePay payment webhook (subscribe, extend, upgrade)',
+  })
   @ApiBearerAuth()
   @ApiResponse({
     status: HttpStatus.OK,
@@ -139,14 +142,14 @@ export class TransactionsController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Invalid or missing authorization',
   })
-  async paymentSubscribe(
+  async handlePaymentWebhook(
     @Body(new ValidationPipe()) sePayWebhookDto: SePayWebhookDto,
     @Req() req: Request,
   ) {
-    this.logger.log(`[paymentSubscribe] Received webhook`);
+    this.logger.log(`[handlePaymentWebhook] Received webhook`);
     try {
       if (!sePayWebhookDto || Object.keys(sePayWebhookDto).length === 0) {
-        this.logger.warn(`[paymentSubscribe] Empty webhook payload`);
+        this.logger.warn(`[handlePaymentWebhook] Empty webhook payload`);
         throw new HttpException('Invalid payload', HttpStatus.BAD_REQUEST);
       }
 
@@ -155,117 +158,118 @@ export class TransactionsController {
         'SUBSCRIBE_WEBHOOK_API_KEY',
       );
       if (!authHeader || authHeader !== `Apikey ${apiKey}`) {
-        this.logger.warn(`[paymentSubscribe] Invalid or missing API key`);
+        this.logger.warn(`[handlePaymentWebhook] Invalid or missing API key`);
         throw new HttpException('Invalid API key', HttpStatus.UNAUTHORIZED);
       }
 
-      const result =
-        await this.transactionsService.queueSubscribeSePayWebhook(
-          sePayWebhookDto,
-        );
-      this.logger.log(`[paymentSubscribe] Webhook queued successfully`);
-      return result;
+      // Đẩy toàn bộ payload vào queue, không phân loại action ở đây
+      await this.transactionsService.queueSePayWebhook(sePayWebhookDto);
+
+      this.logger.log(`[handlePaymentWebhook] Webhook queued for processing`);
+      return { success: true, message: 'Webhook queued for processing' };
     } catch (error) {
-      this.logger.error(`[paymentSubscribe] Failed: ${error.message}`);
+      this.logger.error(`[handlePaymentWebhook] Failed: ${error.message}`);
       throw error instanceof HttpException
         ? error
         : new InternalServerErrorException('Failed to queue webhook');
     }
   }
 
-  @Post('/extend-webhook')
-  @Public()
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Handle SePay extend payment webhook' })
-  @ApiBearerAuth()
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Webhook queued successfully',
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Invalid payload',
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Invalid or missing authorization',
-  })
-  async paymentExtend(
-    @Body(new ValidationPipe()) sePayWebhookDto: SePayWebhookDto,
-    @Req() req: Request,
-  ) {
-    this.logger.log(`[paymentExtend] Received webhook`);
-    try {
-      if (!sePayWebhookDto || Object.keys(sePayWebhookDto).length === 0) {
-        this.logger.warn(`[paymentExtend] Empty webhook payload`);
-        throw new HttpException('Invalid payload', HttpStatus.BAD_REQUEST);
-      }
+  // @Post('/extend-webhook')
+  // @Public()
+  // @HttpCode(HttpStatus.OK)
+  // @ApiOperation({ summary: 'Handle SePay extend payment webhook' })
+  // @ApiBearerAuth()
+  // @ApiResponse({
+  //   status: HttpStatus.OK,
+  //   description: 'Webhook queued successfully',
+  // })
+  // @ApiResponse({
+  //   status: HttpStatus.BAD_REQUEST,
+  //   description: 'Invalid payload',
+  // })
+  // @ApiResponse({
+  //   status: HttpStatus.UNAUTHORIZED,
+  //   description: 'Invalid or missing authorization',
+  // })
+  // async paymentExtend(
+  //   @Body(new ValidationPipe()) sePayWebhookDto: SePayWebhookDto,
+  //   @Req() req: Request,
+  // ) {
+  //   this.logger.log(`[paymentExtend] Received webhook`);
+  //   try {
+  //     if (!sePayWebhookDto || Object.keys(sePayWebhookDto).length === 0) {
+  //       this.logger.warn(`[paymentExtend] Empty webhook payload`);
+  //       throw new HttpException('Invalid payload', HttpStatus.BAD_REQUEST);
+  //     }
 
-      const authHeader = req.headers['authorization'] as string;
-      const apiKey = this.configService.get<string>('EXTEND_WEBHOOK_API_KEY');
-      if (!authHeader || authHeader !== `Apikey ${apiKey}`) {
-        this.logger.warn(`[paymentExtend] Invalid or missing API key`);
-        throw new HttpException('Invalid API key', HttpStatus.UNAUTHORIZED);
-      }
+  //     const authHeader = req.headers['authorization'] as string;
+  //     const apiKey = this.configService.get<string>('EXTEND_WEBHOOK_API_KEY');
+  //     if (!authHeader || authHeader !== `Apikey ${apiKey}`) {
+  //       this.logger.warn(`[paymentExtend] Invalid or missing API key`);
+  //       throw new HttpException('Invalid API key', HttpStatus.UNAUTHORIZED);
+  //     }
 
-      const result =
-        await this.transactionsService.queueExtendSePayWebhook(sePayWebhookDto);
-      this.logger.log(`[paymentExtend] Webhook queued successfully`);
-      return result;
-    } catch (error) {
-      this.logger.error(`[paymentExtend] Failed: ${error.message}`);
-      throw error instanceof HttpException
-        ? error
-        : new InternalServerErrorException('Failed to queue webhook');
-    }
-  }
+  //     const result =
+  //       await this.transactionsService.queueExtendSePayWebhook(sePayWebhookDto);
+  //     this.logger.log(`[paymentExtend] Webhook queued successfully`);
+  //     return result;
+  //   } catch (error) {
+  //     this.logger.error(`[paymentExtend] Failed: ${error.message}`);
+  //     throw error instanceof HttpException
+  //       ? error
+  //       : new InternalServerErrorException('Failed to queue webhook');
+  //   }
+  // }
 
-  @Post('/upgrade-webhook')
-  @Public()
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Handle SePay upgrade payment webhook' })
-  @ApiBearerAuth()
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Webhook queued successfully',
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Invalid payload',
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Invalid or missing authorization',
-  })
-  async paymentUpgrade(
-    @Body(new ValidationPipe()) sePayWebhookDto: SePayWebhookDto,
-    @Req() req: Request,
-  ) {
-    this.logger.log(`[paymentUpgrade] Received webhook`);
-    try {
-      if (!sePayWebhookDto || Object.keys(sePayWebhookDto).length === 0) {
-        this.logger.warn(`[paymentUpgrade] Empty webhook payload`);
-        throw new HttpException('Invalid payload', HttpStatus.BAD_REQUEST);
-      }
+  // @Post('/upgrade-webhook')
+  // @Public()
+  // @HttpCode(HttpStatus.OK)
+  // @ApiOperation({ summary: 'Handle SePay upgrade payment webhook' })
+  // @ApiBearerAuth()
+  // @ApiResponse({
+  //   status: HttpStatus.OK,
+  //   description: 'Webhook queued successfully',
+  // })
+  // @ApiResponse({
+  //   status: HttpStatus.BAD_REQUEST,
+  //   description: 'Invalid payload',
+  // })
+  // @ApiResponse({
+  //   status: HttpStatus.UNAUTHORIZED,
+  //   description: 'Invalid or missing authorization',
+  // })
+  // async paymentUpgrade(
+  //   @Body(new ValidationPipe()) sePayWebhookDto: SePayWebhookDto,
+  //   @Req() req: Request,
+  // ) {
+  //   this.logger.log(`[paymentUpgrade] Received webhook`);
+  //   try {
+  //     if (!sePayWebhookDto || Object.keys(sePayWebhookDto).length === 0) {
+  //       this.logger.warn(`[paymentUpgrade] Empty webhook payload`);
+  //       throw new HttpException('Invalid payload', HttpStatus.BAD_REQUEST);
+  //     }
 
-      const authHeader = req.headers['authorization'] as string;
-      const apiKey = this.configService.get<string>('UPGRADE_WEBHOOK_API_KEY');
-      if (!authHeader || authHeader !== `Apikey ${apiKey}`) {
-        this.logger.warn(`[paymentUpgrade] Invalid or missing API key`);
-        throw new HttpException('Invalid API key', HttpStatus.UNAUTHORIZED);
-      }
+  //     const authHeader = req.headers['authorization'] as string;
+  //     const apiKey = this.configService.get<string>('UPGRADE_WEBHOOK_API_KEY');
+  //     if (!authHeader || authHeader !== `Apikey ${apiKey}`) {
+  //       this.logger.warn(`[paymentUpgrade] Invalid or missing API key`);
+  //       throw new HttpException('Invalid API key', HttpStatus.UNAUTHORIZED);
+  //     }
 
-      const result =
-        await this.transactionsService.queueUpgradeSePayWebhook(sePayWebhookDto);
-      this.logger.log(`[paymentUpgrade] Webhook queued successfully`);
-      return result;
-    } catch (error) {
-      this.logger.error(`[paymentUpgrade] Failed: ${error.message}`);
-      throw error instanceof HttpException
-        ? error
-        : new InternalServerErrorException('Failed to queue webhook');
-    }
-  }
+  //     const result =
+  //       await this.transactionsService.queueUpgradeSePayWebhook(
+  //         sePayWebhookDto,
+  //       );
+  //     this.logger.log(`[paymentUpgrade] Webhook queued successfully`);
+  //     return result;
+  //   } catch (error) {
+  //     this.logger.error(`[paymentUpgrade] Failed: ${error.message}`);
+  //     throw error instanceof HttpException
+  //       ? error
+  //       : new InternalServerErrorException('Failed to queue webhook');
+  //   }
+  // }
 
   @Sse('payment-status/:userId')
   @Public()

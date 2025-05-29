@@ -35,6 +35,7 @@ import { TicketsModule } from './modules/tickets/tickets.module';
 import { DomainsModule } from './modules/domains/domains.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { TransactionsModule } from '@modules/transactions/transactions.module';
+import { MembersModule } from './modules/members/members.module';
 
 @Module({
   imports: [
@@ -82,6 +83,7 @@ import { TransactionsModule } from '@modules/transactions/transactions.module';
     DomainsModule,
     PaymentsModule,
     TransactionsModule,
+    MembersModule,
   ],
   controllers: [AppController],
   providers: [
