@@ -15,15 +15,18 @@ import {
   UsageAction,
 } from '@modules/usage-logs/entities/usage-log.entity';
 import { UsageLogsService } from '@modules/usage-logs/usage-logs.service';
-import { SubscriptionStatus, UserSubscriptions } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
+import {
+  SubscriptionStatus,
+  UserSubscriptions,
+} from '@modules/user-subscriptions/entities/user-subscriptions.entity';
 @Injectable()
 export class SubscriptionsService {
+  private readonly logger = new Logger(SubscriptionsService.name);
   constructor(
     @InjectRepository(Subscription)
     private readonly subscriptionRepository: Repository<Subscription>,
     private readonly usageLogsService: UsageLogsService,
     private readonly dataSource: DataSource,
-    private readonly logger = new Logger(SubscriptionsService.name),
   ) {}
   async create(createSubscriptionDto: CreateSubscriptionDto) {
     const subscription = this.subscriptionRepository.create(
@@ -73,8 +76,12 @@ export class SubscriptionsService {
       throw new BadRequestException('Active subscription not found');
     }
     if (!userSub.subscription) {
-      this.logger.error(`User subscription found but missing subscription entity for user: ${userId}`);
-      throw new BadRequestException('Subscription entity not found for active user subscription');
+      this.logger.error(
+        `User subscription found but missing subscription entity for user: ${userId}`,
+      );
+      throw new BadRequestException(
+        'Subscription entity not found for active user subscription',
+      );
     }
 
     // Định nghĩa các loại tài nguyên cần kiểm tra
@@ -116,7 +123,7 @@ export class SubscriptionsService {
           );
 
           this.logger.log(
-            `User ${userId} - ${resourceType}: totalLimit=${totalLimit}, used=${used}, remaining=${Math.max(totalLimit - used, 0)}`
+            `User ${userId} - ${resourceType}: totalLimit=${totalLimit}, used=${used}, remaining=${Math.max(totalLimit - used, 0)}`,
           );
 
           return [resourceType, Math.max(totalLimit - used, 0)];

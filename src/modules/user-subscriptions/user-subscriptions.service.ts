@@ -317,7 +317,7 @@ export class UserSubscriptionsService {
           user: { id: userId },
           status: SubscriptionStatus.ACTIVE,
         },
-        select: ['id', 'start_date', 'end_date'],
+        select: ['id'],
       });
 
       if (!currentSubscription) {
@@ -330,10 +330,7 @@ export class UserSubscriptionsService {
       const chatbots = await manager.find(Chatbot, {
         where: {
           user: { id: userId },
-          created_at: Between(
-            currentSubscription.start_date,
-            currentSubscription.end_date,
-          ),
+          user_subscriptions_id: currentSubscription.id,
         },
         select: ['id'],
       });
