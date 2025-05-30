@@ -37,7 +37,7 @@ export function parseTransactionContent(content: string): {
 export function calcEndDate(startDate: Date, durationMonths?: number) {
   const endDate = new Date(startDate);
   endDate.setMonth(endDate.getMonth() + (durationMonths || 0));
-  this.logger.debug(
+  console.debug(
     `Calculated endDate: ${endDate.toISOString()} from startDate: ${startDate.toISOString()} and durationMonths: ${durationMonths}`,
   );
   return endDate;
