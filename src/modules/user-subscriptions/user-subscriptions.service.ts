@@ -15,7 +15,7 @@ import { UsersService } from '@modules/users/users.service';
 import { UserStatus } from '@modules/users/entities/user.entity';
 import { PaymentsService } from '@modules/payments/payments.service';
 import { TransactionsService } from '@modules/transactions/transactions.service';
-import { TransactionTemplate } from '@modules/transactions/dto/generate-qr.dto';
+import { ActionTemplate, TransactionTemplate } from '@modules/transactions/dto/generate-qr.dto';
 import {
   Chatbot,
   ChatbotStatus,
@@ -100,7 +100,7 @@ export class UserSubscriptionsService {
         ...(isFree
           ? {}
           : {
-              order_id: `SEVQR${subscription.subscription_code}${user.username}TS${Date.now()}`,
+              order_id: `SEVQR${ActionTemplate.SUBSCRIBE}${subscription.subscription_code}${user.username}TS${Date.now()}`,
             }),
       });
 
@@ -116,6 +116,7 @@ export class UserSubscriptionsService {
 
       const { qrImageUrl } = await this.transactionService.generateQR({
         username: user.username,
+        action: ActionTemplate.SUBSCRIBE,
         order_id: userSubscription.order_id,
         subscription_code: subscription.subscription_code,
         amount: userSubscription.amount,
@@ -179,7 +180,7 @@ export class UserSubscriptionsService {
         user: { id: userId },
         subscription: { id: newSubscriptionId },
         amount: newSubscription.price,
-        order_id: `SEVQR${newSubscription.subscription_code}${currentSubscription.user.username}TS${Date.now()}`,
+        order_id: `SEVQR${ActionTemplate.UPGRADE}${newSubscription.subscription_code}${currentSubscription.user.username}TS${Date.now()}`,
         status: SubscriptionStatus.PENDING,
       });
 
@@ -188,6 +189,7 @@ export class UserSubscriptionsService {
       // Generate QR code for payment
       const { qrImageUrl } = await this.transactionService.generateQR({
         username: currentSubscription.user.username,
+        action: ActionTemplate.UPGRADE,
         order_id: newUserSubscription.order_id,
         subscription_code: newSubscription.subscription_code,
         amount: newSubscription.price,
@@ -230,7 +232,7 @@ export class UserSubscriptionsService {
     const updatedSubscription = {
       ...currentSubscription,
       amount: subscription.price,
-      order_id: `SEVQR${subscription.subscription_code}${user.username}TS${Date.now()}`,
+      order_id: `SEVQR${ActionTemplate.EXTEND}${subscription.subscription_code}${user.username}TS${Date.now()}`,
     };
 
     // Save updated subscription
@@ -240,6 +242,7 @@ export class UserSubscriptionsService {
     // Generate QR code for payment
     const { qrImageUrl } = await this.transactionService.generateQR({
       username: user.username,
+      action: ActionTemplate.EXTEND,
       order_id: savedSubscription.order_id,
       subscription_code: subscription.subscription_code,
       amount: savedSubscription.amount,
