@@ -13,6 +13,7 @@ import {
 export enum SenderType {
   USER = 'user',
   CHATBOT = 'chatbot',
+  PREVIEWER='previewer'
 }
 
 @Entity('messages')

@@ -157,7 +157,7 @@ export class ChatbotsService {
       }),
       this.conversationRepository.findOne({
         where: { id: chatWithChatbotDto.conversation_id },
-        select: { id: true },
+        select: { id: true, external_conversation_id: true },
       }),
     ]);
     if (!chatbot) {
@@ -175,7 +175,7 @@ export class ChatbotsService {
 
     await this.messageService.saveMessageUser({
       conversation_id: conversation.id,
-      sender_type: SenderType.USER,
+      sender_type: SenderType.PREVIEWER,
       message_content: chatWithChatbotDto.message,
       send_at: new Date(),
     });
@@ -520,10 +520,6 @@ export class ChatbotsService {
       console.error('Chatbot stream error:', error);
       res.status(500).json({ message: 'Failed to communicate with Coze API' });
     }
-  }
-
-  findAll() {
-    return `This action returns all chatbots`;
   }
 
   async create(createChatbotDto: CreateChatbotDto) {

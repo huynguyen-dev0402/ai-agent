@@ -15,7 +15,10 @@ import { UsersService } from '@modules/users/users.service';
 import { UserStatus } from '@modules/users/entities/user.entity';
 import { PaymentsService } from '@modules/payments/payments.service';
 import { TransactionsService } from '@modules/transactions/transactions.service';
-import { ActionTemplate, TransactionTemplate } from '@modules/transactions/dto/generate-qr.dto';
+import {
+  ActionTemplate,
+  TransactionTemplate,
+} from '@modules/transactions/dto/generate-qr.dto';
 import {
   Chatbot,
   ChatbotStatus,
@@ -310,7 +313,10 @@ export class UserSubscriptionsService {
     });
   }
 
-  async cancelSubscription(userId: string): Promise<boolean> {
+  async cancelSubscription(
+    userId: string,
+    subscriptionId: string,
+  ): Promise<boolean> {
     this.logger.log(`Canceling subscription for user ${userId}`);
 
     return this.userSubRepository.manager.transaction(async (manager) => {
@@ -318,6 +324,7 @@ export class UserSubscriptionsService {
       const currentSubscription = await manager.findOne(UserSubscriptions, {
         where: {
           user: { id: userId },
+          subscription: { id: subscriptionId },
           status: SubscriptionStatus.ACTIVE,
         },
         select: ['id'],
@@ -382,7 +389,9 @@ export class UserSubscriptionsService {
       start_date: true,
       end_date: true,
       subscription: {
+        id: true,
         name: true,
+        price: true,
         message_limit: true,
         knowledge_limit: true,
         agent_limit: true,

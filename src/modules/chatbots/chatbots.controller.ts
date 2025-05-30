@@ -37,6 +37,7 @@ export class ChatbotsController {
   })
   async chatWithBot(
     @Param('chatbotId') chatbotId: string,
+    @Param('userId') userId: string,
     @Body() chatWithChatbotDto: ChatWithChatbotDto,
     @Res({ passthrough: false }) response: Response,
   ) {

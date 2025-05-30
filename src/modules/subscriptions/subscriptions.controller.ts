@@ -159,6 +159,47 @@ export class SubscriptionsController {
     return successResponse('Subscription renewed successfully.');
   }
 
+  @Post('extend')
+  @HttpCode(201)
+  @ApiOperation({
+    summary: 'Extend the current subscription package of a user',
+  })
+  @ApiBody({ type: ActionSubscriptionDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Subscription has been successfully extended.',
+    type: UserSubscriptions,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid request (e.g., no active subscription to extend).',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User or subscription not found.',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'User is not authorized to perform this action (e.g., user is inactive).',
+  })
+  async extendSubscription(
+    @Body(new ValidationPipe()) extendDto: ActionSubscriptionDto,
+  ) {
+    if (!extendDto.subscriptionId) {
+      throw new BadRequestException('subscriptionId cannot be empty.');
+    }
+    const response = await this.userSubscriptionService.extendSubscription(
+      extendDto.userId,
+    );
+
+    if (!response) {
+      throw new BadRequestException('Cannot extend subscription');
+    }
+
+    return successResponse('Subscription extended successfully.', response);
+  }
+
   @Post('cancel')
   @HttpCode(200)
   @ApiOperation({ summary: 'Cancel the current active subscription of a user' })
@@ -184,8 +225,12 @@ export class SubscriptionsController {
   async cancelSubscription(
     @Body(new ValidationPipe()) cancelDto: ActionSubscriptionDto,
   ) {
+    if (!cancelDto.subscriptionId) {
+      throw new BadRequestException('subscriptionId cannot be empty.');
+    }
     const response = await this.userSubscriptionService.cancelSubscription(
       cancelDto.userId,
+      cancelDto.subscriptionId!,
     );
 
     if (!response) {
