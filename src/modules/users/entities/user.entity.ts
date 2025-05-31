@@ -22,6 +22,7 @@ import { Ticket } from '@modules/tickets/entities/ticket.entity';
 import { WorkspaceMember } from '@modules/workspace-members/entities/workspace-member.entity';
 import { Domain } from '@modules/domains/entities/domain.entity';
 import { Payment } from '@modules/payments/entities/payment.entity';
+import { TicketMessage } from '@modules/ticket-messages/entities/ticket-message.entity';
 
 export enum UserStatus {
   ACTIVE = 'active',
@@ -71,7 +72,7 @@ export class User {
   role: UserRole;
 
   @Column({ type: 'boolean', nullable: true, default: false })
-  is_member: boolean
+  is_member: boolean;
 
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.ACTIVE })
   status: UserStatus;
@@ -133,6 +134,9 @@ export class User {
 
   @OneToMany(() => Domain, (domains) => domains.user)
   domains: Domain[];
+
+  @OneToMany(() => TicketMessage, (ticket_messages) => ticket_messages.user)
+  ticket_messages: TicketMessage[];
 
   // @OneToMany(() => Payment, (payments) => payments.user)
   // payments: Payment[];

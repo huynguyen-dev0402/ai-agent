@@ -672,7 +672,7 @@ export class UsersController {
   async findAllWorkspacesForUser(
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
-    if(request.user.is_member) {
+    if (request.user.is_member) {
       throw new BadRequestException(
         'Cannot retrieve workspaces for a member user. Please contact the workspace owner.',
       );
@@ -699,7 +699,7 @@ export class UsersController {
   async findAllResourceForUser(
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
-    if(request.user.is_member) {
+    if (request.user.is_member) {
       throw new BadRequestException(
         'Cannot retrieve resources for a member user. Please contact the workspace owner.',
       );
@@ -726,7 +726,7 @@ export class UsersController {
   async getSubscriptions(
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
-    if(request.user.is_member) {
+    if (request.user.is_member) {
       throw new BadRequestException(
         'Cannot retrieve subscriptions for a member user. Please contact the workspace owner.',
       );
@@ -779,7 +779,7 @@ export class UsersController {
   async getChatbotToken(
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
-    if(request.user.is_member) {
+    if (request.user.is_member) {
       throw new BadRequestException(
         'Cannot retrieve chatbot tokens for a member user. Please contact the workspace owner.',
       );
@@ -809,7 +809,7 @@ export class UsersController {
   async getSubscriptionsLimits(
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
-    if(request.user.is_member) {
+    if (request.user.is_member) {
       throw new BadRequestException(
         'Cannot retrieve subscription limits for a member user. Please contact the workspace owner.',
       );
@@ -843,7 +843,7 @@ export class UsersController {
     @Param('resourceId') resourceId: string,
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
-    if(request.user.is_member) {
+    if (request.user.is_member) {
       throw new BadRequestException(
         'Cannot retrieve resource for a member user. Please contact the workspace owner.',
       );
@@ -871,7 +871,7 @@ export class UsersController {
   async findAllChatbotsForUser(
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
-    if(request.user.is_member) {
+    if (request.user.is_member) {
       throw new BadRequestException(
         'Cannot retrieve chatbots for a member user. Please contact the workspace owner.',
       );
@@ -904,7 +904,7 @@ export class UsersController {
     @Param('chatbotId') chatbotId: string,
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
-    if(request.user.is_member) {
+    if (request.user.is_member) {
       throw new BadRequestException(
         'Cannot retrieve chatbot for a member user. Please contact the workspace owner.',
       );
@@ -932,7 +932,7 @@ export class UsersController {
   async findDomains(
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
-    if(request.user.is_member) {
+    if (request.user.is_member) {
       throw new BadRequestException(
         'Cannot retrieve domains for a member user. Please contact the workspace owner.',
       );

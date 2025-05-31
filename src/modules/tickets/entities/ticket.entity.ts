@@ -1,3 +1,4 @@
+import { TicketMessage } from '@modules/ticket-messages/entities/ticket-message.entity';
 import { User } from '@modules/users/entities/user.entity';
 import {
   Entity,
@@ -6,6 +7,7 @@ import {
   ManyToOne,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
 
 export enum TicketStatus {
@@ -13,6 +15,8 @@ export enum TicketStatus {
   IN_PROGRESS = 'in_progress',
   RESOLVED = 'resolved',
   CLOSED = 'closed',
+  REOPENED = 'reopened',
+  DELETED = 'deleted',
 }
 
 @Entity('tickets')
@@ -26,7 +30,11 @@ export class Ticket {
   @Column({ type: 'text' })
   content: string;
 
-  @Column({ type: 'enum', enum: TicketStatus })
+  @Column({
+    type: 'enum',
+    enum: TicketStatus,
+    default: TicketStatus.IN_PROGRESS,
+  })
   status: TicketStatus;
 
   @CreateDateColumn({
@@ -45,4 +53,7 @@ export class Ticket {
 
   @ManyToOne(() => User, (user) => user.tickets, { nullable: false })
   user: User;
+
+  @OneToMany(() => TicketMessage, (message) => message.ticket)
+  ticket_messages: TicketMessage[];
 }

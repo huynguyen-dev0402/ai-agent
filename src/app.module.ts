@@ -35,6 +35,7 @@ import { TicketsModule } from './modules/tickets/tickets.module';
 import { DomainsModule } from './modules/domains/domains.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { TransactionsModule } from '@modules/transactions/transactions.module';
+import { TicketMessagesModule } from './modules/ticket-messages/ticket-messages.module';
 
 @Module({
   imports: [
@@ -49,7 +50,7 @@ import { TransactionsModule } from '@modules/transactions/transactions.module';
       password: process.env.DATABASE_PASSWORD,
       database: process.env.DATABASE_NAME,
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      //synchronize: true,
+      synchronize: true,
       //logging: true,
     }),
     UsersModule,
@@ -82,6 +83,7 @@ import { TransactionsModule } from '@modules/transactions/transactions.module';
     DomainsModule,
     PaymentsModule,
     TransactionsModule,
+    TicketMessagesModule,
   ],
   controllers: [AppController],
   providers: [
