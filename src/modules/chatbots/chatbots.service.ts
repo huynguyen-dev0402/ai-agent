@@ -41,7 +41,14 @@ import {
   ChatbotToken,
   ChatbotTokenStatus,
 } from '@modules/chatbot-tokens/entities/chatbot-token.entity';
-import { SubscriptionStatus, UserSubscriptions } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
+import {
+  SubscriptionStatus,
+  UserSubscriptions,
+} from '@modules/user-subscriptions/entities/user-subscriptions.entity';
+import {
+  WorkspaceMember,
+  WorkspaceMemberRole,
+} from '@modules/workspace-members/entities/workspace-member.entity';
 
 @Injectable()
 export class ChatbotsService {
@@ -69,6 +76,8 @@ export class ChatbotsService {
     private readonly domainRepository: Repository<Domain>,
     @InjectRepository(UserSubscriptions)
     private readonly userSubRepository: Repository<UserSubscriptions>,
+    @InjectRepository(WorkspaceMember)
+    private readonly workspaceMemRepository: Repository<WorkspaceMember>,
     @InjectRepository(ChatbotToken)
     private readonly chatbotTokenRepository: Repository<ChatbotToken>,
     private dataSource: DataSource,
@@ -91,6 +100,38 @@ export class ChatbotsService {
         },
       },
     });
+    return chatbots;
+  }
+
+  async findAllForMember(userId: string) {
+    const member = await this.workspaceMemRepository.findOne({
+      where: {
+        user: { id: userId },
+      },
+      relations: {
+        user: true,
+      },
+      select: {
+        id: true,
+        user: {
+          id: true,
+        },
+      },
+    });
+
+    if (!member) {
+      throw new NotFoundException('Member not found');
+    }
+
+    if (
+      member.role !== WorkspaceMemberRole.ADMIN &&
+      member.role !== WorkspaceMemberRole.MEMBER
+    ) {
+      throw new ForbiddenException(
+        'You do not have permission to access this resource',
+      );
+    }
+    const chatbots = await this.findAllChatbotsForUser(member.user.id);
     return chatbots;
   }
 
@@ -586,7 +627,9 @@ export class ChatbotsService {
           space_id: user.workspace_external_space_id,
           name: createChatbotDto.chatbot_name,
           description: createChatbotDto.description || null,
-          model_info_config: createChatbotDto.model_info_config,
+          model_info_config: {
+            model_id: model.id,
+          },
         }),
       });
 

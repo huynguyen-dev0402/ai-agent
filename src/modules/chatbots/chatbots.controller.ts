@@ -7,10 +7,11 @@ import {
   Req,
   Res,
   UseInterceptors,
+  Get,
 } from '@nestjs/common';
 import { ChatbotsService } from '@modules/chatbots/chatbots.service';
 import { AuthGuard } from '@modules/auth/guards/jwt-auth.guard';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UserIdMatchGuard } from '@common/guards/user-id-match.guard';
 import { ChatWithChatbotDto } from '@modules/chatbots/dto/chat-with-chatbot.dto';
 import { Response } from 'express';
@@ -22,12 +23,13 @@ import {
 import { CheckQuotaInterceptor } from '@common/interceptors/usage-logs.interceptor';
 
 @Controller('users/:userId/chatbots')
-@UseGuards(AuthGuard, UserIdMatchGuard)
+@UseGuards(AuthGuard)
 @ApiTags('Chatbots')
 @ApiBearerAuth('access-token')
 export class ChatbotsController {
   constructor(private readonly chatbotsService: ChatbotsService) {}
 
+  @UseGuards(UserIdMatchGuard) // Kiểm tra userId trong URL có khớp với userId trong token
   @Post('/:chatbotId/chat')
   @UseInterceptors(CheckQuotaInterceptor) // Áp dụng interceptor để ghi log usage
   @CheckQuota({
@@ -46,6 +48,24 @@ export class ChatbotsController {
       chatWithChatbotDto,
       response,
     );
+  }
+
+  @ApiTags('Chatbots')
+  @ApiBearerAuth('access-token')
+  @Get()
+  /**
+   * Lấy danh sách chatbot mà user là thành viên.
+   * @param userId ID của user
+   * @returns Danh sách chatbot
+   */
+  @ApiOperation({ summary: 'Lấy danh sách chatbot của user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Danh sách chatbot trả về thành công.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  async getChatbots(@Param('userId') userId: string) {
+    return await this.chatbotsService.findAllForMember(userId);
   }
 
   // @Post('/:chatbotId/iframe/chat')

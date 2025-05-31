@@ -25,6 +25,7 @@ import { ChatbotToken } from '@modules/chatbot-tokens/entities/chatbot-token.ent
 import { ChatbotTokensModule } from '@modules/chatbot-tokens/chatbot-tokens.module';
 import { Domain } from '@modules/domains/entities/domain.entity';
 import { UserSubscriptions } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
+import { WorkspaceMember } from '@modules/workspace-members/entities/workspace-member.entity';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { UserSubscriptions } from '@modules/user-subscriptions/entities/user-sub
       ChatbotToken,
       Domain,
       UserSubscriptions,
+      WorkspaceMember,
     ]),
     AuthModule,
     WorkspacesModule,

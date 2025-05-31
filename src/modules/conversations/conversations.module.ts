@@ -8,12 +8,16 @@ import { Message } from '@modules/messages/entities/message.entity';
 import { ChatbotsModule } from '@modules/chatbots/chatbots.module';
 import { EndUser } from '@modules/end-users/entities/end-user.entity';
 import { User } from '@modules/users/entities/user.entity';
+import { AuthService } from '@modules/auth/auth.service';
+import { UsersService } from '@modules/users/users.service';
+import { AuthModule } from '@modules/auth/auth.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Conversation, Message, EndUser, User]),
     MessagesModule,
-    ChatbotsModule
+    ChatbotsModule,
+    AuthModule
   ],
   controllers: [ConversationsController],
   providers: [ConversationsService],

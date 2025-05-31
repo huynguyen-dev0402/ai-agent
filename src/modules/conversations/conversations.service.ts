@@ -24,10 +24,22 @@ export class ConversationsService {
   }
 
   async findAllByChatbotId(chatbotId: string) {
-    return this.conversationRepository.findOne({
+    return this.conversationRepository.find({
       where: {
         chatbot: {
           id: chatbotId,
+        },
+      },
+    });
+  }
+
+  async findAllByUserId(userId: string) {
+    return this.conversationRepository.find({
+      where: {
+        chatbot: {
+          user: {
+            id: userId,
+          },
         },
       },
     });

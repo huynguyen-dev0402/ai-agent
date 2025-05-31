@@ -92,6 +92,11 @@ export class UsersController {
   async createApiToken(
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
+    if (request.user.is_member) {
+      throw new BadRequestException(
+        'Cannot create API Token for a member user. Please contact the workspace owner.',
+      );
+    }
     const token = await this.usersService.getApiTokenForUser(request.user.id);
     if (!token) {
       throw new BadRequestException('Unable to create API Token.');
@@ -667,6 +672,11 @@ export class UsersController {
   async findAllWorkspacesForUser(
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
+    if(request.user.is_member) {
+      throw new BadRequestException(
+        'Cannot retrieve workspaces for a member user. Please contact the workspace owner.',
+      );
+    }
     const workspaces = await this.workspaceService.findWorkspaceByUserId(
       request.user.id,
     );
@@ -689,6 +699,11 @@ export class UsersController {
   async findAllResourceForUser(
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
+    if(request.user.is_member) {
+      throw new BadRequestException(
+        'Cannot retrieve resources for a member user. Please contact the workspace owner.',
+      );
+    }
     const resources = await this.usersService.findAllResourceForUser(
       request.user.id,
     );
@@ -711,6 +726,11 @@ export class UsersController {
   async getSubscriptions(
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
+    if(request.user.is_member) {
+      throw new BadRequestException(
+        'Cannot retrieve subscriptions for a member user. Please contact the workspace owner.',
+      );
+    }
     const userSubscription = await this.userSubscriptionService.findOneForUser(
       request.user.id,
     );
@@ -759,6 +779,11 @@ export class UsersController {
   async getChatbotToken(
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
+    if(request.user.is_member) {
+      throw new BadRequestException(
+        'Cannot retrieve chatbot tokens for a member user. Please contact the workspace owner.',
+      );
+    }
     const chatbotTokens = await this.chatbotTokenService.getTokenForUser(
       request.user.id,
     );
@@ -784,6 +809,11 @@ export class UsersController {
   async getSubscriptionsLimits(
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
+    if(request.user.is_member) {
+      throw new BadRequestException(
+        'Cannot retrieve subscription limits for a member user. Please contact the workspace owner.',
+      );
+    }
     const remainingLimits = await this.subscriptionService.getRemainingLimits(
       request.user.id,
     );
@@ -813,6 +843,11 @@ export class UsersController {
     @Param('resourceId') resourceId: string,
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
+    if(request.user.is_member) {
+      throw new BadRequestException(
+        'Cannot retrieve resource for a member user. Please contact the workspace owner.',
+      );
+    }
     const resource = await this.resourceService.findOneResourceForUser(
       request.user.id,
       resourceId,
@@ -836,6 +871,11 @@ export class UsersController {
   async findAllChatbotsForUser(
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
+    if(request.user.is_member) {
+      throw new BadRequestException(
+        'Cannot retrieve chatbots for a member user. Please contact the workspace owner.',
+      );
+    }
     const chatbots = await this.chatbotService.findAllChatbotsForUser(
       request.user.id,
     );
@@ -864,6 +904,11 @@ export class UsersController {
     @Param('chatbotId') chatbotId: string,
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
+    if(request.user.is_member) {
+      throw new BadRequestException(
+        'Cannot retrieve chatbot for a member user. Please contact the workspace owner.',
+      );
+    }
     const chatbot = await this.chatbotService.findChatbotForUser(
       request.user.id,
       chatbotId,
@@ -887,6 +932,11 @@ export class UsersController {
   async findDomains(
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
+    if(request.user.is_member) {
+      throw new BadRequestException(
+        'Cannot retrieve domains for a member user. Please contact the workspace owner.',
+      );
+    }
     const domains = await this.domainService.findDomainsForUser(
       request.user.id,
     );

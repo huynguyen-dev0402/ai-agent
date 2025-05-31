@@ -3,7 +3,7 @@ import { WorkspaceMembersService } from './workspace-members.service';
 import { WorkspaceMembersController } from './workspace-members.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { WorkspaceMember } from './entities/workspace-member.entity';
-import { AdminGuard } from '@common/guards/workspace-admin.guard';
+//import { AdminGuard } from '@common/guards/workspace-admin.guard';
 import { UserSubscriptions } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
 import { User } from '@modules/users/entities/user.entity';
 import { Workspace } from '@modules/workspaces/entities/workspace.entity';
@@ -26,20 +26,17 @@ import { WorkspacesModule } from '@modules/workspaces/workspaces.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      WorkspaceMember,
-      Workspace,
-      User,
-    ]),
+    TypeOrmModule.forFeature([WorkspaceMember, Workspace, User]),
     WorkspacesModule,
     UsersModule,
     UserSubscriptionsModule,
     UsageLogsModule,
+    AuthModule,
   ],
   controllers: [WorkspaceMembersController],
   providers: [
     WorkspaceMembersService,
-    AdminGuard,
+    //AdminGuard,
     CheckQuotaInterceptor,
     Reflector,
     QuotaService,

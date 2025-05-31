@@ -1,74 +1,76 @@
-import { User } from '@modules/users/entities/user.entity';
-import {
-  WorkspaceMember,
-  WorkspaceMemberRole,
-} from '@modules/workspace-members/entities/workspace-member.entity';
-import { Workspace } from '@modules/workspaces/entities/workspace.entity';
-import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+// import {
+//   WorkspaceMember,
+//   WorkspaceMemberRole,
+// } from '@modules/workspace-members/entities/workspace-member.entity';
+// import { Workspace } from '@modules/workspaces/entities/workspace.entity';
+// import {
+//   CanActivate,
+//   ExecutionContext,
+//   ForbiddenException,
+//   Injectable,
+//   Logger,
+//   NotFoundException,
+// } from '@nestjs/common';
+// import { InjectRepository } from '@nestjs/typeorm';
+// import { Repository } from 'typeorm';
 
-@Injectable()
-export class AdminGuard implements CanActivate {
-  constructor(
-    @InjectRepository(WorkspaceMember)
-    private workspaceMembersRepository: Repository<WorkspaceMember>,
-    @InjectRepository(Workspace)
-    private workspaceRepository: Repository<Workspace>,
-  ) {}
+// @Injectable()
+// export class MemberGuard implements CanActivate {
+//   private readonly logger = new Logger(MemberGuard.name);
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
-    const userId = request.user?.id; // Lấy từ JwtAuthGuard
-    const workspaceId = request.params.workspaceId;
+//   constructor(
+//     @InjectRepository(WorkspaceMember)
+//     private workspaceMembersRepository: Repository<WorkspaceMember>,
+//     @InjectRepository(Workspace)
+//     private workspaceRepository: Repository<Workspace>,
+//   ) {}
 
-    if (!userId || !workspaceId) {
-      throw new ForbiddenException('Missing user or workspace information');
-    }
+//   async canActivate(context: ExecutionContext): Promise<boolean> {
+//     const request = context.switchToHttp().getRequest();
+//     const userId = request.user?.id;
 
-    const workspace = await this.workspaceRepository.findOne({
-      where: {
-        id: workspaceId,
-        users: {
-          id: userId,
-        },
-      },
-      relations: {
-        users: true,
-      },
-      select: {
-        id: true,
-      },
-    });
+//     if (!userId || !workspaceId) {
+//       this.logger.warn('Missing user or workspace information');
+//       throw new ForbiddenException('Missing user or workspace information');
+//     }
 
-    if (!workspace) {
-      throw new NotFoundException('User does not have any workspace yet');
-    }
+//     const inviter = await this.workspaceMembersRepository.findOne({
+//       where: {
+//         invited_by: userId,
+//       },
+//       select: ['id'],
+//     });
 
-    if (workspace.id === workspaceId) {
-      return true;
-    }
+//     if (!inviter) {
+//       this.logger.warn(
+//         `Workspace not found or user ${userId} does not belong to workspace ${workspaceId}`,
+//       );
+//       throw new NotFoundException('User does not have any workspace yet');
+//     }
 
-    const isAdmin = await this.workspaceMembersRepository.findOne({
-      where: {
-        id: workspaceId,
-        user: { id: userId },
-        role: WorkspaceMemberRole.ADMIN,
-      },
-    });
+//     if (inviter.id === userId) {
+//       this.logger.log(`User ${userId} is owner of workspace ${workspaceId}`);
+//       return true;
+//     }
 
-    if (!isAdmin) {
-      throw new ForbiddenException(
-        'You do not have admin rights in this workspace',
-      );
-    }
+//     const isAdmin = await this.workspaceMembersRepository.findOne({
+//       where: {
+//         id: workspaceId,
+//         user: { id: userId },
+//         role: WorkspaceMemberRole.ADMIN,
+//       },
+//     });
 
-    return true;
-  }
-}
+//     if (!isAdmin) {
+//       this.logger.warn(
+//         `User ${userId} is not admin in workspace ${workspaceId}`,
+//       );
+//       throw new ForbiddenException(
+//         'You do not have admin rights in this workspace',
+//       );
+//     }
+
+//     this.logger.log(`User ${userId} is admin in workspace ${workspaceId}`);
+//     return true;
+//   }
+// }

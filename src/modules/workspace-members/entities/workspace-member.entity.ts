@@ -18,7 +18,6 @@ export enum WorkspaceMemberRole {
 }
 
 @Entity('workspace_members')
-@Index('idx_workspace_members_workspace_id', ['workspace'])
 @Index('idx_workspace_members_user_id', ['user'])
 export class WorkspaceMember {
   @PrimaryGeneratedColumn('uuid')
@@ -39,13 +38,13 @@ export class WorkspaceMember {
   joined_at: Date;
 
   @Column({ type: 'uuid' })
-  user_manager_id: string;
-
-  @Column({ type: 'uuid' })
   user_id: string;
 
-  @Column({ type: 'text' })
-  workspace_id: string;
+  @Column({ type: 'uuid' })
+  invited_by: string;
+
+  // @Column({ type: 'text' })
+  // workspace_id: string;
 
   @CreateDateColumn({
     type: 'timestamp',
@@ -61,13 +60,17 @@ export class WorkspaceMember {
   })
   updated_at: Date;
 
-  @ManyToOne(() => Workspace, (workspace) => workspace.workspace_members, {
-    nullable: false,
-  })
-  @JoinColumn({ name: 'workspace_id' })
-  workspace: Workspace;
+  // @ManyToOne(() => Workspace, (workspace) => workspace.workspace_members, {
+  //   nullable: false,
+  // })
+  // @JoinColumn({ name: 'workspace_id' })
+  // workspace: Workspace;
 
   @ManyToOne(() => User, (user) => user.workspace_members, { nullable: false })
   @JoinColumn({ name: 'user_id' })
   user: User;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'invited_by' })
+  inviter: User;
 }

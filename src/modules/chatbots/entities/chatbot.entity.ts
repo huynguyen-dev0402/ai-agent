@@ -90,7 +90,7 @@ export class Chatbot {
     () => UserSubscriptions,
     (user_subscriptions) => user_subscriptions.chatbots,
   )
-  @JoinColumn({ name: 'user_subscription_id' })
+  @JoinColumn({ name: 'user_subscriptions_id' })
   user_subscriptions: UserSubscriptions;
 
   @OneToOne(() => ChatbotOnboarding, (onboarding) => onboarding.chatbot)

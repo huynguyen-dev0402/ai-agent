@@ -14,7 +14,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { WorkspaceMembersService } from './workspace-members.service';
-import { AdminGuard } from '@common/guards/workspace-admin.guard';
+//import { AdminGuard } from '@common/guards/workspace-admin.guard';
 import { AuthGuard } from '@modules/auth/guards/jwt-auth.guard';
 import { CheckQuota } from '@common/decorators/check-quota.decorator';
 import { CheckQuotaInterceptor } from '@common/interceptors/usage-logs.interceptor';
@@ -26,22 +26,18 @@ import { QUANTITY_REDUCE } from '@common/constants/quantity.constant';
 import { AddMemberDto } from './dto/add-member.dto';
 import { Request } from 'express';
 import { EditMemberDto } from './dto/edit-member.dto';
+import { UserIdMatchGuard } from '@common/guards/user-id-match.guard';
 
-@Controller('workspaces/:workspaceId/members')
+@UseGuards(AuthGuard, UserIdMatchGuard)
+@Controller('users/:userId/members')
 export class WorkspaceMembersController {
   constructor(
     private readonly workspaceMembersService: WorkspaceMembersService,
   ) {}
 
   @Get()
-  async getMembers(
-    @Param('workspaceId') workspaceId: string,
-    @Query('userId') userId: string,
-  ) {
-    const members = await this.workspaceMembersService.findAllMember(
-      workspaceId,
-      userId,
-    );
+  async getMembers(@Param('userId') userId: string) {
+    const members = await this.workspaceMembersService.findAllMember(userId);
     return {
       success: true,
       message: 'Get members success',
@@ -50,7 +46,6 @@ export class WorkspaceMembersController {
   }
 
   @Post()
-  @UseGuards(AdminGuard)
   @UseInterceptors(CheckQuotaInterceptor) // Áp dụng interceptor để ghi log usage
   @CheckQuota({
     resourceType: ResourceType.MEMBER,
@@ -58,15 +53,10 @@ export class WorkspaceMembersController {
     quantity: QUANTITY_REDUCE, // Số lượng sử dụng, mặc định là 1
   })
   async addMember(
-    @Param('workspaceId') workspaceId: string,
+    @Param('userId') userId: string,
     @Body() addMemberDto: AddMemberDto,
-    @Req() request: Request & { user: { [key: string]: string } },
   ) {
-    await this.workspaceMembersService.addMember(
-      request.user.id,
-      workspaceId,
-      addMemberDto,
-    );
+    await this.workspaceMembersService.addSubMember(userId, addMemberDto);
     return {
       success: true,
       message: 'Add member success',
@@ -74,14 +64,13 @@ export class WorkspaceMembersController {
   }
 
   @Patch('')
-  @UseGuards(AdminGuard)
   async updateMemberRole(
-    @Param('workspaceId') workspaceId: string,
+    @Param('userId') userId: string,
     @Body() editMemberDto: EditMemberDto,
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
     const member = await this.workspaceMembersService.updateMemberRole(
-      workspaceId,
+      userId,
       request.user.id,
       editMemberDto,
     );
@@ -92,17 +81,14 @@ export class WorkspaceMembersController {
     };
   }
 
-  @Delete('/:userId')
-  @UseGuards(AdminGuard)
+  @Delete('/:memberId')
   async removeMember(
-    @Param('workspaceId') workspaceId: string,
     @Param('userId') userId: string,
-    @Req() request: Request & { user: { [key: string]: string } },
+    @Param('memberId') memberId: string,
   ) {
     const result = await this.workspaceMembersService.removeMember(
-      workspaceId,
+      memberId,
       userId,
-      request.user.id,
     );
     return { success: true, message: result.message };
   }

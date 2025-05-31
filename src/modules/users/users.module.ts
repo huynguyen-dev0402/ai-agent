@@ -34,6 +34,7 @@ import { Domain } from '@modules/domains/entities/domain.entity';
 import { ChatbotToken } from '@modules/chatbot-tokens/entities/chatbot-token.entity';
 import { DomainsModule } from '@modules/domains/domains.module';
 import { PaymentsModule } from '@modules/payments/payments.module';
+import { WorkspaceMember } from '@modules/workspace-members/entities/workspace-member.entity';
 
 @Module({
   imports: [
@@ -50,7 +51,8 @@ import { PaymentsModule } from '@modules/payments/payments.module';
       UsageLog,
       Conversation,
       Domain,
-      ChatbotToken
+      ChatbotToken,
+      WorkspaceMember,
     ]),
     AuthModule,
     ApiTokensModule,

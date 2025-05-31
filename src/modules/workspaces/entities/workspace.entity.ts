@@ -52,9 +52,9 @@ export class Workspace {
   @OneToMany(() => User, (user) => user.workspace)
   users: User[];
 
-  @OneToMany(
-    () => WorkspaceMember,
-    (workspace_members) => workspace_members.workspace,
-  )
-  workspace_members: WorkspaceMember[];
+  // @OneToMany(
+  //   () => WorkspaceMember,
+  //   (workspace_members) => workspace_members.workspace,
+  // )
+  // workspace_members: WorkspaceMember[];
 }

@@ -120,7 +120,7 @@ export class SubscriptionsController {
       throw new BadRequestException('Cannot upgrade subscription');
     }
 
-    return successResponse('Subscription upgraded successfully.');
+    return successResponse('Subscription upgraded successfully.', response);
   }
 
   @Post('renew')
