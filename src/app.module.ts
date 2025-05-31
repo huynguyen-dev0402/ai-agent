@@ -50,7 +50,7 @@ import { TicketMessagesModule } from './modules/ticket-messages/ticket-messages.
       password: process.env.DATABASE_PASSWORD,
       database: process.env.DATABASE_NAME,
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true,
+      //synchronize: true,
       //logging: true,
     }),
     UsersModule,
