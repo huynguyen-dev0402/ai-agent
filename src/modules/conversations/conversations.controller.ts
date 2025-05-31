@@ -39,8 +39,16 @@ export class ConversationsController {
     description: 'Danh sách conversation trả về thành công.',
   })
   @ApiResponse({ status: 400, description: 'Thiếu hoặc sai chatbotId.' })
-  findAll(@Query('chatbotId') chatbotId: string) {
-    return this.conversationsService.findAllByChatbotId(chatbotId);
+  async findAll(@Query('chatbotId') chatbotId: string) {
+    if (!chatbotId) {
+      throw new BadRequestException('chatbotId is required');
+    }
+    const result=await this.conversationsService.findAllByChatbotId(chatbotId);
+    return {
+      success: true,
+      message: 'Get conversations success',
+      data: result,
+    };
   }
 
   @Get('/:id')

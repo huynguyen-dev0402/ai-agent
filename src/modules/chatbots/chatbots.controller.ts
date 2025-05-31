@@ -8,6 +8,7 @@ import {
   Res,
   UseInterceptors,
   Get,
+  BadRequestException,
 } from '@nestjs/common';
 import { ChatbotsService } from '@modules/chatbots/chatbots.service';
 import { AuthGuard } from '@modules/auth/guards/jwt-auth.guard';
@@ -65,7 +66,15 @@ export class ChatbotsController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async getChatbots(@Param('userId') userId: string) {
-    return await this.chatbotsService.findAllForMember(userId);
+    if (!userId) {
+      throw new BadRequestException('userId is required');
+    }
+    const result= await this.chatbotsService.findAllForMember(userId);
+    return {
+      success: true,
+      message: 'Get successful chatbot list',
+      data: result,
+    };
   }
 
   // @Post('/:chatbotId/iframe/chat')
