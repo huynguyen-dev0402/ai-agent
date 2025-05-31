@@ -184,6 +184,8 @@ export class UserSubscriptionsService {
         subscription: { id: newSubscriptionId },
         amount: newSubscription.price,
         order_id: `SEVQR${ActionTemplate.UPGRADE}${newSubscription.subscription_code}${currentSubscription.user.username}TS${Date.now()}`,
+        end_date: endDate,
+        start_date: startDate,
         status: SubscriptionStatus.PENDING,
       });
 

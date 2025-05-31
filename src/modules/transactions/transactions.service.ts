@@ -283,9 +283,8 @@ export class TransactionsService {
         throw new BadRequestException('Duplicate transaction');
       }
 
-      const startDate = new Date(userSub.start_date);
       const endDate = calcEndDate(
-        startDate,
+        new Date(userSub.end_date),
         userSub.subscription?.duration_months,
       );
 
@@ -368,7 +367,6 @@ export class TransactionsService {
 
       try {
         await manager.update(UserSubscriptions, newUserSub.id, {
-          start_date: new Date(),
           status: SubscriptionStatus.ACTIVE,
           sepay_transaction_id: sePayWebhookDto.id,
           amount: sePayWebhookDto.transferAmount,
@@ -391,10 +389,7 @@ export class TransactionsService {
         if (oldUserSub) {
           await manager.update(UserSubscriptions, oldUserSub.id, {
             status: SubscriptionStatus.ACTIVE,
-            end_date: calcEndDate(
-              oldUserSub.start_date,
-              oldUserSub.subscription.duration_months,
-            ),
+            end_date: oldUserSub.end_date,
           });
           this.logger.warn(
             `Upgrade failed, restored old subscription ${oldUserSub.id} to ACTIVE`,

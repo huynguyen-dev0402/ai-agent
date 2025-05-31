@@ -79,6 +79,7 @@ export class WorkspaceMembersService {
     // Nếu user chưa tồn tại, tạo mới
     const newUser = this.usersRepository.create({
       email,
+      is_member: true,
       password: hashPassword(password),
     });
     await this.usersRepository.save(newUser);
