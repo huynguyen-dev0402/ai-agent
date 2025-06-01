@@ -92,7 +92,7 @@ export class ChatbotsService {
     return normalized;
   }
 
-  async findAllChatbotsForUser(userId: string) {
+  async findAllChatbotsForUser(userId: string): Promise<Chatbot[]> {
     const chatbots = await this.chatbotRepository.find({
       where: {
         user: {
@@ -113,6 +113,7 @@ export class ChatbotsService {
       },
       select: {
         id: true,
+        role: true,
         user: {
           id: true,
         },
@@ -127,6 +128,7 @@ export class ChatbotsService {
       member.role !== WorkspaceMemberRole.ADMIN &&
       member.role !== WorkspaceMemberRole.MEMBER
     ) {
+      console.log('Member role:', member.role);
       throw new ForbiddenException(
         'You do not have permission to access this resource',
       );
@@ -686,11 +688,8 @@ export class ChatbotsService {
     }
 
     const { status } = chatbot;
-    if (
-      status === ChatbotStatus.PUBLISHED ||
-      status === ChatbotStatus.INACTIVE
-    ) {
-      throw new NotFoundException('Chatbot is not active or published');
+    if (status === ChatbotStatus.INACTIVE) {
+      throw new NotFoundException('Chatbot is not active');
     }
 
     if (!chatbot.external_bot_id) {
@@ -723,9 +722,12 @@ export class ChatbotsService {
         throw new Error('API did not return a bot_id');
       }
 
-      await this.chatbotRepository.update(chatbot.id, {
-        status: ChatbotStatus.PUBLISHED,
-      });
+      // Nếu chưa publish thì cập nhật trạng thái
+      if (chatbot.status !== ChatbotStatus.PUBLISHED) {
+        await this.chatbotRepository.update(chatbot.id, {
+          status: ChatbotStatus.PUBLISHED,
+        });
+      }
       return data;
     } catch (error) {
       console.error('Error publishing chatbot:', error.message);

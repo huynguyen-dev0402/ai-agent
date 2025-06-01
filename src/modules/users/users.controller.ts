@@ -652,7 +652,9 @@ export class UsersController {
   async getInfoUser(
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
-    const user = await this.usersService.findOne(request.user.id);
+    const user = request.user.is_member
+      ? await this.usersService.findOneMember(request.user.id)
+      : await this.usersService.findOne(request.user.id);
     return {
       success: true,
       message: 'User information retrieved successfully',
@@ -871,14 +873,9 @@ export class UsersController {
   async findAllChatbotsForUser(
     @Req() request: Request & { user: { [key: string]: string } },
   ) {
-    if (request.user.is_member) {
-      throw new BadRequestException(
-        'Cannot retrieve chatbots for a member user. Please contact the workspace owner.',
-      );
-    }
-    const chatbots = await this.chatbotService.findAllChatbotsForUser(
-      request.user.id,
-    );
+    const chatbots = request.user.is_member
+      ? await this.chatbotService.findAllForMember(request.user.id)
+      : await this.chatbotService.findAllChatbotsForUser(request.user.id);
     return {
       success: true,
       message: 'Chatbots retrieved successfully',

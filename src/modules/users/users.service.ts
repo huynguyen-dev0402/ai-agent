@@ -8,7 +8,10 @@ import { UpdateUserDto } from '@modules/users/dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User, UserStatus } from '@modules/users/entities/user.entity';
 import { In, Repository } from 'typeorm';
-import { comparePassword, hashPassword } from '@common/utils/hash-password/hashing.util';
+import {
+  comparePassword,
+  hashPassword,
+} from '@common/utils/hash-password/hashing.util';
 import { generateUniqueString } from '@common/utils/generate-random/generate-username.util';
 import { plainToInstance } from 'class-transformer';
 import { Workspace } from '@modules/workspaces/entities/workspace.entity';
@@ -16,6 +19,7 @@ import {
   ApiToken,
   TokenStatus,
 } from '@modules/api-tokens/entities/api-token.entity';
+import { WorkspaceMember } from '@modules/workspace-members/entities/workspace-member.entity';
 
 @Injectable()
 export class UsersService {
@@ -23,6 +27,8 @@ export class UsersService {
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     @InjectRepository(Workspace)
     private readonly workspaceRepository: Repository<Workspace>,
+    @InjectRepository(WorkspaceMember)
+    private readonly workspaceMemberRepository: Repository<WorkspaceMember>,
     @InjectRepository(ApiToken)
     private readonly apiTokenRepository: Repository<ApiToken>,
   ) {}
@@ -142,6 +148,32 @@ export class UsersService {
       },
     });
     return plainToInstance(User, user);
+  }
+
+  async findOneMember(id: string) {
+    const user = await this.findOne(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    const workspaceMember = await this.workspaceMemberRepository.findOne({
+      where: {
+        user_id: user.id,
+      },
+      select: {
+        role: true,
+        joined_at: true,
+      },
+    });
+    if (!workspaceMember) {
+      throw new NotFoundException('Workspace member not found');
+    }
+    return {
+      ...user,
+      workspace_member: {
+        role: workspaceMember.role,
+        joined_at: workspaceMember.joined_at,
+      },
+    };
   }
 
   async findOneByEmail(email: string) {
