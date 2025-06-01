@@ -24,13 +24,34 @@ export class ConversationsService {
   }
 
   async findAllByChatbotId(chatbotId: string) {
-    return this.conversationRepository.find({
-      where: {
-        chatbot: {
-          id: chatbotId,
-        },
-      },
-    });
+    const conversations = await this.conversationRepository
+      .createQueryBuilder('conversation')
+      .leftJoinAndSelect(
+        'conversation.messages',
+        'last_message',
+        `last_message.id = (
+        SELECT m.id FROM messages m
+        WHERE m.conversation_id = conversation.id
+        ORDER BY m.created_at DESC
+        LIMIT 1
+      )`,
+      )
+      .where('conversation.chatbot_id = :chatbotId', { chatbotId })
+      .getMany();
+
+    // Chỉ lấy các trường cần thiết của last_message
+    return conversations.map((conv) => ({
+      ...conv,
+      last_message:
+        conv.messages && conv.messages[0]
+          ? {
+              sender: conv.messages[0].sender_type,
+              content: conv.messages[0].message_content,
+              sent_at: conv.messages[0].created_at,
+            }
+          : null,
+      messages: undefined, // Ẩn toàn bộ messages nếu không cần
+    }));
   }
 
   async findAllByUserId(userId: string) {

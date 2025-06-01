@@ -9,12 +9,14 @@ import { UserSubscriptions } from '@modules/user-subscriptions/entities/user-sub
 import { BullModule } from '@nestjs/bullmq';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { SepayWebhookProcessor } from './transaction.processor';
+import { PaymentsModule } from '@modules/payments/payments.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Subscription, UserSubscriptions]),
     forwardRef(() => SubscriptionsModule),
     EventEmitterModule.forRoot(),
+    PaymentsModule,
     BullModule.forRoot({
       connection: {
         host: process.env.REDIS_HOST,

@@ -8,15 +8,32 @@ import { UserSubscriptionsModule } from '@modules/user-subscriptions/user-subscr
 import { SubscriptionsModule } from '@modules/subscriptions/subscriptions.module';
 import { UserSubscriptions } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
 import { Subscription } from '@modules/subscriptions/entities/subscription.entity';
+import { BullModule } from '@nestjs/bullmq';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Payment, PaymentLogs, UserSubscriptions, Subscription]),
+    TypeOrmModule.forFeature([
+      Payment,
+      PaymentLogs,
+      UserSubscriptions,
+      Subscription,
+    ]),
+    BullModule.forRoot({
+      connection: {
+        host: process.env.REDIS_HOST,
+        port: Number(process.env.REDIS_PORT),
+        username: process.env.REDIS_USERNAME,
+        password: process.env.REDIS_PASSWORD,
+      },
+    }),
+    BullModule.registerQueue({
+      name: 'payment-history',
+    }),
     forwardRef(() => UserSubscriptionsModule),
     forwardRef(() => SubscriptionsModule),
   ],
   controllers: [PaymentsController],
   providers: [PaymentsService],
-  exports: [PaymentsService],
+  exports: [PaymentsService, BullModule],
 })
 export class PaymentsModule {}

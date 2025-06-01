@@ -24,6 +24,7 @@ import {
   calcEndDate,
   parseTransactionContent,
 } from '@common/utils/transaction/transaction.util';
+import { PaymentStatus } from '@modules/payments/entities/payment.entity';
 
 @Injectable()
 export class TransactionsService {
@@ -35,6 +36,7 @@ export class TransactionsService {
     @InjectRepository(UserSubscriptions)
     private readonly userSubRepository: Repository<UserSubscriptions>,
     @InjectQueue('sepay-webhook') private readonly sepayQueue: Queue,
+    @InjectQueue('payment-history') private readonly paymentHistoryQueue: Queue,
     private readonly eventEmitter: EventEmitter2,
     private dataSource: DataSource,
   ) {}
@@ -203,6 +205,19 @@ export class TransactionsService {
         this.logger.warn(
           `User subscription not found for username: ${username}, subscriptionCode: ${subscriptionCode}`,
         );
+        // Lưu lịch sử thanh toán thất bại
+        // await this.addPaymentHistory({
+        //   userId: null,
+        //   userSubscriptionId: null,
+        //   amount: sePayWebhookDto.transferAmount,
+        //   status: PaymentStatus.FAILED,
+        //   paymentMethod: 'QR',
+        //   orderId: null,
+        //   sepayTransactionId: sePayWebhookDto.id,
+        //   description: sePayWebhookDto.content,
+        //   paidAt: new Date(),
+        //   rawWebhook: sePayWebhookDto,
+        // });
         throw new NotFoundException('User subscription not found');
       }
 
@@ -214,6 +229,18 @@ export class TransactionsService {
         this.logger.warn(
           `Duplicate transaction detected: ${sePayWebhookDto.id}`,
         );
+        // await this.addPaymentHistory({
+        //   userId: userSub.user.id,
+        //   userSubscriptionId: userSub.id,
+        //   amount: sePayWebhookDto.transferAmount,
+        //   status: PaymentStatus.FAILED,
+        //   paymentMethod: 'QR',
+        //   orderId: userSub.order_id,
+        //   sepayTransactionId: sePayWebhookDto.id,
+        //   description: '[DUPLICATE] ' + sePayWebhookDto.content,
+        //   paidAt: new Date(),
+        //   rawWebhook: sePayWebhookDto,
+        // });
         throw new BadRequestException('Duplicate transaction');
       }
 
@@ -238,6 +265,19 @@ export class TransactionsService {
         userSub.order_id,
         endDate,
       );
+
+      await this.addPaymentHistory({
+        userId: userSub.user.id,
+        userSubscriptionId: userSub.id,
+        amount: sePayWebhookDto.transferAmount,
+        status: PaymentStatus.COMPLETED,
+        paymentMethod: 'QR',
+        orderId: userSub.order_id,
+        sepayTransactionId: sePayWebhookDto.id,
+        description: sePayWebhookDto.content,
+        paidAt: new Date(),
+        rawWebhook: sePayWebhookDto,
+      });
 
       this.logger.log(
         `Subscribe transaction processed successfully for transactionId: ${sePayWebhookDto.id}`,
@@ -269,6 +309,19 @@ export class TransactionsService {
         this.logger.warn(
           `User subscription not found for username: ${username}, subscriptionCode: ${subscriptionCode}`,
         );
+        // Lưu lịch sử thanh toán thất bại
+        // await this.addPaymentHistory({
+        //   userId: null,
+        //   userSubscriptionId: null,
+        //   amount: sePayWebhookDto.transferAmount,
+        //   status: PaymentStatus.FAILED,
+        //   paymentMethod: 'QR',
+        //   orderId: null,
+        //   sepayTransactionId: sePayWebhookDto.id,
+        //   description: sePayWebhookDto.content,
+        //   paidAt: new Date(),
+        //   rawWebhook: sePayWebhookDto,
+        // });
         throw new NotFoundException('User subscription not found');
       }
 
@@ -280,6 +333,19 @@ export class TransactionsService {
         this.logger.warn(
           `Duplicate transaction detected: ${sePayWebhookDto.id}`,
         );
+        // Lưu lịch sử thanh toán thất bại
+        // await this.addPaymentHistory({
+        //   userId: userSub.user.id,
+        //   userSubscriptionId: userSub.id,
+        //   amount: sePayWebhookDto.transferAmount,
+        //   status: PaymentStatus.FAILED,
+        //   paymentMethod: 'QR',
+        //   orderId: userSub.order_id,
+        //   sepayTransactionId: sePayWebhookDto.id,
+        //   description: '[DUPLICATE] ' + sePayWebhookDto.content,
+        //   paidAt: new Date(),
+        //   rawWebhook: sePayWebhookDto,
+        // });
         throw new BadRequestException('Duplicate transaction');
       }
 
@@ -301,6 +367,19 @@ export class TransactionsService {
         userSub.order_id,
         endDate,
       );
+
+      await this.addPaymentHistory({
+        userId: userSub.user.id,
+        userSubscriptionId: userSub.id,
+        amount: sePayWebhookDto.transferAmount,
+        status: PaymentStatus.COMPLETED,
+        paymentMethod: 'QR',
+        orderId: userSub.order_id,
+        sepayTransactionId: sePayWebhookDto.id,
+        description: sePayWebhookDto.content,
+        paidAt: new Date(),
+        rawWebhook: sePayWebhookDto,
+      });
 
       this.logger.log(
         `Extend transaction processed successfully for transactionId: ${sePayWebhookDto.id}`,
@@ -330,6 +409,19 @@ export class TransactionsService {
         this.logger.warn(
           `User subscription not found for username: ${username}, subscriptionCode: ${subscriptionCode}`,
         );
+        // Lưu lịch sử thanh toán thất bại
+        // await this.addPaymentHistory({
+        //   userId: null,
+        //   userSubscriptionId: null,
+        //   amount: sePayWebhookDto.transferAmount,
+        //   status: PaymentStatus.FAILED,
+        //   paymentMethod: 'QR',
+        //   orderId:null,
+        //   sepayTransactionId: sePayWebhookDto.id,
+        //   description: sePayWebhookDto.content,
+        //   paidAt: new Date(),
+        //   rawWebhook: sePayWebhookDto,
+        // });
         throw new NotFoundException('User subscription not found');
       }
 
@@ -360,6 +452,13 @@ export class TransactionsService {
           status: SubscriptionStatus.CANCELED,
           end_date: new Date(),
         });
+        // this.emitPaymentStatus(
+        //   oldUserSub.user.id,
+        //   oldUserSub.id,
+        //   SubscriptionStatus.CANCELED,
+        //   oldUserSub.order_id,
+        //   oldUserSub.end_date,
+        // );
         this.logger.log(
           `Canceled old active subscription for user: ${username}, oldSubId: ${oldUserSub.id}`,
         );
@@ -380,12 +479,26 @@ export class TransactionsService {
           newUserSub.end_date,
         );
 
+        // Lưu lịch sử thanh toán thành công
+        await this.addPaymentHistory({
+          userId: newUserSub.user.id,
+          userSubscriptionId: newUserSub.id,
+          amount: sePayWebhookDto.transferAmount,
+          status: PaymentStatus.COMPLETED,
+          paymentMethod: 'QR',
+          orderId: newUserSub.order_id,
+          sepayTransactionId: sePayWebhookDto.id,
+          description: sePayWebhookDto.content,
+          paidAt: new Date(),
+          rawWebhook: sePayWebhookDto,
+        });
+
         this.logger.log(
           `Upgrade transaction processed successfully for transactionId: ${sePayWebhookDto.id}`,
         );
+
         return { message: 'Transaction processed successfully' };
       } catch (error) {
-        // Nếu lỗi, khôi phục lại trạng thái gói cũ về ACTIVE
         if (oldUserSub) {
           await manager.update(UserSubscriptions, oldUserSub.id, {
             status: SubscriptionStatus.ACTIVE,
@@ -398,12 +511,43 @@ export class TransactionsService {
         this.logger.error(
           `Upgrade transaction failed for transactionId: ${sePayWebhookDto.id}: ${error.message}`,
         );
+        await this.addPaymentHistory({
+          userId: newUserSub.user.id,
+          userSubscriptionId: newUserSub.id,
+          amount: sePayWebhookDto.transferAmount,
+          status: PaymentStatus.FAILED,
+          paymentMethod: 'QR',
+          orderId: newUserSub.order_id,
+          sepayTransactionId: sePayWebhookDto.id,
+          description: '[UPGRADE_FAILED] ' + sePayWebhookDto.content,
+          paidAt: new Date(),
+          rawWebhook: sePayWebhookDto,
+        });
         throw error;
       }
     });
   }
 
   // --- PRIVATE HELPERS ---
+
+  private async addPaymentHistory(data: {
+    userId: string | null;
+    userSubscriptionId: string | null;
+    amount: number;
+    status: PaymentStatus;
+    paymentMethod?: string;
+    orderId?: string | null;
+    sepayTransactionId?: number;
+    description?: string;
+    paidAt?: Date;
+    rawWebhook?: any;
+  }) {
+    await this.paymentHistoryQueue.add('payment-history', data, {
+      attempts: 3,
+      backoff: 5000,
+      removeOnComplete: true,
+    });
+  }
 
   private async ensureNoDuplicateTransaction(
     repoOrManager: Repository<UserSubscriptions> | EntityManager,
