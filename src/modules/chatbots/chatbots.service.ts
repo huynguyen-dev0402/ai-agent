@@ -105,18 +105,12 @@ export class ChatbotsService {
 
   async findAllForMember(userId: string) {
     const member = await this.workspaceMemRepository.findOne({
-      where: {
-        user: { id: userId },
-      },
-      relations: {
-        user: true,
-      },
+      where: { user: { id: userId } },
+      relations: { inviter: true },
       select: {
         id: true,
         role: true,
-        user: {
-          id: true,
-        },
+        inviter: { id: true },
       },
     });
 
@@ -128,12 +122,11 @@ export class ChatbotsService {
       member.role !== WorkspaceMemberRole.ADMIN &&
       member.role !== WorkspaceMemberRole.MEMBER
     ) {
-      console.log('Member role:', member.role);
       throw new ForbiddenException(
         'You do not have permission to access this resource',
       );
     }
-    const chatbots = await this.findAllChatbotsForUser(member.user.id);
+    const chatbots = await this.findAllChatbotsForUser(member.inviter.id);
     return chatbots;
   }
 
