@@ -12,15 +12,15 @@ import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { UserIdMatchGuard } from '@common/guards/user-id-match.guard';
 import { CreateTicketMessageDto } from './dto/create-ticket-message.dto';
 import { AuthGuard } from '@modules/auth/guards/jwt-auth.guard';
+import { Public } from '@common/decorators/public-route.decorator';
 
 @ApiTags('Ticket Messages')
-@UseGuards(AuthGuard) 
 @Controller('users/:userId/tickets/:ticketId/messages')
 export class TicketMessagesController {
   constructor(private readonly ticketMessagesService: TicketMessagesService) {}
 
   @Post()
-  @UseGuards(UserIdMatchGuard)
+  @Public()
   @ApiOperation({ summary: 'Send a message in a ticket' })
   @ApiParam({ name: 'userId', required: true, description: 'ID of the user' })
   @ApiParam({
@@ -49,7 +49,6 @@ export class TicketMessagesController {
   }
 
   @Get()
-  @UseGuards(UserIdMatchGuard)
   @ApiOperation({ summary: 'Get all messages in a ticket' })
   @ApiParam({ name: 'userId', required: true, description: 'ID of the user' })
   @ApiParam({

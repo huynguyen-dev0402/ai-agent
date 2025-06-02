@@ -26,6 +26,20 @@ export class TicketMessage {
   @Column({ type: 'text' })
   content: string;
 
+  @ApiProperty({
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'Ticket ID',
+  })
+  @Column({ type: 'uuid' })
+  ticket_id: string;
+
+  @ApiProperty({
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'User ID',
+  })
+  @Column({ type: 'uuid' })
+  user_id: string;
+
   @ApiProperty({ type: () => Ticket, description: 'Related ticket' })
   @ManyToOne(() => Ticket, (ticket) => ticket.ticket_messages, {
     nullable: false,
