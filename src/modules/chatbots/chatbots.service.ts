@@ -897,7 +897,7 @@ export class ChatbotsService {
         const existingRelations = await this.chatbotResourceRepository
           .createQueryBuilder('chatbotResource')
           .leftJoinAndSelect('chatbotResource.resource', 'resource')
-          .where('chatbotResource.chatbotId = :chatbotId', {
+          .where('chatbotResource.chatbot = :chatbotId', {
             chatbotId: chatbot.id,
           })
           .select(['chatbotResource.id', 'resource.id'])

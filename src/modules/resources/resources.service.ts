@@ -25,7 +25,6 @@ export class ResourcesService {
     userId: string,
     createResourceDto: CreateResourceDto,
   ) {
-    const user = await this.userService.findOne(userId);
     try {
       const response = await fetch('https://api.coze.com/v1/datasets', {
         method: 'POST',
@@ -55,7 +54,7 @@ export class ResourcesService {
             ? ExternalTypeName.TEXT
             : ExternalTypeName.IMAGE,
         description: createResourceDto.description,
-        user_id: user.id,
+        user_id: userId,
       };
       const newResource = this.resourceRepository.create(dataResource);
       await this.resourceRepository.save(newResource);
