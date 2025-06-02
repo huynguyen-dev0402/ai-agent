@@ -17,7 +17,7 @@ export class TicketsService {
     createTicketDto: CreateTicketDto,
   ): Promise<boolean> {
     const newTicket = this.ticketRepository.create({
-      user: { id: userId },
+      user_id: userId,
       ...createTicketDto,
     });
     try {
@@ -32,7 +32,7 @@ export class TicketsService {
   async getTickets(userId: string, status?: string): Promise<Ticket[]> {
     const query = this.ticketRepository
       .createQueryBuilder('ticket')
-      .where('ticket.userId = :userId', { userId })
+      .where('ticket.user_id = :userId', { userId })
       .andWhere('ticket.status != :deletedStatus', {
         deletedStatus: TicketStatus.DELETED,
       });
@@ -56,7 +56,7 @@ export class TicketsService {
     const ticket = await this.ticketRepository.findOne({
       where: {
         id: ticketId,
-        user: { id: userId },
+        user_id: userId,
         status: Not(TicketStatus.DELETED),
       },
     });

@@ -8,6 +8,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  JoinColumn,
 } from 'typeorm';
 
 export enum TicketStatus {
@@ -28,7 +29,10 @@ export class Ticket {
   subject: string;
 
   @Column({ type: 'text' })
-  content: string;
+  description: string;
+
+  @Column({ type: 'uuid' })
+  user_id: string;
 
   @Column({
     type: 'enum',
@@ -52,8 +56,9 @@ export class Ticket {
   updated_at: Date;
 
   @ManyToOne(() => User, (user) => user.tickets, { nullable: false })
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @OneToMany(() => TicketMessage, (message) => message.ticket)
+  @OneToMany(() => TicketMessage, (ticket_messages) => ticket_messages.ticket)
   ticket_messages: TicketMessage[];
 }

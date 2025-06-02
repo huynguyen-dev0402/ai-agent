@@ -712,7 +712,7 @@ export class UsersController {
     return {
       success: true,
       message: 'Resources retrieved successfully',
-      resources,
+      data: resources,
     };
   }
 
@@ -857,7 +857,7 @@ export class UsersController {
     return {
       success: true,
       message: 'Resource retrieved successfully',
-      resource,
+      data: resource,
     };
   }
 
@@ -879,7 +879,7 @@ export class UsersController {
     return {
       success: true,
       message: 'Chatbots retrieved successfully',
-      chatbots,
+      data: chatbots,
     };
   }
 
@@ -913,7 +913,7 @@ export class UsersController {
     return {
       success: true,
       message: 'Chatbot retrieved successfully',
-      chatbot,
+      data: chatbot,
     };
   }
 
@@ -940,7 +940,7 @@ export class UsersController {
     return {
       success: true,
       message: 'Domains retrieved successfully',
-      domains,
+      data: domains,
     };
   }
 

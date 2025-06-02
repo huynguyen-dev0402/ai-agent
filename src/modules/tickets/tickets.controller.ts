@@ -43,7 +43,7 @@ export class TicketsController {
     if (!result) {
       throw new BadRequestException('Failed to create ticket');
     }
-    return successResponse('Chatbot deleted successfully.');
+    return successResponse('Ticket created successfully.');
   }
 
   @Get('users/:userId/tickets')
@@ -63,8 +63,12 @@ export class TicketsController {
     @Param('userId') userId: string,
     @Query('status') status?: string,
   ) {
-    const result = await this.ticketsService.getTickets(userId, status);
-    return successResponse('Get ticket list successfully.', result);
+    const tickets = await this.ticketsService.getTickets(userId, status);
+    return {
+      success: true,
+      message: 'Get ticket list successfully.',
+      data: tickets,
+    };
   }
 
   @Get('users/:userId/tickets/:ticketId')
@@ -84,11 +88,15 @@ export class TicketsController {
     @Param('userId') userId: string,
     @Param('ticketId') ticketId: string,
   ) {
-    const result = await this.ticketsService.getTicketById(userId, ticketId);
-    if (!result) {
+    const ticket = await this.ticketsService.getTicketById(userId, ticketId);
+    if (!ticket) {
       throw new NotFoundException('Ticket not found or has been deleted');
     }
-    return successResponse('Get ticket details successfully.', result);
+    return {
+      success: true,
+      message: 'Get ticket details successfully.',
+      data: ticket, 
+    };
   }
 
   @Post('users/:userId/tickets/:ticketId/close')

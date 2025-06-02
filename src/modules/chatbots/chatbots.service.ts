@@ -131,7 +131,7 @@ export class ChatbotsService {
   }
 
   async findChatbotForUser(userId: string, chatbotId: string) {
-    const chatbot = await this.chatbotRepository.findOne({
+    return await this.chatbotRepository.findOne({
       where: {
         id: chatbotId,
         user: {
@@ -163,7 +163,6 @@ export class ChatbotsService {
         },
       },
     });
-    return chatbot;
   }
 
   async chatWithBotStream(
