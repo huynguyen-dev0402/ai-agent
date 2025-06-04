@@ -9,6 +9,7 @@ import { SubscriptionsModule } from '@modules/subscriptions/subscriptions.module
 import { UserSubscriptions } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
 import { Subscription } from '@modules/subscriptions/entities/subscription.entity';
 import { BullModule } from '@nestjs/bullmq';
+import { AuthModule } from '@modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { BullModule } from '@nestjs/bullmq';
     BullModule.registerQueue({
       name: 'payment-history',
     }),
+    AuthModule,
     forwardRef(() => UserSubscriptionsModule),
     forwardRef(() => SubscriptionsModule),
   ],
