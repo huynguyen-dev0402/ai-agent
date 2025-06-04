@@ -1,31 +1,36 @@
-import { BadRequestException, Body, Controller, Post, Redirect, Req } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { PaymentsService } from './payments.service';
-import { firstValueFrom } from 'rxjs';
-import { UserSubscriptionsService } from '@modules/user-subscriptions/user-subscriptions.service';
-import { Request } from 'express';
+import { AuthGuard } from '@modules/auth/guards/jwt-auth.guard';
+import { Payment } from './entities/payment.entity';
+import { GetPaymentsQueryDto } from './dto/get-payment-query.dto';
 
 @Controller('payments')
+@UseGuards(AuthGuard)
 export class PaymentsController {
-  constructor(
-    private readonly paymentsService: PaymentsService,
-    private readonly userSubscriptionsService: UserSubscriptionsService,
-  ) {}
-  // @Post('sepay/initiate')
-  // @Redirect()
-  // async initiateSepayPayment(
-  //   @Body() body: { subscriptionId: string },
-  //   @Req() req: Request & { user: { [key: string]: string } },
-  // ) {
-  //   const { subscriptionId } = body;
+  constructor(private readonly paymentsService: PaymentsService) {}
 
-  //   try {
-  //     const { paymentUrl } = await this.paymentsService.initiateSepayPayment(
-  //       subscriptionId,
-  //       req.user.id,
-  //     );
-  //     return { url: paymentUrl };
-  //   } catch (error) {
-  //     throw new BadRequestException(error.message);
-  //   }
-  // }
+  @Get('/:id')
+  getPaymentById(@Param('id') id: string): Promise<Payment | null> {
+    if (!id) {
+      throw new BadRequestException('Payment ID is required');
+    }
+    return this.paymentsService.getPaymentById(id);
+  }
+
+  @Get('/')
+  getPaymentsByUserId(@Query() query: GetPaymentsQueryDto): Promise<Payment[]> {
+    if (!query.userId) {
+      throw new BadRequestException('User ID is required');
+    }
+    return this.paymentsService.getPaymentsByUserId(query.userId, query);
+  }
 }

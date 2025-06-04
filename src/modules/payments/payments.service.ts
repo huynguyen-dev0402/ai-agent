@@ -15,6 +15,7 @@ import {
   UserSubscriptions,
 } from '@modules/user-subscriptions/entities/user-subscriptions.entity';
 import { SubscriptionsService } from '@modules/subscriptions/subscriptions.service';
+import { DEFAULT_PAYMENT_LIMIT, DEFAULT_PAYMENT_OFFSET, DEFAULT_PAYMENT_ORDER, DEFAULT_PAYMENT_SORT, GetPaymentsQueryDto } from './dto/get-payment-query.dto';
 
 @Injectable()
 export class PaymentsService {
@@ -30,9 +31,74 @@ export class PaymentsService {
     private readonly subscriptionsService: SubscriptionsService,
   ) {}
 
-  async initiateSepayPayment(
-    subscriptionId: string,
-    userId: string,
-    userSubscriptionId: string,
-  ) {}
+  async getPaymentById(paymentId: string): Promise<Payment | null> {
+    const payment = await this.paymentsRepository.findOne({
+      where: { id: paymentId },
+      relations: {
+        user_subscriptions: {
+          user: true,
+          subscription: true,
+        },
+      },
+      select: {
+        id: true,
+        amount: true,
+        status: true,
+        payment_method: true,
+        description: true,
+        created_at: true,
+        updated_at: true,
+        user_subscriptions: {
+          id: true,
+          status: true,
+          start_date: true,
+          end_date: true,
+          created_at: true,
+          user: {
+            id: true,
+            username: true, // Assuming you want to include username
+          },
+          subscription: {
+            id: true,
+            name: true, // Assuming you want to include subscription name
+            price: true, // Assuming you want to include subscription price
+          },
+        },
+      },
+    });
+
+    if (!payment) {
+      this.logger.warn(`Payment with ID ${paymentId} not found`);
+      return null;
+    }
+
+    return payment;
+  }
+
+  async getPaymentsByUserId(userId: string, query: GetPaymentsQueryDto): Promise<Payment[]> {
+    const {
+      limit = DEFAULT_PAYMENT_LIMIT,
+      offset = DEFAULT_PAYMENT_OFFSET,
+      sort = DEFAULT_PAYMENT_SORT,
+      order = DEFAULT_PAYMENT_ORDER,
+    } = query;
+
+    const payments = await this.paymentsRepository.find({
+      where: { user_id: userId },
+      select: {
+        id: true,
+        amount: true,
+        status: true,
+        payment_method: true,
+        description: true,
+        created_at: true,
+        updated_at: true,
+      },
+      order: { [sort]: order },
+      take: limit,
+      skip: offset,
+    });
+
+    return payments;
+  }
 }

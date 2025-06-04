@@ -349,6 +349,12 @@ export class TransactionsService {
         throw new BadRequestException('Duplicate transaction');
       }
 
+      this.logger.error(
+        `Processing extend for userSub: ${JSON.stringify(userSub)}`,
+      );
+      this.logger.debug(
+        `Current end_date: ${userSub.end_date}, duration_months: ${userSub.subscription?.duration_months}`,
+      );
       const endDate = calcEndDate(
         new Date(userSub.end_date),
         userSub.subscription?.duration_months,
