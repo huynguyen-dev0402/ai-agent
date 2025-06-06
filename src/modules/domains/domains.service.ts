@@ -36,12 +36,12 @@ export class DomainsService {
     }
 
     // Kiểm tra domain đã tồn tại trong hệ thống chưa
-    const existingDomain = await this.domainsRepository.findOne({
-      where: { name: normalizedDomain },
-    });
-    if (existingDomain) {
-      throw new BadRequestException('Domain already exists');
-    }
+    // const existingDomain = await this.domainsRepository.findOne({
+    //   where: { name: normalizedDomain },
+    // });
+    // if (existingDomain) {
+    //   throw new BadRequestException('Domain already exists');
+    // }
 
     // Lưu domain
     const domain = this.domainsRepository.create({
