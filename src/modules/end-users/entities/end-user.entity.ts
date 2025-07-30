@@ -43,6 +43,7 @@ export class EndUser {
   @CreateDateColumn({
     type: 'timestamp',
     nullable: true,
+    precision: 0,
     default: () => 'CURRENT_TIMESTAMP',
   })
   created_at: Date;
@@ -50,6 +51,8 @@ export class EndUser {
   @UpdateDateColumn({
     type: 'timestamp',
     nullable: true,
+    precision: 0,
+    default: () => 'CURRENT_TIMESTAMP',
     onUpdate: 'CURRENT_TIMESTAMP',
   })
   updated_at: Date;

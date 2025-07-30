@@ -610,6 +610,22 @@ export class ChatbotsService {
     }
 
     try {
+      console.log(
+        `
+        curl --location 'https://api.coze.com/v1/bot/create' \
+        --header 'Authorization: Bearer ${user.api_token_token}' \
+        --header 'Content-Type: application/json' \
+        --data '{
+            "space_id": "${user.workspace_external_space_id}",
+            "name": "${createChatbotDto.chatbot_name}",
+            "description": "${createChatbotDto.description || null}",
+            "model_info_config": {
+              "model_id": "${model.id}"
+            }
+          }'
+        `
+      );
+      
       // Gọi API Coze để tạo chatbot
       const response = await fetch('https://api.coze.com/v1/bot/create', {
         method: 'POST',
@@ -626,9 +642,10 @@ export class ChatbotsService {
           },
         }),
       });
-
+      
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('API error:', errorData);
         throw new Error(
           `API call failed: ${errorData?.message || response.statusText}`,
         );
@@ -689,6 +706,15 @@ export class ChatbotsService {
     }
 
     try {
+      console.log(`
+        curl --location 'https://api.coze.com/v1/bot/publish' \
+--header 'Authorization: Bearer ${chatbot.user.api_token.token}' \
+--header 'Content-Type: application/json' \
+--data '{
+    "bot_id": "${chatbot.external_bot_id}",
+    "connector_ids": ["${publishChatbotDto.connector_id || '1024'}"]
+}'`);
+      
       // Gọi API Coze để xuất bản chatbot
       const response = await fetch('https://api.coze.com/v1/bot/publish', {
         method: 'POST',
@@ -698,7 +724,7 @@ export class ChatbotsService {
         },
         body: JSON.stringify({
           bot_id: chatbot.external_bot_id,
-          connector_ids: [publishChatbotDto.connector_id],
+          connector_ids: [publishChatbotDto.connector_id || '1024'],
         }),
       });
 

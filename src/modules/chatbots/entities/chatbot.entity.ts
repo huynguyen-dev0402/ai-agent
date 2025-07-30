@@ -60,6 +60,7 @@ export class Chatbot {
   @CreateDateColumn({
     type: 'timestamp',
     nullable: true,
+    precision: 0,
     default: () => 'CURRENT_TIMESTAMP',
   })
   created_at: Date;
@@ -67,6 +68,8 @@ export class Chatbot {
   @UpdateDateColumn({
     type: 'timestamp',
     nullable: true,
+    precision: 0,
+    default: () => 'CURRENT_TIMESTAMP',
     onUpdate: 'CURRENT_TIMESTAMP',
   })
   updated_at: Date;

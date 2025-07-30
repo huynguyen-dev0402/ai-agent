@@ -110,6 +110,7 @@ export class UsageLog {
   @CreateDateColumn({
     name: 'used_at',
     type: 'timestamp',
+    precision: 0,
     default: () => 'CURRENT_TIMESTAMP',
   })
   used_at: Date;
@@ -117,6 +118,7 @@ export class UsageLog {
   @CreateDateColumn({
     type: 'timestamp',
     nullable: true,
+    precision: 0,
     default: () => 'CURRENT_TIMESTAMP',
   })
   created_at: Date;
@@ -124,6 +126,8 @@ export class UsageLog {
   @UpdateDateColumn({
     type: 'timestamp',
     nullable: true,
+    precision: 0,
+    default: () => 'CURRENT_TIMESTAMP',
     onUpdate: 'CURRENT_TIMESTAMP',
   })
   updated_at: Date;

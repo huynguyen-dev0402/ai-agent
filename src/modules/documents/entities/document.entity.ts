@@ -58,6 +58,7 @@ export class Document {
   @CreateDateColumn({
     name: 'created_at',
     type: 'timestamp',
+    precision: 0,
     default: () => 'CURRENT_TIMESTAMP',
   })
   createdAt: Date;
@@ -66,6 +67,9 @@ export class Document {
     name: 'updated_at',
     type: 'timestamp',
     nullable: true,
+    precision: 0,
+    default: () => 'CURRENT_TIMESTAMP',
+    onUpdate: 'CURRENT_TIMESTAMP',
   })
   updatedAt: Date;
 

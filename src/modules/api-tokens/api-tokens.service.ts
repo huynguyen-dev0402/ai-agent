@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateApiTokenDto } from './dto/create-api-token.dto';
 import { UpdateApiTokenDto } from './dto/update-api-token.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -72,23 +72,51 @@ export class ApiTokensService {
     }
   }
 
-  create(createApiTokenDto: CreateApiTokenDto) {
-    return 'This action adds a new apiToken';
+  async create(createApiTokenDto: CreateApiTokenDto): Promise<ApiToken> {
+    // Generate a unique token string
+    const tokenString = `sk-${uuidv4()}${uuidv4()}`.replace(/-/g, '');
+    
+    const apiToken = this.apiTokenRepository.create({
+      ...createApiTokenDto,
+      token: tokenString,
+      expires_at: new Date(createApiTokenDto.expires_at),
+    });
+    
+    return await this.apiTokenRepository.save(apiToken);
   }
 
-  findAll() {
-    return `This action returns all apiTokens`;
+  async findAll(): Promise<ApiToken[]> {
+    return await this.apiTokenRepository.find({
+      order: { created_at: 'DESC' },
+    });
   }
 
-  findOne(id: string) {
-    return `This action returns a #${id} apiToken`;
+  async findOne(id: string): Promise<ApiToken> {
+    const apiToken = await this.apiTokenRepository.findOne({
+      where: { id },
+    });
+    
+    if (!apiToken) {
+      throw new NotFoundException(`API Token with ID ${id} not found`);
+    }
+    
+    return apiToken;
   }
 
-  update(id: number, updateApiTokenDto: UpdateApiTokenDto) {
-    return `This action updates a #${id} apiToken`;
+  async update(id: string, updateApiTokenDto: UpdateApiTokenDto): Promise<ApiToken> {
+    const apiToken = await this.findOne(id);
+    
+    Object.assign(apiToken, updateApiTokenDto);
+    
+    if (updateApiTokenDto.expires_at) {
+      apiToken.expires_at = new Date(updateApiTokenDto.expires_at);
+    }
+    
+    return await this.apiTokenRepository.save(apiToken);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} apiToken`;
+  async remove(id: string): Promise<void> {
+    const apiToken = await this.findOne(id);
+    await this.apiTokenRepository.remove(apiToken);
   }
 }

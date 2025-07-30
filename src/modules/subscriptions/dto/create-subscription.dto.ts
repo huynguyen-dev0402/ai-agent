@@ -18,6 +18,14 @@ export class CreateSubscriptionDto {
   name: string;
 
   @ApiProperty({
+    example: 1001,
+    description: 'Unique subscription code',
+  })
+  @IsInt({ message: 'The subscription code must be an integer' })
+  @IsPositive({ message: 'The subscription code must be greater than 0' })
+  subscription_code: number;
+
+  @ApiProperty({
     example: 1000,
     description: 'The maximum number of messages the user can use in this plan',
   })

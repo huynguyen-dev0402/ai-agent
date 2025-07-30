@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateChatbotModelDto } from '@modules/chatbot-models/dto/create-chatbot-model.dto';
 import { UpdateChatbotModelDto } from '@modules/chatbot-models/dto/update-chatbot-model.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -11,11 +11,13 @@ export class ChatbotModelsService {
     @InjectRepository(ChatbotModel)
     private readonly chatbotModelRepository: Repository<ChatbotModel>,
   ) {}
-  create(createChatbotModelDto: CreateChatbotModelDto) {
-    return 'This action adds a new chatbotModel';
+
+  async create(createChatbotModelDto: CreateChatbotModelDto): Promise<ChatbotModel> {
+    const model = this.chatbotModelRepository.create(createChatbotModelDto);
+    return await this.chatbotModelRepository.save(model);
   }
 
-  async findAll() {
+  async findAll(): Promise<ChatbotModel[] | false> {
     const models = await this.chatbotModelRepository.find({});
     if (!models.length) {
       return false;
@@ -23,7 +25,7 @@ export class ChatbotModelsService {
     return models;
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<ChatbotModel | false> {
     const model = await this.chatbotModelRepository.findOne({
       where: {
         id,
@@ -35,11 +37,28 @@ export class ChatbotModelsService {
     return model;
   }
 
-  update(id: number, updateChatbotModelDto: UpdateChatbotModelDto) {
-    return `This action updates a #${id} chatbotModel`;
+  async update(id: string, updateChatbotModelDto: UpdateChatbotModelDto): Promise<ChatbotModel> {
+    const model = await this.chatbotModelRepository.findOne({
+      where: { id },
+    });
+
+    if (!model) {
+      throw new NotFoundException(`Chatbot model with ID ${id} not found`);
+    }
+
+    Object.assign(model, updateChatbotModelDto);
+    return await this.chatbotModelRepository.save(model);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} chatbotModel`;
+  async remove(id: string): Promise<void> {
+    const model = await this.chatbotModelRepository.findOne({
+      where: { id },
+    });
+
+    if (!model) {
+      throw new NotFoundException(`Chatbot model with ID ${id} not found`);
+    }
+
+    await this.chatbotModelRepository.remove(model);
   }
 }

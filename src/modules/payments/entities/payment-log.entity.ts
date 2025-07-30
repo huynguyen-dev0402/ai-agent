@@ -28,6 +28,10 @@ export class PaymentLogs {
   @Column({ type: 'json', nullable: true })
   payload: any;
 
-  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn({
+    type: 'timestamp',
+    precision: 0,
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   created_at: Date;
 }

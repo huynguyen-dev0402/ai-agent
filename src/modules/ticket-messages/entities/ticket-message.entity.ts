@@ -56,6 +56,11 @@ export class TicketMessage {
     example: '2024-05-31T12:00:00.000Z',
     description: 'Created at',
   })
-  @CreateDateColumn()
+  @CreateDateColumn({
+    type: 'timestamp',
+    nullable: true,
+    precision: 0,
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   created_at: Date;
 }

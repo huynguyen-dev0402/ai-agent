@@ -1,12 +1,12 @@
 import { User } from '@modules/users/entities/user.entity';
 import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  CreateDateColumn,
-  UpdateDateColumn,
-  JoinColumn,
+    Column,
+    CreateDateColumn,
+    Entity,
+    JoinColumn,
+    ManyToOne,
+    PrimaryGeneratedColumn,
+    UpdateDateColumn,
 } from 'typeorm';
 
 @Entity('chatbot_prompts')
@@ -26,6 +26,7 @@ export class ChatbotPrompt {
   @CreateDateColumn({
     type: 'timestamp',
     nullable: true,
+    precision: 0,
     default: () => 'CURRENT_TIMESTAMP',
   })
   created_at: Date;
@@ -33,6 +34,8 @@ export class ChatbotPrompt {
   @UpdateDateColumn({
     type: 'timestamp',
     nullable: true,
+    precision: 0,
+    default: () => 'CURRENT_TIMESTAMP',
     onUpdate: 'CURRENT_TIMESTAMP',
   })
   updated_at: Date;

@@ -19,9 +19,15 @@ import { WorkspaceMember } from '@modules/workspace-members/entities/workspace-m
       isGlobal: true,
     }),
     PassportModule,
-    JwtModule.register({
-      secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: process.env.JWT_EXPIRED },
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: { 
+          expiresIn: configService.get<string>('JWT_EXPIRED'),
+        },
+      }),
+      inject: [ConfigService],
     }),
     TypeOrmModule.forFeature([User, Workspace, ApiToken, ChatbotToken, WorkspaceMember]),
     RedisModule.forRootAsync({

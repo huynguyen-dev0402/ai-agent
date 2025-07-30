@@ -23,6 +23,7 @@ export class ChatbotEmbedLog {
   @CreateDateColumn({
     type: 'timestamp',
     nullable: true,
+    precision: 0,
     default: () => 'CURRENT_TIMESTAMP',
   })
   created_at: Date;

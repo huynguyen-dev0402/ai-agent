@@ -53,6 +53,10 @@ export class TransactionEntity {
   @JoinColumn({ name: 'payment_id' })
   payment: Payment;
 
-  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn({
+    type: 'timestamp',
+    precision: 0,
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   created_at: Date;
 }

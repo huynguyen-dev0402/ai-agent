@@ -70,6 +70,10 @@ export class UserSubscriptions {
   @Column({ nullable: true })
   sepay_transaction_id: number; // SePay transaction ID
 
-  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn({
+    type: 'timestamp',
+    precision: 0,
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   created_at: Date;
 }
